@@ -5,6 +5,7 @@ Created on Feb 22, 2021
 '''
 import json
 import music
+import  pandas as pd
 
 def keys_usage(keys_file):   
     with open(keys_file, "r") as read_file:
@@ -35,8 +36,15 @@ def scales_usage(scales_file):
     print("scales file: {}".format(_scales.scales_file))
     print("scale names: {}".format(_scales.scale_names))
     # select a specific scale
-    print("Dorian b2: {}".format(_scales.scale['Dorian b2'].scale))
+    print("Dorian b2: \n{}".format(_scales.scale['Dorian b2'].scale))
+    # get the DataFrame
+    scales_df = _scales.scales_df
+    scales_df_blues = scales_df[scales_df['groups'].apply(lambda x:'blues' in x)]
     
+    print('blues scales with 7 notes: \n{}'.format( scales_df_blues[scales_df_blues['size']==7][['name', 'formula_str']]))
+    
+    for ser in scales_df_blues:
+        pass
 
 if __name__ == '__main__':
     print('Sample usage of Keys and Song')

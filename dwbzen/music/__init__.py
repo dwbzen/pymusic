@@ -8,5 +8,8 @@ from .song import Song
 from .keys import Keys
 from .scales import Scales
 from .scale  import Scale
-
-
+from .chords import Chords
+from .chord import Chord
+from .noteCollector import NoteCollector
+from .intervalCollector import IntervalCollector
+from dwbzen.common import Collector
