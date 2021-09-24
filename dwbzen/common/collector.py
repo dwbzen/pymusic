@@ -19,15 +19,17 @@
 # ------------------------------------------------------------------------------
 
 import pandas as pd
+import common
 
 class Collector:
     
-    def __init__(self, state_size=2, verbose=False, source=None):
+    def __init__(self, state_size=2, verbose=0, source=None):
         self.order = state_size
         self.verbose = verbose
-        self.chain = pd.DataFrame()
-        self.counts = pd.DataFrame()
+        self.chain_df = pd.DataFrame()
+        self.counts_df = pd.DataFrame()
         self.stateSpace_type = None
+        self.markovChain =  common.MarkovChain(state_size)
         self.name = None
         self.format = None
         self.source = source  # file input source

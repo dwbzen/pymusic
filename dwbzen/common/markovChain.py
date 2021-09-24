@@ -23,28 +23,22 @@
 
 import json
 import pandas as pd
-from common.characterCollector import CharacterCollector
 
 class MarkovChain(object):
 
-    def __init__(self, state_size=2, myname=''):
+    def __init__(self, state_size=2, chain_df=pd.DataFrame(), myname=None):
         self.order = state_size
-        self.name = myname              # used when persisting to CSV or JSON
-        self.chain = pd.DataFrame()
-        pass
+        self.name = myname          # used when persisting to CSV, Excel, or JSON
+        self.chain_df = chain_df
+        self.collector = None       # the Collector type
     
-    def add_key(self, key, next_token, probability):
-        prob_tupple = (probability, next_token)
-        if key in self.chain:
-            pass
-        
+    def __repr__(self, *args, **kwargs):
+        return self.chain_df.to_json(path_or_buf = None,orient='index')
+    
+    def __str__(self):
+        return self.chain_df.to_csv(path_or_buf = None, line_terminator='\n')
     
     if __name__ == '__main__':
-        print('Sample usage')
-        collector = CharacterCollector(2)
-        print(collector.__repr__())
-        #
-        # Example with strings
-        #
-        
+        print('MarkovChain')
+
 

@@ -8,7 +8,7 @@ import json
 import pandas as pd
 
 
-class Scales:
+class Scales(object):
     '''
     Scale formulas for common scales
     Can also use pandas as pd to read in the JSON, for example:

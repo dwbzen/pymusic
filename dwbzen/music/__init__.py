@@ -6,8 +6,8 @@ from .__version__ import __copyright__
 
 from .song import Song
 from .keys import Keys
-from .scales import Scales
 from .scale  import Scale
+from .scales import Scales
 from .chords import Chords
 from .chord import Chord
 from .noteCollector import NoteCollector

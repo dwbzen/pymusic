@@ -9,4 +9,4 @@ from .characterCollector import CharacterCollector
 from .markovChain import MarkovChain
 from .producer import Producer
 from .wordProducer import WordProducer
-
+from .wordProducerRunner import WordProducerRunner
