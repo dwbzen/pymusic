@@ -5,8 +5,8 @@
 # Purpose:       Note collector class.
 #
 #                NoteCollector creates a pair of MarkovChains
-#                from a Note stream (strings) for the pitches and durations.
-#                The corresponding Producer class is PartProducer which reverses the process.
+#                from a Note stream (strings) for the intervals (or Notes) and durations.
+#                The corresponding Producer class is PartProducer (TODO) which reverses the process.
 #
 # Authors:      Donald Bacon
 #
@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------------
 
 import common
-from music21 import stream, interval, note
+from music21 import stream, interval, note, duration
 
 class NoteCollector(common.Collector):
 

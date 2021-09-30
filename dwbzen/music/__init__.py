@@ -12,4 +12,8 @@ from .chords import Chords
 from .chord import Chord
 from .noteCollector import NoteCollector
 from .intervalCollector import IntervalCollector
+from .durationCollector import DurationCollector
+from .intervalCollectorRunner import IntervalCollectorRunner
 from dwbzen.common import Collector
+from dwbzen.common import Producer
+from .utils import Utils
