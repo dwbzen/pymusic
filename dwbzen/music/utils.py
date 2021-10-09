@@ -1,5 +1,6 @@
 
-from music21 import stream, interval, corpus, converter
+from music21 import stream, interval, corpus, converter, note, duration
+import music
 import pandas as pd
 import pathlib
 
@@ -40,7 +41,7 @@ class Utils(object):
     # item = list of music21.interval.Interval
     #
     @staticmethod
-    def get_score_intervals(ascore, partname=None):
+    def get_score_intervals(ascore, partname=None) -> (stream.Score,str):
         parts = ascore.getElementsByClass(stream.Part)
         pdict = dict()
         for p in parts:
@@ -56,7 +57,7 @@ class Utils(object):
     # item = notes for that part as a list of music21.note.Note
     #
     @staticmethod
-    def get_score_notes(ascore, partname=None):
+    def get_score_notes(ascore, partname=None) -> (stream.Score,str):
         parts = ascore.getElementsByClass(stream.Part)
         pdict = dict()
         for p in parts:
@@ -88,6 +89,7 @@ class Utils(object):
                     part_number = part_number + 1
     
         intrvals_df['name'] = [x.name for x in intrvals_df['interval']]
+        intrvals_df['directedName'] = [x.directedName for x in intrvals_df['interval']]
         intrvals_df['niceName'] = [x.niceName for x in intrvals_df['interval']]
         intrvals_df['semitones'] = [x.semitones for x in intrvals_df['interval']]
         return intrvals_df
@@ -102,17 +104,18 @@ class Utils(object):
     # pitchClass (int)
     #
     @staticmethod
-    def get_all_score_notes(ascore):
+    def get_notes_for_score(ascore, partnames=None, partnumbers=None):
         pdict = Utils.get_score_notes(ascore)
         notes_df = pd.DataFrame()
         part_number = 1
         for k in pdict.keys():
-            df = pd.DataFrame(data=pdict[k], columns=['note'])
-            df['part_number'] = part_number
-            df['part_name'] = k
-            notes_df = notes_df.append(df)
-            part_number = part_number + 1
-            
+            if (partnames is None or k in partnames) or (partnumbers is None or part_number in partnumbers):
+                df = pd.DataFrame(data=pdict[k], columns=['note'])
+                df['part_number'] = part_number
+                df['part_name'] = k
+                notes_df = notes_df.append(df)
+                part_number = part_number + 1
+        
         notes_df['name'] = [x.name for x in notes_df['note']]
         notes_df['nameWithOctave'] = [x.nameWithOctave for x in notes_df['note']]
         notes_df['pitch'] = [x.pitch for x in notes_df['note']]
@@ -121,7 +124,19 @@ class Utils(object):
         return notes_df
     
     @staticmethod
-    def get_metadata_bundle(composer=None, title=None):
+    def get_durations_from_notes(notes_df) -> pd.DataFrame:
+        # 'type','ordinal','dots','full_name','quarterLength','tuplets'
+        durations_df = pd.DataFrame(data=notes_df[['note','duration']], columns=['note','duration'])
+        durations_df['type'] = [x.type for x in notes_df['duration']]
+        durations_df['ordinal'] = [x.ordinal for x in notes_df['duration']]
+        durations_df['dots'] = [x.dots for x in notes_df['duration']]
+        durations_df['fullName'] = [x.fullName for x in notes_df['duration']]
+        durations_df['quarterLength'] = [x.quarterLength for x in notes_df['duration']]
+        durations_df['tuplets'] = [x.tuplets for x in notes_df['duration']]
+        return durations_df
+    
+    @staticmethod
+    def get_metadata_bundle(composer=None, title=None) -> (str,str):
         meta = None
         if composer is not None:
             meta = corpus.search(composer,'composer')
@@ -144,6 +159,18 @@ class Utils(object):
         return intrvals_df
     
     @staticmethod
+    def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
+        meta = Utils.get_metadata_bundle(composer, title)
+        notes_df = pd.DataFrame()
+        for i in range(len(meta)):
+            md = meta[i].metadata
+            score = corpus.parse(meta[i])
+            df = Utils.get_notes_for_score(score, partnames, partnumbers)
+            df['title'] = md.title
+            notes_df = notes_df.append(df)
+        return notes_df
+    
+    @staticmethod
     def show_measures(measures, how='text'):
         nmeasures = len(measures)
         print(f"number of measures: {nmeasures}")
@@ -160,9 +187,44 @@ class Utils(object):
             measure.show(how)   # if None, displays in MuseScore
     
     @staticmethod
-    def show_intervals(df, what='name'):
+    def show_intervals(df, what='name') -> pd.DataFrame:
         int_string = str(df[what].values.tolist())
         return int_string
+    
+    @staticmethod
+    def show_notes(df, what='name') -> pd.DataFrame:
+        note_string = str(df[what].values.tolist())
+        return note_string
+    
+    @staticmethod
+    def show_durations(df, what='quarterLength'):
+        duration_string = str(df[what].values.tolist())
+        return duration_string
+    
+    @staticmethod
+    def note_info(note):
+        dur = note.duration
+        if note.isRest:
+            info = f'name: {note.name}, fullName: {note.fullName}, type: {dur.type}, dots: {dur.dots},\
+            quarterLength: {dur.quarterLength}'
+        else:
+            info = f'{note.nameWithOctave}, type: {dur.type}, dots: {dur.dots},\
+            fullName: {dur.fullName}, quarterLength: {dur.quarterLength}, tuplets: {dur.tuplets}'
+        return info
+
+    @staticmethod
+    def duration_info(dur) -> duration.Duration:
+        info = f'type: {dur.type}, ordinal: {dur.ordinal}, dots: {dur.dots}, fullName: {dur.fullName}, \
+        quarterLength {dur.quarterLength}, tuplets: {dur.tuplets}'
+        return info
+    
+    @staticmethod
+    def get_interval_stats(ascore, partnames=None, partnumbers=None):
+        int_df = Utils.get_intervals_for_score(ascore, partnames, partnumbers)
+        int_df = int_df.groupby(by=['semitones']).count()[['interval']]
+        int_df.rename(columns={'interval':'count'}, inplace=True)
+        int_df.reset_index(inplace=True)       
+        return int_df.sort_values(by='count', ascending=False)
     
     #
     # breaks up a path name into component parts
@@ -185,11 +247,12 @@ class Utils(object):
         p = pathlib.Path(path)
         return  {'paths':paths, 'path_text':path, 'filename':filename, 'name':name,'extension': ext, 'Path':p}
 
-    if __name__ == '__main__':
-        print('Sample music21 usage')
-        sBach = corpus.parse('bwv67.4')
-        soprano = sBach.parts[0]
-        soprano_measures = soprano.getElementsByClass('Measure')
-        show_measures(soprano_measures)
-
+    @staticmethod
+    def round_values(x, places=5):
+        if not type(x) is str:
+            return round(x, places)
+        else:
+            return x
     
+    if __name__ == '__main__':
+        print(Utils.__doc__)

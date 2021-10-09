@@ -14,7 +14,6 @@ import common
 import argparse
 import sys
 import pandas as pd
-from common.wordProducer import get_file_info
 
 class WordProducerRunner(object):
     
@@ -59,12 +58,12 @@ class WordProducerRunner(object):
             markovChain = collector.collect()
         else:
             # use serialized MarkovChain file in JSON format (--chain )as input TODO
-            file_info = get_file_info(args.chainFile)
-            thepath = file_info[1]
-            ext = file_info[4].lower()
+            file_info = common.Utils.get_file_info(args.chainFile)
+            thepath = file_info["path_text"]
+            ext = file_info['extension'].lower()
             if args.verbose > 0:
                 print(file_info)
-            if not file_info[-1].exists():
+            if not file_info['Path'].exists():
                 print(f"{thepath} does not exist")
                 exit()
             else:

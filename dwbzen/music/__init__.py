@@ -10,10 +10,12 @@ from .scale  import Scale
 from .scales import Scales
 from .chords import Chords
 from .chord import Chord
+from .musicCollector import MusicCollector
 from .noteCollector import NoteCollector
 from .intervalCollector import IntervalCollector
 from .durationCollector import DurationCollector
 from .intervalCollectorRunner import IntervalCollectorRunner
+from .noteCollectorRunner import NoteCollectorRunner
 from dwbzen.common import Collector
 from dwbzen.common import Producer
 from .utils import Utils

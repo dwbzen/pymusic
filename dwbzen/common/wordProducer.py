@@ -10,48 +10,21 @@
 
 import common
 import pandas as pd
-import pathlib
-import numpy as np
 import random
 
-#
-# breaks up a path name into component parts
-#
-def get_file_info(cpath, def_extension='json'):
-    x = cpath.split("/")
-    paths = x[0:len(x)-1]
-    filename = x[-1]
-    ext = filename.split(".")
-    name = ext[0]
-    if len(ext)==2:
-        ext = ext[1]
-        path = cpath
-    else:
-        ext = def_extension
-        filename = f"{filename}.{ext}"
-        path = f"{cpath}.{ext}"
-    p = pathlib.Path(path)
-    return (paths,path,filename,name,ext,p)
 
 class WordProducer(common.Producer):
     
     def __init__(self, state_size, markovChain, source_file, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
-        super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose)
-        self.outfile=None
-        self.seed=None
-        self.sort=None
+        super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose, rand_seed)
         self.list=False
         self.postprocessing = None
         self.initial=False
         self.pos=False
-        self.chain_df = self.markovChain.chain_df
-        self.keys = pd.Series(self.chain_df.index)
+
         self.initial_keys = self.keys[self.keys.apply(lambda s:s.startswith(' '))]
-        np.random.seed(rand_seed)
+
         self.terminal_character = '~'   # needs to match the CharacterCollector terminal_character
-        # count of how many times the current seed has been used
-        # when >= self.recycle_seed_count, a new seed is picked
-        self.seed_count = 0
         self.output_format = 'TC'   # title case, can also do UC = upper case, LC = lower case
     
     def __str__(self):
@@ -122,7 +95,7 @@ class WordProducer(common.Producer):
 
     def produce(self):
         """
-        Produce words using the MarkovChain probabilities
+        Produce a list of words using the MarkovChain probabilities
         """
         words = []
         initial_seed = self.get_seed(self.seed)      # get the initial seed

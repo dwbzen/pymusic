@@ -43,10 +43,13 @@ class Collector:
         self.source = source  # file input source
         self.sort_chain = False
         self.save_folder="/Compile/dwbzen/resources"
-        self.filename = None
+        self.filename = None                # MarkovChain filename
         self.counts_file = None
         self.terminal_object = None         # must be set in derived classes
         self.initial_object = None          # must be set in derived classes
+        
+        self.chainFileName = '_chain'       # appended to self.name for the MarkovChain file
+        self.countsFileName = '_counts'     # appended to self.name for the counts file
         
     def __repr__(self, *args, **kwargs):
         return "Collector"
@@ -73,17 +76,28 @@ class Collector:
         return None
     
     def get_json_output(self):
-        result = self.chain_df.to_json(orient='index')
-        parsed = json.loads(result)
-        return json.dumps(parsed, indent=4)
+        return common.Utils.get_json_output(self.chain_df)
     
     def save(self):
+        """Saves the MarkovChain and counts DataFrame files
+        
+        The chain_df DataFrame of the MarkovChain is saved in the specified format,
+        csv, xls or json, to the self.save_folder directory.
+        The filename is the name of the MarkovChain (self.name) + the chainFileName.
+        The chainFileName default is '_chain' and this is typically set
+        to something more appropriate in Collector subclasses.
+        For example, '_charsChain'.
+        
+        Similarly, the counts_df DataFrame is saved using the self.countsFileName
+        to create the save filename. For example, '_charsCounts'
+        
+        """
         save_result = True
         if self.name is not None:   # format will always be set to something, even if name is None
             self.markovChain.name = self.name
             
-            self.filename = "{}/{}.{}".format(self.save_folder, self.name, self.format)
-            self.counts_file = "{}/{}_counts.{}".format(self.save_folder, self.name, self.format)
+            self.filename = "{}/{}{}.{}".format(self.save_folder, self.name, self.chainFileName, self.format)
+            self.counts_file = "{}/{}{}.{}".format(self.save_folder, self.name, self.countsFileName, self.format)
             if self.verbose > 1:
                 print(f"output filename '{self.filename}' counts: {self.counts_file}")
             if len(self.chain_df) > 0:

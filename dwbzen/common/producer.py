@@ -10,21 +10,35 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
+import numpy as np
+import pandas as pd
 
 class Producer(object):
     
-    def __init__(self, state_size, markovChain=None, source_file=None, min_size=0, max_size=0, num=10, verbose=0):
-        self.markovChain = markovChain        # a MarkovChain instance
+    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
+        self.markovChain = markovChain        # a MarkovChain instance, provided by WordProducerRunner
         self.order = state_size
         self.min_size = min_size
         self.max_size = max_size
-        self.output_format = None
-        self.source_file = source_file  # file input source
-        self.chain_file = None          # serialized MarkovChain.chain_df json file
         self.num = num
-        self.initial=False
+        self.source_file = source_file  # file input source
         self.verbose=verbose
+        
+        self.output_format = None
+        self.outfile=None
+        self.seed=None
+        self.sort=None
+        self.chain_file = None          # serialized MarkovChain.chain_df json file
+        self.initial=False
+        self.chain_df = self.markovChain.chain_df
+        self.keys = pd.Series(self.chain_df.index)
+        #
+        # count of how many times the current seed has been used
+        # when >= self.recycle_seed_count, a new seed is picked
+        self.seed_count = 0
         self.recycle_seed_count = 1     # pick a new seed every n things produced
+        
+        np.random.seed(rand_seed)
         
     def __repr__(self):
         return f"Producer {self.order}"
