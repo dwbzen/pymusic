@@ -32,6 +32,10 @@ import json
 class Collector:
     
     def __init__(self, state_size=2, verbose=0, source=None):
+        """Initialize elements common to all Collector subclasses.
+        
+        """
+        
         self.order = state_size
         self.verbose = verbose
         self.chain_df = pd.DataFrame()
@@ -40,7 +44,7 @@ class Collector:
         self.markovChain =  common.MarkovChain(state_size)
         self.name = None
         self.format = None
-        self.source = source  # file input source
+        self.source = source  # file input or DataFrame source
         self.sort_chain = False
         self.save_folder="/Compile/dwbzen/resources"
         self.filename = None                # MarkovChain filename
@@ -55,12 +59,14 @@ class Collector:
         return "Collector"
 
     def run(self):
-        """
+        """Invokes the derived class's collect() function and invokes save()
+        
         Invokes the derived class's collect() function and if the resulting
-        MarkovChain is valid, invokes save() 
+        MarkovChain is valid, invokes save()
         Returns the boolean results of the collect() and save() as a dict()
-        with keys collect_result and save_result
+        with keys 'collect_result' and 'save_result'
         """
+        
         save_result = False
         collect_result = False
         self.collect()
@@ -105,10 +111,11 @@ class Collector:
                     self.chain_df.to_csv(self.filename)
                     self.counts_df.to_csv(self.counts_file)
                 elif self.format == 'json':
-                    dumped = self.get_json_output()
+                    dumped = common.Utils.get_json_output(self.chain_df)
                     with open(self.filename, 'w') as f:
                         f.write(str(dumped))
-                    self.counts_df.to_json(self.counts_file, orient='index')
+                    with open(self.counts_file, 'w') as f:
+                        f.write(str(common.Utils.get_json_output(self.counts_df)))
                 else: # must be excel
                     self.chain_df.to_excel(self.filename, sheet_name='Sheet 1',index=False)
                     self.counts_df.to_excel(self.counts_file, sheet_name='Sheet 1',index=False)
@@ -117,3 +124,7 @@ class Collector:
                 if self.verbose > 0:
                     print("Empty MarkovChain")
         return save_result
+
+    if __name__ == '__main__':
+        print(Collector.__doc__)
+        

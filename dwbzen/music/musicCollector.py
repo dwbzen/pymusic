@@ -13,7 +13,6 @@
 import common
 import music
 import pandas as pd
-from music21 import  interval, corpus, converter, duration, note
 
 class MusicCollector(common.Collector):
     
@@ -22,17 +21,19 @@ class MusicCollector(common.Collector):
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes
         self.score = None       # if source is a single Score
-        self.part_names = []
-        self.part_numbers = []
-        self.parts = None
+        self.part_names = []    # optional part names used to filter parts of score(s)
+        self.part_numbers = []  # optional part numbers used to filter parts
+        self.parts = None       # comma-delimited part names from the command line
+        self.score_partNumbers = []     # the part numbers extracted from the score or scores
+        self.score_partNames = []       # the part names extracted from the score or scores
+        self.durationCollector = None
+        self.durations_df = None
         self.save_folder="/Compile/dwbzen/resources/music"
         self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         if parts is not None:
             self.add_parts(parts)
-        if source is not None:
-            self.source = self.set_source(source)   # otherwise it's None
     
-    def add_parts(self, parts):
+    def add_parts(self, parts) -> str:
         if parts is not None:
             self.parts = parts
             parts_list = parts.split(",")   # could be numbers or names
@@ -46,6 +47,16 @@ class MusicCollector(common.Collector):
     def collect(self):  # implement in derived classes
         return None
     
+    def collect_durations(self, source:pd.DataFrame ):
+        self.durationCollector = music.DurationCollector(self.order, self.verbose, source, self.parts)
+        self.durationCollector.score = self.score
+        if self.name is not None and len(self.name) > 0:
+            self.durationCollector.name = self.name
+        self.durationCollector.format = self.format
+        self.durationCollector.sort_chain = self.sort_chain
+        run_results = self.durationCollector.run()
+        self.durations_df = self.durationCollector.durations_df
+        return run_results
     
     def save(self):
         save_result = super().save()

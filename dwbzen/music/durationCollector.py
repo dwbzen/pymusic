@@ -31,7 +31,7 @@ class DurationCollector(music.MusicCollector):
         self.part_numbers = []
         self.parts = None
         self.durations_df = None
-        self.notes_df = None
+        self.source_df = None
         self.countsFileName = '_durationCounts'
         self.chainFileName = '_durationsChain'
         if parts is not None:
@@ -72,7 +72,8 @@ class DurationCollector(music.MusicCollector):
     def set_source(self, source):
         """This method is called in the __init__ of the parent class, MusicCollector
         
-        The source is notes DataFrame (notes_df) created by NoteCollector.
+        The source is notes DataFrame (notes_df) created by NoteCollector,
+        or DataFrame (intervals_df) created by IntervalCollector
         """
         result = False
         if not isinstance(source, pd.DataFrame):
@@ -81,10 +82,11 @@ class DurationCollector(music.MusicCollector):
             print("Invalid source", file=sys.stderr)
             return result
         self.source = source
-        self.notes_df = source
-        if self.notes_df is not None:   # create the durations DataFrame
-            self.durations_df = music.Utils.get_durations_from_notes(self.notes_df)
-            result = True
+        self.source_df = source
+        self.durations_df = None
+        result = True
+        if self.source_df is not None:   # create the durations DataFrame
+            self.durations_df = music.Utils.get_durations_from_notes(self.source_df)
         
         return result
 

@@ -142,5 +142,5 @@ class WordProducer(common.Producer):
         return words
 
     if __name__ == '__main__':
-        print("Please run WordProducerRunner")
+        print(WordProducer.__doc__)
 

@@ -15,12 +15,13 @@ import pandas as pd
 
 class Producer(object):
     
-    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
-        self.markovChain = markovChain        # a MarkovChain instance, provided by WordProducerRunner
+    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=20, verbose=0, rand_seed=42):
+        self.markovChain = markovChain        # a MarkovChain instance, provided by a ProducerRunner
         self.order = state_size
         self.min_size = min_size
         self.max_size = max_size
         self.num = num
+        self.name = None
         self.source_file = source_file  # file input source
         self.verbose=verbose
         

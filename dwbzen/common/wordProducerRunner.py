@@ -57,7 +57,7 @@ class WordProducerRunner(object):
             collector.sort_chain = True
             markovChain = collector.collect()
         else:
-            # use serialized MarkovChain file in JSON format (--chain )as input TODO
+            # use serialized MarkovChain file in JSON format (--chain )as input
             file_info = common.Utils.get_file_info(args.chainFile)
             thepath = file_info["path_text"]
             ext = file_info['extension'].lower()

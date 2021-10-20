@@ -2,11 +2,7 @@
 #
 # ------------------------------------------------------------------------------
 # Name:          intervalCollector.py
-# Purpose:       Note collector class.
-#
-#                IntervalCollector creates a pair of MarkovChains
-#                from a Note stream for the Intervals and Durations. 
-#                The corresponding Producer class is PartProducer which reverses the process.
+# Purpose:       Run IntervalCollector
 #
 # Authors:      Donald Bacon
 #
@@ -29,7 +25,7 @@ class IntervalCollectorRunner(common.Collector):
         parser.add_argument("-n","--name", help="Name of resulting MarkovChain, used to save to file", type=str)
         parser.add_argument("-f","--format", help="Save output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='csv' )
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
-        parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format",type=str, choices=['csv','json','chain'] )
+        parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format", type=str, choices=['csv','json','chain'] )
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str)
         args = parser.parse_args()
         if args.verbose > 0:

@@ -14,6 +14,7 @@
 # ------------------------------------------------------------------------------
 
 import music
+import common
 import pandas as pd
 from music21 import  interval, converter, corpus
 
@@ -21,11 +22,23 @@ from music21 import  interval, converter, corpus
 class IntervalCollector(music.MusicCollector):
 
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
-        super().__init__(state_size, verbose, source, parts)        # this also executes self.set_source()
-        self.terminal_object = interval.Interval(99)
-        self.initial_object = interval.Interval(0)
+        super().__init__(state_size, verbose, source, parts)
+        self.initial_object, self.terminal_object = self.initialize_initial_terminal_objects()
         self.markovChain.collector = IntervalCollector        self.countsFileName = '_intervalCounts'
         self.chainFileName = '_intervalsChain'
+        if source is not None:
+            self.source = self.set_source(source)   # otherwise it's None
+    
+    def initialize_initial_terminal_objects(self) -> (pd.DataFrame, pd.DataFrame):
+        terminal_object = interval.Interval(99)
+        initial_object = interval.Interval(0)
+        initial_dict = {'interval':initial_object, 'name':initial_object.name, 'directedName':initial_object.directedName,\
+                        'niceName':initial_object.niceName, 'semitones':initial_object.semitones, 'part_number':1, 'part_name':'rest'}
+        terminal_dict = {'interval':terminal_object, 'name':terminal_object.name, 'directedName':terminal_object.directedName,\
+                        'niceName':terminal_object.niceName, 'semitones':terminal_object.semitones, 'part_number':1, 'part_name':'rest'}
+        initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
+        terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
+        return initial_object, terminal_object
         
     def __repr__(self):
         # this should return a serialized form 
@@ -60,9 +73,8 @@ class IntervalCollector(music.MusicCollector):
         self.counts_df = self.counts_df.fillna(0)
 
     def set_source(self, source):
-        """This method is called in the __init__ of the parent class, MusicCollector
+        """Determine if source is a file or folder and if it exists (or not)
         
-        Determine if source is a file or folder and if it exists (or not)
         Source can be a single file, or a composer name (such as 'bach')
         A single file must be compressed musicXML (.mxl), uncompressed (.musicxml), or .xml
         An xml file is treated as an uncompressed musicXML file
@@ -92,7 +104,7 @@ class IntervalCollector(music.MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
-            self.intervals_df = music.Utils.get_all_score_intervals(composer=composer, title=title) 
+            self.intervals_df, self.score_partNames, self.score_partNumbers = music.Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title) 
             if self.intervals_df is None or len(self.intervals_df) == 0:
                 result = False
         else:   # must be a single filename or path
@@ -102,34 +114,44 @@ class IntervalCollector(music.MusicCollector):
                 if self.verbose > 2:
                     print(self.score)
             if self.score is not None:
-                self.intervals_df = music.Utils.get_intervals_for_score(self.score, self.part_names, self.part_numbers)
+                self.intervals_df, self.score_partNames, self.score_partNumbers = music.Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
         return result
 
-    def collect(self):
+    def collect(self) -> common.MarkovChain:
         """
         Run collection using the set parameters
         Returns MarkovChain result
         """
         if self.verbose > 1:
             print(f"intervals: {self.intervals_df}")
-        if self.intervals_df is not None:
-            df_len = len(self.intervals_df) 
+            
+        for pname in self.score_partNames:
+            partIntervals_df = self.intervals_df[self.intervals_df['part_name']==pname]
+            df_len = len(partIntervals_df)
+            key_intervals = None
+            next_interval = None
             iloc = 0
+
             while iloc + self.order < df_len:
                 key_intervals = self.intervals_df.iloc[iloc:iloc+self.order]    # list of length self.order
                 next_interval = self.intervals_df.iloc[iloc+self.order]
                 self.process(key_intervals, next_interval)      # add to counts DataFrame
                 
                 iloc = iloc + self.order
+            
+            # add the terminal_object to signify and of the part
+            key_intervals = partIntervals_df.iloc[iloc:iloc+self.order]
+            next_interval = self.terminal_object.iloc[0]
+            self.process(key_intervals, next_interval)
 
         self.counts_df.rename_axis('KEY', inplace=True)
         if self.sort_chain:
             self.counts_df.sort_index('index', ascending=True, inplace=True)
             self.counts_df.sort_index(axis=1, ascending=True, inplace=True)
         #
-        # create the MarkovChain from the counts by added probabilities
+        # create the MarkovChain from the counts by summing probabilities
         #
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
@@ -137,12 +159,15 @@ class IntervalCollector(music.MusicCollector):
         self.chain_df = self.chain_df.applymap(lambda x: music.Utils.round_values(x, 6))
         self.markovChain.chain_df = self.chain_df
         
-        if self.verbose > 0:
+        if self.verbose > 1:
             print(f" Counts:\n {self.counts_df}")
             print(f" MarkovChain:\n {self.markovChain}")
             if self.verbose > 1:
                 print(self.markovChain.__repr__())
-
+        #
+        # collect durations from the Score and notes_df DataFrame
+        #
+        run_results = self.collect_durations(self.intervals_df)
         return self.markovChain
     
     def save(self):
