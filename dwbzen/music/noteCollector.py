@@ -15,24 +15,36 @@
 # ------------------------------------------------------------------------------
 
 import music
-import pandas as pd
 import common
+import pandas as pd
 from music21 import  converter, corpus, note
 
 class NoteCollector(music.MusicCollector):
 
-    def __init__(self, state_size=2, verbose=0, source=None, parts=None):       # this also executes self.set_source()
+    def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source, parts)
-        self.terminal_object = note.Rest()
-        self.terminal_object.duration.quarterLength=24
-        self.initial_object = note.Rest()
-        self.initial_object.duration.quarterLength=0
-
+        self.initial_object, self.terminal_object = self.initialize_initial_terminal_objects()
         self.markovChain.collector = NoteCollector
-        self.durationCollector = None
         self.countsFileName = '_noteCounts'
         self.chainFileName = '_notesChain'
-
+        if source is not None:
+            self.source = self.set_source(source)   # otherwise it's None
+            
+    def initialize_initial_terminal_objects(self) -> (pd.DataFrame, pd.DataFrame):
+        initial_object = note.Rest()
+        initial_object.duration.quarterLength=0
+        terminal_object = note.Rest()
+        terminal_object.duration.quarterLength=24
+        initial_dict = {'note':initial_object, 'part_number':1, 'part_name':'rest', \
+               'nameWithOctave':'rest', 'pitch':'', 'duration':initial_object.duration, \
+                'pitchClass':0, 'name':'rest'}
+        terminal_dict = {'note':terminal_object, 'part_number':1, 'part_name':'rest', \
+               'nameWithOctave':'rest', 'pitch':'', 'duration':terminal_object.duration, \
+                'pitchClass':0, 'name':'rest'}
+        initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
+        terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
+        return initial_object, terminal_object
+        
     def __repr__(self):
         return f"NoteCollector {self.order}"
     
@@ -42,10 +54,12 @@ class NoteCollector(music.MusicCollector):
     def get_base_type(self):
         return note.Note
     
-    def process(self, key_notes, next_note):
+    def process(self, key_notes, next_note) -> (pd.DataFrame, pd.Series):
+        """Adds key_notes and next_note to counts_df DataFrame
+        
+        """
         index_str = music.Utils.show_notes(key_notes,'nameWithOctave')
         col_str = str(next_note.nameWithOctave)
-        col_name = next_note.nameWithOctave
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
         
@@ -98,7 +112,7 @@ class NoteCollector(music.MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
-            self.notes_df = music.Utils.get_all_score_notes(composer=composer, title=title) 
+            self.notes_df, self.score_partNames, self.score_partNumbers = music.Utils.get_all_score_music21_objects(note.Note, composer=composer, title=title) 
             if self.notes_df is None or len(self.notes_df) == 0:
                 result = False
         else:   # must be a single filename or path
@@ -108,27 +122,40 @@ class NoteCollector(music.MusicCollector):
                 if self.verbose > 2:
                     print(self.score)
             if self.score is not None:
-                self.notes_df = music.Utils.get_notes_for_score(self.score, self.part_names, self.part_numbers)
+                self.notes_df, self.score_partNames, self.score_partNumbers = music.Utils.get_music21_objects_for_score(note.Note, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
         return result
     
-    def collect(self):
-        """
-        Run collection using the set parameters
+    def collect(self) -> common.MarkovChain:
+        """Run collection on the notes_df DataFrame extracted from the source
+        
+        The collection unit is a score part name. Score part_names are in self.score_partNames set.
+        The first MarkovChain key entry will consists of the initial_object + the first order-1 notes.
+        The last entry will have the terminal_object as the last note.
         Returns MarkovChain result
         """
         if self.verbose > 1:
             print(f"notes: {self.notes_df}")
-        if self.notes_df is not None:
-            df_len = len(self.notes_df) 
+        for pname in self.score_partNames:
+            partNotes_df = self.notes_df[self.notes_df['part_name']==pname]
+            df_len = len(partNotes_df)
+            next_note = None
+            key_notes = None
             iloc = 0
             while iloc + self.order < df_len:
-                key_notes = self.notes_df.iloc[iloc:iloc+self.order]    # list of length self.order
-                next_note = self.notes_df.iloc[iloc+self.order]
+                if iloc == 0:
+                    key_notes = self.initial_object.append( partNotes_df[iloc:iloc+self.order-1])
+                else:
+                    key_notes = partNotes_df.iloc[iloc:iloc+self.order]
+                next_note = partNotes_df.iloc[iloc+self.order]
                 self.process(key_notes, next_note)      # add to counts DataFrame
                 
                 iloc = iloc + self.order
+            # add the terminal_object to signify and of the part
+            key_notes = partNotes_df.iloc[iloc-1:iloc+self.order]
+            next_note = self.terminal_object.iloc[0]
+            self.process(key_notes, next_note)
 
         self.counts_df.rename_axis('KEY', inplace=True)
         if self.sort_chain:
@@ -151,18 +178,9 @@ class NoteCollector(music.MusicCollector):
         #
         # collect durations from the Score and notes_df DataFrame
         #
-        run_results = self.collect_durations()
+        run_results = self.collect_durations(self.notes_df)
         return self.markovChain
-    
-    def collect_durations(self):
-        self.durationCollector = music.DurationCollector(self.order, self.verbose, self.notes_df, self.parts)
-        self.durationCollector.score = self.score
-        if self.name is not None and len(self.name) > 0:
-            self.durationCollector.name = self.name
-        self.durationCollector.format = self.format
-        self.durationCollector.sort_chain = self.sort_chain
-        run_results = self.durationCollector.run()
-        return run_results
+
     
     def save(self):
         save_result = super().save()
