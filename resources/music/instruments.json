@@ -1,0 +1,80 @@
+{
+	"Alto" : {
+		"module": "music21.instrument",
+		"class" : "Alto",
+		"range" : "A3,A5",
+		"clef"  : "Treble"
+	},
+	"Bass" : {
+		"module": "music21.instrument",
+		"class" : "Bass",
+		"range" : "C2,B3",
+		"clef"  : "Bass"
+	},
+	"Bassoon" : {
+		"module": "music21.instrument",
+		"class" : "Bassoon",
+		"range" : "F2,Ab4",
+		"clef"  : "Bass"
+	},
+	"Clarinet" : {
+		"module": "music21.instrument",
+		"class" : "Clarinet",
+		"range" : "E3,C6",
+		"clef"  : "Treble"
+	},
+	"Flute" : {
+		"module": "music21.instrument",
+		"class" : "Flute",
+		"range" : "C4,C6",
+		"clef"  : "Treble"
+	},
+	"Harpsichord" : {
+		"module": "music21.instrument",
+		"class" : "Harpsichord",
+		"range" : "C2,C7",
+		"clef"  : "Treble"
+	},
+	"Koto" : {
+		"module": "music21.instrument",
+		"class" : "Koto",
+		"range" : "G3,G5",
+		"clef"  : "Treble"
+	},
+	"Oboe" : {
+		"module": "music21.instrument",
+		"class" : "Oboe",
+		"range" : "D4,A5",
+		"clef"  : "Treble"
+	},
+	"Piano" : {
+		"module": "music21.instrument",
+		"class" : "Piano",
+		"range" : "A0,C8",
+		"clef"  : "Treble"
+	},
+	"PianoLH" : {
+		"module": "music21.instrument",
+		"class" : "Piano",
+		"range" : "A0,C4",
+		"clef"  : "Bass"
+	},
+	"PianoRH" : {
+		"module": "music21.instrument",
+		"class" : "Piano",
+		"range" : "C4,C8",
+		"clef"  : "Treble"
+	},
+	"Soprano" : {
+		"module": "music21.instrument",
+		"class" : "Soprano",
+		"range" : "C4,E6",
+		"clef"  : "Treble"
+	},
+	"Tenor" : {
+		"module": "music21.instrument",
+		"class" : "Tenor",
+		"range" : "C3,C5",
+		"clef"  : "Bass"
+	}	
+}

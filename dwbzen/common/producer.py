@@ -20,7 +20,7 @@ class Producer(object):
         self.order = state_size
         self.min_size = min_size
         self.max_size = max_size
-        self.num = num
+        self.num = num      # units defined in Producer subclass
         self.name = None
         self.source_file = source_file  # file input source
         self.verbose=verbose

@@ -10,7 +10,6 @@
 # Authors:      Donald Bacon
 #
 # Copyright:    Copyright (c) 2021 Donald Bacon
-
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
@@ -50,13 +49,14 @@ class DurationCollector(music.MusicCollector):
     
     def process(self, key_durations, next_duration):
         index_str = music.Utils.show_durations(key_durations)
-        col_str = str(next_duration.quarterLength)
+        col_str = next_duration.quarterLength   # str(next_duration.quarterLength)
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
         
         if len(self.counts_df) == 0:
             # initialize the counts DataFrame
-            self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[str(next_duration.quarterLength)] )
+            # self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[str(next_duration.quarterLength)] )
+            self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_duration.quarterLength] )
         
         else:
             if index_str not in self.counts_df.index:   # add a new row

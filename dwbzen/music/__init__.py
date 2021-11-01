@@ -22,3 +22,4 @@ from .musicProducerRunner import MusicProducerRunner
 from common import Collector
 from common import Producer
 from .utils import Utils
+from .instruments import Instruments

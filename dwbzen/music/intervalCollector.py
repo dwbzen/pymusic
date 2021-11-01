@@ -18,24 +18,25 @@ import common
 import pandas as pd
 from music21 import  interval, converter, corpus
 
-
 class IntervalCollector(music.MusicCollector):
+    
+    terminal_object = interval.Interval(100)
+    initial_object = interval.Interval(99)
 
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source, parts)
-        self.initial_object, self.terminal_object = self.initialize_initial_terminal_objects()
+        self.initial_object, self.terminal_object = IntervalCollector.initialize_initial_terminal_objects()
         self.markovChain.collector = IntervalCollector        self.countsFileName = '_intervalCounts'
         self.chainFileName = '_intervalsChain'
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
     
-    def initialize_initial_terminal_objects(self) -> (pd.DataFrame, pd.DataFrame):
-        terminal_object = interval.Interval(99)
-        initial_object = interval.Interval(0)
-        initial_dict = {'interval':initial_object, 'name':initial_object.name, 'directedName':initial_object.directedName,\
-                        'niceName':initial_object.niceName, 'semitones':initial_object.semitones, 'part_number':1, 'part_name':'rest'}
-        terminal_dict = {'interval':terminal_object, 'name':terminal_object.name, 'directedName':terminal_object.directedName,\
-                        'niceName':terminal_object.niceName, 'semitones':terminal_object.semitones, 'part_number':1, 'part_name':'rest'}
+    @staticmethod
+    def initialize_initial_terminal_objects() -> (pd.DataFrame, pd.DataFrame):
+        initial_dict = {'interval':IntervalCollector.initial_object, 'name':IntervalCollector.initial_object.name, 'directedName':IntervalCollector.initial_object.directedName,\
+                        'niceName':IntervalCollector.initial_object.niceName, 'semitones':IntervalCollector.initial_object.semitones, 'part_number':1, 'part_name':'rest'}
+        terminal_dict = {'interval':IntervalCollector.terminal_object, 'name':IntervalCollector.terminal_object.name, 'directedName':IntervalCollector.terminal_object.directedName,\
+                        'niceName':IntervalCollector.terminal_object.niceName, 'semitones':IntervalCollector.terminal_object.semitones, 'part_number':1, 'part_name':'rest'}
         initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
         terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
         return initial_object, terminal_object
@@ -55,7 +56,7 @@ class IntervalCollector(music.MusicCollector):
         col_str = str(next_interval.semitones)
         col_name = next_interval.interval.directedName
         
-        if self.verbose > 0:
+        if self.verbose > 1:
             print(f"key_interval: {index_str}, next_interval: {next_interval.semitones}, {col_name}")
     
         if len(self.counts_df) == 0:
@@ -135,14 +136,18 @@ class IntervalCollector(music.MusicCollector):
             iloc = 0
 
             while iloc + self.order < df_len:
-                key_intervals = self.intervals_df.iloc[iloc:iloc+self.order]    # list of length self.order
-                next_interval = self.intervals_df.iloc[iloc+self.order]
+                if iloc == 0:
+                    key_intervals =  self.initial_object.append(partIntervals_df[iloc:iloc+self.order-1])
+                else:
+                    key_intervals = partIntervals_df.iloc[iloc:iloc+self.order]    # list of length self.order
+                    
+                next_interval = partIntervals_df.iloc[iloc+self.order]
                 self.process(key_intervals, next_interval)      # add to counts DataFrame
                 
-                iloc = iloc + self.order
+                iloc = iloc + 1
             
             # add the terminal_object to signify and of the part
-            key_intervals = partIntervals_df.iloc[iloc:iloc+self.order]
+            key_intervals = partIntervals_df.iloc[iloc:]
             next_interval = self.terminal_object.iloc[0]
             self.process(key_intervals, next_interval)
 

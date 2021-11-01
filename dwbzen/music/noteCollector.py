@@ -21,26 +21,27 @@ from music21 import  converter, corpus, note
 
 class NoteCollector(music.MusicCollector):
 
+    initial_object = note.Rest(quarterLength=0)
+    terminal_object = note.Note('C#8')
+        
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source, parts)
-        self.initial_object, self.terminal_object = self.initialize_initial_terminal_objects()
+        self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
         self.markovChain.collector = NoteCollector
         self.countsFileName = '_noteCounts'
         self.chainFileName = '_notesChain'
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
             
-    def initialize_initial_terminal_objects(self) -> (pd.DataFrame, pd.DataFrame):
-        initial_object = note.Rest()
-        initial_object.duration.quarterLength=0
-        terminal_object = note.Rest()
-        terminal_object.duration.quarterLength=24
-        initial_dict = {'note':initial_object, 'part_number':1, 'part_name':'rest', \
-               'nameWithOctave':'rest', 'pitch':'', 'duration':initial_object.duration, \
-                'pitchClass':0, 'name':'rest'}
-        terminal_dict = {'note':terminal_object, 'part_number':1, 'part_name':'rest', \
-               'nameWithOctave':'rest', 'pitch':'', 'duration':terminal_object.duration, \
-                'pitchClass':0, 'name':'rest'}
+    @staticmethod
+    def initialize_initial_terminal_objects() -> (pd.DataFrame, pd.DataFrame):
+
+        initial_dict = {'note':NoteCollector.initial_object, 'part_number':1, 'part_name':'rest', \
+               'nameWithOctave':'rest', 'pitch':'', 'duration':NoteCollector.initial_object.duration, \
+               'pitchClass':0, 'name':'rest'}
+        terminal_dict = {'note':NoteCollector.terminal_object, 'part_number':1, 'part_name':'note', \
+               'nameWithOctave':NoteCollector.terminal_object.nameWithOctave, 'pitch':str(NoteCollector.terminal_object.pitch), \
+               'duration':NoteCollector.terminal_object.duration, 'pitchClass':NoteCollector.terminal_object.pitch.pitchClass, 'name':NoteCollector.terminal_object.name}
         initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
         terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
         return initial_object, terminal_object
@@ -148,12 +149,14 @@ class NoteCollector(music.MusicCollector):
                     key_notes = self.initial_object.append( partNotes_df[iloc:iloc+self.order-1])
                 else:
                     key_notes = partNotes_df.iloc[iloc:iloc+self.order]
+                
                 next_note = partNotes_df.iloc[iloc+self.order]
                 self.process(key_notes, next_note)      # add to counts DataFrame
                 
-                iloc = iloc + self.order
-            # add the terminal_object to signify and of the part
-            key_notes = partNotes_df.iloc[iloc-1:iloc+self.order]
+                iloc = iloc + 1
+                
+            # add the terminal_object to signify end of this part
+            key_notes = partNotes_df.iloc[iloc:]
             next_note = self.terminal_object.iloc[0]
             self.process(key_notes, next_note)
 

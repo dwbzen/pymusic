@@ -1,0 +1,50 @@
+{
+	"Alto" : {
+		"module": "music21.clef",
+		"class" : "AltoClef",
+	},
+	"Bass" : {
+		"module": "music21.clef",
+		"class" : "BassClef",
+	},
+	"Bass8va" : {
+		"module": "music21.clef",
+		"class" : "Bass8vaClef",
+	},
+	"Bass8vb" : {
+		"module": "music21.clef",
+		"class" : "Bass8vbClef",
+	},
+	"C" : {
+		"module": "music21.clef",
+		"class" : "CClef",
+	},
+	"F" : {
+		"module": "music21.clef",
+		"class" : "FClef",
+	},
+	"G" : {
+		"module": "music21.clef",
+		"class" : "GClef",
+	},
+	"Soprano" : {
+		"module": "music21.clef",
+		"class" : "SopranoClef",
+	},
+	"Tenor" : {
+		"module": "music21.clef",
+		"class" : "TenorClef",
+	},
+	"Treble" : {
+		"module": "music21.clef",
+		"class" : "TrebleClef",
+	},
+	"Treble8va" : {
+		"module": "music21.clef",
+		"class" : "Treble8vaClef",
+	},
+	"Treble8vb" : {
+		"module": "music21.clef",
+		"class" : "Treble8vbClef",
+	}
+}

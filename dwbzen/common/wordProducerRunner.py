@@ -63,7 +63,7 @@ class WordProducerRunner(object):
             ext = file_info['extension'].lower()
             if args.verbose > 0:
                 print(file_info)
-            if not file_info['Path'].exists():
+            if not file_info['exists']:
                 print(f"{thepath} does not exist")
                 exit()
             else:

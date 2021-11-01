@@ -1,6 +1,6 @@
 
 from music21 import stream, interval,instrument, corpus, converter
-from music21 import note, chord, clef, duration, metadata
+from music21 import note, clef, duration, metadata
 import music
 import pandas as pd
 import pathlib, random, copy
@@ -14,7 +14,7 @@ class Utils(object):
     def get_score(self, file_path:str) -> stream.Score:
         score = None
         file_info = music.Utils.get_file_info(file_path)
-        if file_info['Path'].exists():
+        if file_info['exists']:
                 score = converter.parse(file_info['path_text'])
         return score
     
@@ -99,7 +99,7 @@ class Utils(object):
         score_partnames = set()
         score_partnumbers = set()
         for k in pdict.keys():  # part names
-                if (partnames is None or k in partnames) or (partnumbers is None or part_number in partnumbers):
+                if (partnames is None or len(partnames)==0 or k in partnames) or (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers):
                     part_intervals = pdict[k]
                     intervals =  [x['interval'] for x in part_intervals]
                     df = pd.DataFrame(data=intervals, columns=['interval'])
@@ -361,12 +361,13 @@ class Utils(object):
         part.append(notes)
         return part
     
-    #
-    # breaks up a path name into component parts
-    #
     @staticmethod
-    def get_file_info(cpath, def_extension='mxl'):
-        known_extensions = [def_extension, 'mxl','.xml','.musicxml']
+    def get_file_info(cpath:str, def_extension:str='mxl') -> dict:
+        """Breaks up a path name into component parts
+        
+        """
+        
+        known_extensions = [def_extension, 'mxl','.xml','.musicxml','.json','.txt','.csv']
         x = cpath.split("/")
         paths = x[0:len(x)-1]
         filename = x[-1]
@@ -380,7 +381,8 @@ class Utils(object):
             filename = f"{filename}.{ext}"
             path = f"{cpath}.{ext}"
         p = pathlib.Path(path)
-        return  {'paths':paths, 'path_text':path, 'filename':filename, 'name':name,'extension': ext, 'Path':p}
+        exists = p.exists()
+        return  {'paths':paths, 'path_text':path, 'filename':filename, 'name':name,'extension': ext, 'Path':p, 'exists':exists}
 
     @staticmethod
     def round_values(x, places=5):

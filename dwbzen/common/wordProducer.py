@@ -57,11 +57,12 @@ class WordProducer(common.Producer):
         return aseed
     
     def get_next_character(self, seed):
+        """Gets the next character based on the seed argument
+        
+        Returns:
+            both the next character and a new seed as a dict with keys 'new_seed' and 'next_token'
         """
-        gets the next character based on the seed argument
-        returns both the next character and a new seed
-        as a dict with keys 'new_seed' and 'next_token'
-        """
+        
         new_seed = None
         next_token = None
         if self.verbose > 2:

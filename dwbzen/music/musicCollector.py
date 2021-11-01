@@ -18,6 +18,8 @@ class MusicCollector(common.Collector):
     
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source)
+        self.save_folder="/Compile/dwbzen/resources/music"
+        self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes
         self.score = None       # if source is a single Score
@@ -28,8 +30,6 @@ class MusicCollector(common.Collector):
         self.score_partNames = []       # the part names extracted from the score or scores
         self.durationCollector = None
         self.durations_df = None
-        self.save_folder="/Compile/dwbzen/resources/music"
-        self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         if parts is not None:
             self.add_parts(parts)
     
