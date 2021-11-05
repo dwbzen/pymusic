@@ -2,79 +2,105 @@
 	"Alto" : {
 		"module": "music21.instrument",
 		"class" : "Alto",
-		"range" : "A3,A5",
+		"range" : "E3,F5",
+		"pitchRange" : "52,77",
 		"clef"  : "Treble"
 	},
 	"Bass" : {
 		"module": "music21.instrument",
 		"class" : "Bass",
-		"range" : "C2,B3",
+		"range" : "D2,D4",
+		"pitchRange" : "38,62",
 		"clef"  : "Bass"
 	},
 	"Bassoon" : {
 		"module": "music21.instrument",
 		"class" : "Bassoon",
-		"range" : "F2,Ab4",
+		"range" : "C2,Ab4",
+		"pitchRange" : "34,76",
 		"clef"  : "Bass"
 	},
 	"Clarinet" : {
 		"module": "music21.instrument",
 		"class" : "Clarinet",
 		"range" : "E3,C6",
-		"clef"  : "Treble"
+		"pitchRange" : "52,84",
+		"clef"  : "Treble",
+		"transposeDiatonic" : "-1",
+		"transposeChromatic" : "-2",
+		"transposeText" : "Sounds a major 2nd lower than written"
+	},
+	"English Horn" : {
+		"module": "music21.instrument",
+		"class" : "EnglishHorn",
+		"range" : "Bb3,D6",
+		"pitchRange" : "58,86",
+		"clef"  : "Treble",
+		"transposeDiatonic" : "-4",
+		"transposeChromatic" : "-7",
+		"transposeText" : "Sounds a perfect 5th lower than written"
 	},
 	"Flute" : {
 		"module": "music21.instrument",
 		"class" : "Flute",
 		"range" : "C4,C6",
+		"pitchRange" : "72,84",
 		"clef"  : "Treble"
 	},
 	"Harpsichord" : {
 		"module": "music21.instrument",
 		"class" : "Harpsichord",
 		"range" : "C2,C7",
+		"pitchRange" : "36,96",
 		"clef"  : "Treble"
 	},
 	"Koto" : {
 		"module": "music21.instrument",
 		"class" : "Koto",
 		"range" : "G3,G5",
+		"pitchRange" : "55,79",
 		"clef"  : "Treble"
 	},
 	"Oboe" : {
 		"module": "music21.instrument",
 		"class" : "Oboe",
 		"range" : "D4,A5",
+		"pitchRange" : "62,81",
 		"clef"  : "Treble"
 	},
 	"Piano" : {
 		"module": "music21.instrument",
 		"class" : "Piano",
 		"range" : "A0,C8",
+		"pitchRange" : "21,108",
 		"clef"  : "Treble"
 	},
 	"PianoLH" : {
 		"module": "music21.instrument",
 		"class" : "Piano",
 		"range" : "A0,C4",
+		"pitchRange" : "21,60",
 		"clef"  : "Bass"
 	},
 	"PianoRH" : {
 		"module": "music21.instrument",
 		"class" : "Piano",
 		"range" : "C4,C8",
+		"pitchRange" : "72,108",
 		"clef"  : "Treble"
 	},
 	"Soprano" : {
 		"module": "music21.instrument",
 		"class" : "Soprano",
-		"range" : "C4,E6",
+		"range" : "C4,C6",
+		"pitchRange" : "60,84",
 		"clef"  : "Treble"
 	},
 	"Tenor" : {
 		"module": "music21.instrument",
 		"class" : "Tenor",
 		"range" : "C3,C5",
+		"pitchRange" : "48,72",
 		"clef"  : "Bass"
 	}	
 }

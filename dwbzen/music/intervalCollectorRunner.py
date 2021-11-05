@@ -23,7 +23,7 @@ class IntervalCollectorRunner(common.Collector):
         parser.add_argument("-s", "--source", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)")
         parser.add_argument("-v","--verbose", help="increase output verbosity", action="count", default=0)
         parser.add_argument("-n","--name", help="Name of resulting MarkovChain, used to save to file", type=str)
-        parser.add_argument("-f","--format", help="Save output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='csv' )
+        parser.add_argument("-f","--format", help="Save output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='json' )
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format", type=str, choices=['csv','json','chain'] )
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str)

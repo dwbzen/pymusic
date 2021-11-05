@@ -1,9 +1,12 @@
-# -*- coding: utf-8 -*-
-'''
-Created on Feb 22, 2021
-
-@author: don_bacon
-'''
+# ------------------------------------------------------------------------------
+# Name:          scale.py
+# Purpose:       Encapsulate a musical scale.
+#
+# Authors:      Donald Bacon
+#
+# Copyright:    Copyright (c) 2021 Donald Bacon
+# License:      BSD, see license.txt
+# ------------------------------------------------------------------------------
 import json
 import music
     
@@ -21,18 +24,20 @@ def find_note_in_scale(note):
     return _index
 
 class Scale:
-    CHROMATIC_SHARP_PITCHES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-    CHROMATIC_FLAT_PITCHES =  ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
-    CHROMATIC_MIXED_PITCHES = ['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B']
-    
-    '''
+    """
     A single Scale as a dictionary with keys:
     name - primary lookup key
     alternateNames - list of AKAs
     groups - list of group names the scale is a member of
     formula - a list of integer intervals that define the scale
     size - number of notes in the scale
-    '''
+    """
+    
+    CHROMATIC_SHARP_PITCHES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+    CHROMATIC_FLAT_PITCHES =  ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
+    CHROMATIC_MIXED_PITCHES = ['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B']
+    
+
     @classmethod
     def has_octave(cls, note):
         _result = len(note) > 0 and note[len(note)-1].isdigit()
@@ -74,21 +79,21 @@ class Scale:
         self._chromatic_scale = []
 
     def __iter__(self):
-        ''' Iterate over the notes in the scale '''
+        """ Iterate over the notes in the scale """
         return self.scale.__iter__()
         
-    '''
-    Creates and returns the list of notes for this scale starting with the root provided. the default root is 'C4' (middle C).
-    If the root provided lacks an octave, 4 is assumed.
-    By convention, pitches are expressed in scientific music notation which includes an octave designation starting at 0
-    For example, the range of a Piano is A0 to C8.
-    Octaves are from C to B, so the pitch following B4 is C5.
-    In general the accidental (# or b) used is determined first by the root note. If the root doesn't have an accidental,
-    the accidental_preference is used. If a preference is not provided a # is the default.
-    Preferences: 'sharp', '#', 'flat', 'b', 'mixed', '#b'
-    '''
-    def pitches(self, root='C4', accidental_preference=None):
 
+    def pitches(self, root='C4', accidental_preference=None):
+        """
+        Creates and returns the list of notes for this scale starting with the root provided. the default root is 'C4' (middle C).
+        If the root provided lacks an octave, 4 is assumed.
+        By convention, pitches are expressed in scientific music notation which includes an octave designation starting at 0
+        For example, the range of a Piano is A0 to C8.
+        Octaves are from C to B, so the pitch following B4 is C5.
+        In general the accidental (# or b) used is determined first by the root note. If the root doesn't have an accidental,
+        the accidental_preference is used. If a preference is not provided a # is the default.
+        Preferences: 'sharp', '#', 'flat', 'b', 'mixed', '#b'
+        """
         _ap = self.get_accidental_preference(root, accidental_preference)
         _p = Scale.get_pitch(root)
         _notes = self.notes(_p, accidental_preference)
@@ -112,11 +117,12 @@ class Scale:
             i = i + 1
         return _pitches
 
-    '''
-    Creates and returns the list of notes for this scale starting with the root note provided. the default root is 'C'. 
-    By convention, notes do not include an octave designation.
-    '''
+
     def notes(self, root = 'C', accidental_preference=None):
+        """
+        Creates and returns the list of notes for this scale starting with the root note provided. the default root is 'C'. 
+        By convention, notes do not include an octave designation.
+        """
         _root = root
         if(Scale.has_octave(root)):
             _root = root[0:len(root)-2]

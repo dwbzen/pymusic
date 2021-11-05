@@ -16,9 +16,11 @@ import pandas as pd
 
 class MusicCollector(common.Collector):
     
+    save_folder="/Compile/dwbzen/resources/music"
+    
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source)
-        self.save_folder="/Compile/dwbzen/resources/music"
+        self.save_folder=music.MusicCollector.save_folder
         self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes

@@ -16,20 +16,20 @@ import pandas as pd
 import importlib
 
 class Instruments(object):
-    """Encapsulates instrument information for supported instrument:
+    """Encapsulates instrument information for supported instruments:
        * Clef to use
        * range (low, high)
        * associated music21 class and class instance
     Instrument information maintained in resources/music/instruments.json
     Clef information in resources/music/clefs.json
-    
+    TODO - account for transposing instruments.
     """
     
     instrument_names=[ 'Alto', 'Bass', 'Bassoon', 'Clarinet', 'Flute', 'Harpsichord', 'Koto', 'Oboe', 'Piano', 'PianoLH', 'PianoRH', 'Soprano', 'Tenor']
     clef_names=['Soprano', 'Alto', 'Tenor', 'Bass', 'Treble', 'Treble8va', 'Treble8vb', 'Bass8va', 'Bass8vb', 'C', 'F', 'G']
     
-    def __init__(self, verbose=0):
-        self.resource_folder="/Compile/dwbzen/resources/music"
+    def __init__(self, verbose=0, resource_folder ="/Compile/dwbzen/resources/music"):
+        self.resource_folder = resource_folder
         self.verbose = verbose
         self.__create_instrument_classes()
         self.__create_clef_classes()
@@ -43,9 +43,22 @@ class Instruments(object):
         instance = MyClass()
         return instance
     
+    @staticmethod
+    def __define_pitch_range(row:pd.Series):
+        notes = row['range'].split(",")
+        nlow = note.Note(notes[0])
+        nhigh = note.Note(notes[1])
+        rlow = int(nlow.pitch.ps)
+        rhigh = int(nhigh.pitch.ps)
+        return [rlow,rhigh]
+    
     def __create_instrument_classes(self):
         self.instruments_pd = pd.read_json(self.resource_folder + "/instruments.json", orient="index")
         self.instruments_pd['instance'] = [Instruments.__create_instance(row[1]) for row in self.instruments_pd.iterrows()]
+        self.instruments_pd['range_ps'] = [Instruments.__define_pitch_range(row[1]) for row in self.instruments_pd.iterrows()]
+        self.instruments_pd.fillna(value={'transposeDiatonic':0}, inplace=True)
+        self.instruments_pd.fillna(value={'transposeChromatic':0}, inplace=True)
+        self.instruments_pd.fillna(value={'transposeText':'Non-transposing'}, inplace=True)
     
     def __create_clef_classes(self):
         self.clefs_pd = pd.read_json(self.resource_folder + "/clefs.json", orient="index")
@@ -70,13 +83,19 @@ class Instruments(object):
             instance = self.instruments_pd.loc[instrument_name]['instance']
         return instance
     
-    def check_range(self, instrument, note:note.Note) -> int:
-        pass
+    def check_range(self, instrument_name:str, note:note.Note) -> bool:
+        noteps = note.pitch.ps
+        rng = self.instruments_pd.loc[instrument_name]['range_ps']
+        inrange = (noteps >= rng[0] and noteps <= rng[1])
+        return inrange
         
     if __name__ == '__main__':
         print(music.Instruments.__doc__)
         instruments = music.Instruments()
-        print(instruments.instruments_pd)
-        print(instruments.clefs_pd)
+        if instruments.verbose > 0:
+            print(instruments.instruments_pd)
+            print(instruments.clefs_pd)
+        print(instruments.instruments_pd.loc['Flute'])
+        
     
     

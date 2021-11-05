@@ -11,17 +11,15 @@
 import music, common
 import pandas as pd
 import random
-from music21 import note, clef, duration, stream, instrument, interval, tempo, meter
+from music21 import note, clef, stream, interval, tempo, meter, key
 
 class MusicProducer(common.Producer):
     """Produce music from interval or notes MarkovChains
     
-    TODO: check generated note against instrument range. If beyond, use start_note instead
+    TODO: fix reading csv format chains. Currently using the row# as the index which is incorrect. The column lable is "KEY"
+    TODO: fix reading durations_chain in json format. Currenly the columns are interpreted as datetime values, should be int.
     
     """
-    
-    clef_choices=['Soprano', 'Alto', 'Tenor', 'Bass', 'Treble', 'Treble8va', 'Treble8vb', 'Bass8va', 'Bass8vb', 'C', 'F', 'G']
-    instrument_choices=['Soprano', 'Alto', 'Tenor', 'Bass', 'Piano', 'Harpsichord', 'Flute', 'Oboe', 'Koto']
 
     # TODO - consider making the dataframe keys a list instead of a str of a list
     #
@@ -36,7 +34,6 @@ class MusicProducer(common.Producer):
         self.produceParts = produceParts    # comma-delimited production part names (instruments) from the command line
         self.part_names, self.part_numbers = MusicProducer.get_parts(parts)
         self.producePart_names = produceParts
-        #self.add_part_clefs()   # add a Clef for each part (instrument)
         
         self.durationsChain = durationsChain
         self.durationKeys = pd.Series(self.durationsChain.chain_df.index)
@@ -48,15 +45,13 @@ class MusicProducer(common.Producer):
         self.initial_keys = self.get_initial_keys()
         self.key_values = self.keys.values
         self.raw_seed = None
+        self.score_key = key.Key('C')
 
         #
         # for producerType of 'intervals' there needs to be one start note per part
         #
         self.start_notes = dict()    # key is producePart name, value is a note.Note
-        #self.part_clefs = dict()     # key is producePart name, value is clef.Clef
-        #self.part_instruments = dict()
-        # self.clefs = MusicProducer.__create_clefs()   # references to possible clefs to assign to parts
-        # self.instruments = MusicProducer.__create_instruments()     # references to possible Instruments to assign to parts
+
         self.tempo = tempo.MetronomeMark(number=60, referent=note.Note(type='quarter'))
         self.timeSignature = meter.TimeSignature('3/4')
         self.num_measures = self.num        # number of measures to produce
@@ -73,7 +68,7 @@ class MusicProducer(common.Producer):
                     part_numbers.append(int(p))
                 else:
                     part_names.append(p)
-            return (part_names, part_numbers)
+        return (part_names, part_numbers)
     
 
     def __str__(self):
@@ -84,24 +79,10 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         if notes is None:
             raise TypeError("You must specify a starting note for each part")
         notes_list = notes.split(",")
-        if len(notes_list) != len(self.producePart_names):
+        if len(notes_list) < len(self.producePart_names):    # it's okay to have more notes than parts, just use what's there
             raise TypeError("You must specify a starting note for each part")
-        for i in range(len(notes_list)):
+        for i in range(len(self.producePart_names)):
             self.start_notes[self.producePart_names[i]] = note.Note(notes_list[i])
-    
-    #def add_part_clefs(self):
-    #   for p in self.producePart_names:    # a part name is also the instrument name
-    #            self.part_clefs[p] = self.instruments.get_instrument_clef(p)
-        
-    #def add_part_instruments(self, instrument_names:[]):
-    #    if len(instrument_names) == 1:       # assign all parts this instrument
-    #        for p in self.producePart_names:
-    #            self.part_instruments[p] = self.instruments[instrument_names[0]]
-    #    elif len(instrument_names) == len(self.producePart_names):
-    #        for i in range(len(self.producePart_names)):
-    #            self.part_instruments[self.producePart_names[i]] = self.instruments[instrument_names[i]]
-    #    else:
-    #        raise ValueError("Number of Instruments must be 1 or match the number of produceParts")            
     
     def get_initial_keys(self):
         initstr = None
@@ -251,21 +232,22 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             part_instrument = self.instruments.get_instrument(pname)
 
             part.insert(clef)
-            part.insert(part_instrument)
             part.insert(self.tempo)
+            part.insert(part_instrument)
+            part.insert(self.score_key)
             part.insert(self.timeSignature)
             part_notes = []
             part_duration = 0       # running total of the durations of all the part notes
             more_to_go = True
             num_notes = 1
-            
-            part_notes.append(self.start_notes[pname])
+            first_note = self.start_notes[pname]
+            part_notes.append(first_note)
             durations_seed = self.get_durations_seed()
             prev_note = self.start_notes[pname]
             while more_to_go:       # more to go for this part
                 next_object_dict = self.get_next_object(seed)
                 next_duration_dict = self.get_next_durations_object(durations_seed)
-                if self.verbose > 0:
+                if self.verbose > 1:
                     print('next_token: {}\t new_seed: {}'.format(next_object_dict['next_token'], next_object_dict['new_seed']))
                 #
                 # create the next note
@@ -279,18 +261,29 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                     seed = self.get_seed()
                     continue
                 ainterval = interval.Interval(halfsteps)
+                if self.verbose > 2:
+                    print(f"halfsteps: {halfsteps}, interval: {ainterval}")
                 
                 dur = next_duration_dict['next_token']    # quarterLength 
                 if dur is None:
                     durations_seed = self.get_durations_seed()
                     continue             
                 newnote = prev_note.transpose(ainterval)
+                if self.enforceRange and not self.instruments.check_range(pname, newnote):
+                    # if the note is out of range for this part (instrument)
+                    # use self.start_notes[pname] instead
+                    if self.verbose > 0:
+                        print(f"newnote: {newnote.nameWithOctave} out of range for {pname}, using {first_note.nameWithOctave}")
+                    newnote = note.Note(nameWithOctave=first_note.nameWithOctave)
+                                            
                 remaining_dur =  total_duration - part_duration
                 if part_duration + dur >= total_duration:
                     dur = remaining_dur     # make the last note fill out the measure
                     more_to_go = False
                 if dur > 0:
                     newnote.duration.quarterLength = dur
+                    if self.verbose > 1:
+                        print(f"{newnote.fullName}")
                     part_notes.append(newnote)
                     
                     part_duration = part_duration + dur
@@ -304,7 +297,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             # so all parts have the same total duration (in terms of quarter lengths)
             # 
             if self.verbose > 0:
-                print(f" End of {pname} part, duration: {part_duration}")
+                print(f"---- End of {pname} part, duration: {part_duration}")
             part.append(part_notes)
             self.score.append(part)
     

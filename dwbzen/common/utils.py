@@ -9,7 +9,7 @@ class Utils(object):
     #
     @staticmethod
     def get_file_info(cpath, def_extension='json'):
-        known_extensions = [def_extension, 'txt', 'mxl','.xml','.musicxml', '.csv']
+        known_extensions = [def_extension, 'txt', 'mxl','.xml','musicxml', 'csv']
         x = cpath.split("/")
         paths = x[0:len(x)-1]
         filename = x[-1]

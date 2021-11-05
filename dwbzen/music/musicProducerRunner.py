@@ -14,6 +14,7 @@ import music
 import common
 import argparse
 import pandas as pd
+from music21 import key
 
 class MusicProducerRunner(object):
     
@@ -55,7 +56,7 @@ class MusicProducerRunner(object):
         #
         # Producer arguments
         #
-        parser.add_argument("-c", "--chainFiles", help="Existing serialized MarkovChain and Durations files (json).",  type=str, default=None)
+        parser.add_argument("-c", "--chainFiles", help="Existing serialized MarkovChain and Durations files (--format type).",  type=str, default=None)
         
         parser.add_argument("--show", help="How to display resulting score", type=str, choices=['text','musicxml','midi'], default='musicxml')
         parser.add_argument("--name", help="Name of resulting score, used to save to .musicxml file", type=str, default=None)
@@ -64,12 +65,9 @@ class MusicProducerRunner(object):
         
         parser.add_argument("--produce", help="Comma-delimited list of Part name(s) to produce. A part name must also be a valid instrument name", \
                             type=str, action="extend", nargs="+", choices=music.Instruments.instrument_names,  default=None)
-        parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)
-        
-        # parser.add_argument("--clefs", help="Clef to use for each Part.", type=str, action="extend", nargs="+", choices=music.Instruments.clef_names,  default=None)
-        # parser.add_argument("--instruments", help="Instrument to assign to each Part", type=str, action="extend", nargs="+", choices=music.Instruments.instrument_names,  default=None)
-        
+        parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)   
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
+        parser.add_argument("-k", "--key", help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
          
         parser.add_argument("--seed", help="Initial seed, length must be equal to the order of source chain", type=str, default=None)
         parser.add_argument("--initial", help="choose initial seed only", action="store_true", default=False)
@@ -103,8 +101,8 @@ class MusicProducerRunner(object):
         else:
             # use serialized MarkovChain and Durations files in JSON format as input
             file_list = []
-            file_list.append('{}/{}_{}.json'.format(music.MusicCollector.save_folder, args.chainFiles, args.type))
-            file_list.append('{}/{}_{}.json'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations'))
+            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.format))
+            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', args.format))
 
             i = 0
             for chainFile in file_list:
@@ -117,7 +115,10 @@ class MusicProducerRunner(object):
                     print(f"{thepath} does not exist")
                     exit()
                 else:
-                    mc_df = pd.read_json(thepath, orient="index")
+                    if args.format == 'json':
+                        mc_df = pd.read_json(thepath, orient="index")
+                    elif args.format == 'csv':
+                        mc_df = pd.read_csv(thepath)
                     if i==0:
                         markovChain = common.MarkovChain(args.order, chain_df=mc_df)
                         i=i+1
@@ -130,6 +131,8 @@ class MusicProducerRunner(object):
         musicProducer.recycle_seed_count = args.recycle
         musicProducer.initial = args.initial
         musicProducer.enforceRange = args.enforceRange
+        if args.key is not None:
+            musicProducer.score_key = key.Key(args.key)
         #
         # order 2 examples:
         #  --seed "-1, -2"  for intervals
@@ -142,27 +145,7 @@ class MusicProducerRunner(object):
         #
         if args.type == 'intervals':
             musicProducer.add_part_notes(args.notes)
-        
-        #
-        # instrument clefs automatically assigned by Instrument class
-        #
-        #if args.clefs is None:
-        #    clefs = ['Treble']
-        #else:
-        #    clefs = args.clefs
-        #musicProducer.add_part_clefs(clefs)
-        
-        #
-        # assign an Instrument to each Part.
-        # If unspecified use produceParts as the instrument names
-        #
-        #if args.instruments is None:
-        #    instrument_names = ['Piano']
-        #else:
-        #    instrument_names = args.instruments
-        #musicProducer.add_part_instruments(instrument_names)
-
-        
+                
         theScore = musicProducer.produce()
         if theScore is not None:
             theScore.show(args.show)
