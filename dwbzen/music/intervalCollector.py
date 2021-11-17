@@ -1,10 +1,7 @@
 
 # ------------------------------------------------------------------------------
 # Name:          intervalCollector.py
-# Purpose:       Note collector class.
-#
-#                IntervalCollector creates a MarkovChains from a Note stream for the Intervals. 
-#                The corresponding Producer class is PartProducer which reverses the process.
+# Purpose:       Interval collector class.
 #
 # Authors:      Donald Bacon
 #
@@ -13,12 +10,16 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music
+from music import MusicCollector
+from music.utils import Utils
 import common
 import pandas as pd
 from music21 import  interval, converter, corpus
 
-class IntervalCollector(music.MusicCollector):
+class IntervalCollector(MusicCollector):
+    """IntervalCollector creates a MarkovChains from a the Intervals in Score Notes.
+    
+    """
     
     terminal_object = interval.Interval(100)
     initial_object = interval.Interval(99)
@@ -52,7 +53,7 @@ class IntervalCollector(music.MusicCollector):
         return interval.Interval
     
     def process(self, key_intervals, next_interval):
-        index_str = music.Utils.show_intervals(key_intervals,'semitones')
+        index_str = Utils.show_intervals(key_intervals,'semitones')
         col_str = str(next_interval.semitones)
         col_name = next_interval.interval.directedName
         
@@ -105,17 +106,17 @@ class IntervalCollector(music.MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
-            self.intervals_df, self.score_partNames, self.score_partNumbers = music.Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title) 
+            self.intervals_df, self.score_partNames, self.score_partNumbers = Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title) 
             if self.intervals_df is None or len(self.intervals_df) == 0:
                 result = False
         else:   # must be a single filename or path
-            file_info = music.Utils.get_file_info(source)
+            file_info = Utils.get_file_info(source)
             if file_info['Path'].exists():
                 self.score = converter.parse(file_info['path_text'])
                 if self.verbose > 2:
                     print(self.score)
             if self.score is not None:
-                self.intervals_df, self.score_partNames, self.score_partNumbers = music.Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
+                self.intervals_df, self.score_partNames, self.score_partNumbers = Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
         return result
@@ -161,7 +162,7 @@ class IntervalCollector(music.MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: music.Utils.round_values(x, 6))
+        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
         self.markovChain.chain_df = self.chain_df
         
         if self.verbose > 1:
@@ -186,6 +187,6 @@ class IntervalCollector(music.MusicCollector):
             df.to_csv(filename)
         return save_result
         
-    if __name__ == '__main__':
-        print(IntervalCollector.__doc__)
+if __name__ == '__main__':
+    print(IntervalCollector.__doc__)
         

@@ -8,8 +8,7 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 import json
-import music
-    
+from music.scales import Scales
     
 def find_note_in_scale(note):
     # returns the index of note in one of the CHROMATIC scales or -1 if not there
@@ -167,27 +166,26 @@ class Scale:
     def __repr__(self):
         return str(self.scale)
 
-    if __name__ == '__main__':
-        print('Sample Scale usage')
-        scales_file = "../../resources/common_scaleFormulas.json"
-        _scales = music.Scales(json_file_name=scales_file)
-        _scale = _scales.scale['Dorian b2']
-        print(type(_scale))             # class music.scale.Scale
-        print(type(_scale.scale))       # class dict
-        print("Dorian b2: {}".format(_scale.scale))
-        print('formula: {}'.format(_scale.formula))
-        _notes = _scale.notes(root='A', accidental_preference='mixed')
-        print(_notes)
-        print(str(_scale))
-        print(repr(_scale))
-        
-        _scale = _scales.scale['Mixolydian b5']
-        print("\nMixolydian b5: {}".format(_scale.scale))
-        print('formula: {}'.format(_scale.formula))
-        print(str(_scale))
-        print(repr(_scale))
-        _pitches = _scale.pitches(root='B3')
-        print(_pitches)
+if __name__ == '__main__':
+    print('Sample Scale usage')
+    scales_file = "../../resources/common_scaleFormulas.json"
+    _scales = Scales()
+    _scale = _scales.scale['Dorian b2']
+
+    print("Dorian b2: {}".format(_scale.scale))
+    print('formula: {}'.format(_scale.formula))
+    _notes = _scale.notes(root='A', accidental_preference='mixed')
+    print(_notes)
+    print(str(_scale))
+    print(repr(_scale))
+    
+    _scale = _scales.scale['Mixolydian b5']
+    print("\nMixolydian b5: {}".format(_scale.scale))
+    print('formula: {}'.format(_scale.formula))
+    print(str(_scale))
+    print(repr(_scale))
+    _pitches = _scale.pitches(root='B3')
+    print(_pitches)
         
         
         

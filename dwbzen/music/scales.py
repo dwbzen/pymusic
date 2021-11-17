@@ -36,7 +36,7 @@ class Scales(object):
             self.data = json.load(read_file)
 
         self.create_dataFrame()
-        self._get_scales_data()
+        self.get_scales_data()
         
     def format_cols(self, formula, fnumber):
         return '{}:{}'.format(formula,fnumber)
@@ -102,9 +102,9 @@ class Scales(object):
         """
         return self.scales.__iter__()
         
-    if __name__ == '__main__':
-        _scales = music.Scales()
-        scales_df = _scales.scales_df
-        scales_df_blues = scales_df[scales_df['groups'].apply(lambda x:'blues' in x)]
-        print(scales_df_blues)
+if __name__ == '__main__':
+    _scales = Scales()
+    scales_df = _scales.scales_df
+    scales_df_blues = scales_df[scales_df['groups'].apply(lambda x:'blues' in x)]
+    print(scales_df_blues)
         

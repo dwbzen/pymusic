@@ -269,12 +269,18 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                     durations_seed = self.get_durations_seed()
                     continue             
                 newnote = prev_note.transpose(ainterval)
-                if self.enforceRange and not self.instruments.check_range(pname, newnote):
+                if self.enforceRange and not self.instruments.is_in_range(pname, newnote):
+                    steps_out_of_range = self.instruments.check_range(pname, newnote)
+                    #
                     # if the note is out of range for this part (instrument)
-                    # use self.start_notes[pname] instead
+                    # transpose up an octave is below the range, down an octave if above
                     if self.verbose > 0:
-                        print(f"newnote: {newnote.nameWithOctave} out of range for {pname}, using {first_note.nameWithOctave}")
-                    newnote = note.Note(nameWithOctave=first_note.nameWithOctave)
+                        print(f"newnote: {newnote.nameWithOctave} out of range for {pname}, by {steps_out_of_range} steps")
+                    if steps_out_of_range <0:
+                        tintval = interval.Interval('P8')
+                    else:
+                        tintval = interval.Interval('P-8')
+                    newnote = newnote.transpose(tintval)
                                             
                 remaining_dur =  total_duration - part_duration
                 if part_duration + dur >= total_duration:

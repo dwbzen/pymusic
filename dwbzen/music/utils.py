@@ -1,19 +1,28 @@
 
-from music21 import stream, interval,instrument, corpus, converter
-from music21 import note, clef, duration, metadata
-import music
+from music21 import interval, instrument, corpus, converter
+from music21 import note, clef, duration, metadata, key
+from music21.stream import Score
+from music21.stream import Part
+from music21.stream import Measure
+
+from music.instruments import Instruments
+
 import pandas as pd
 import pathlib, random, copy
 from datetime import date
 
 class Utils(object):
+    """Music utilities
+    
+    """
     
     verbose = 0
-    
+    C_Major = key.Key('C')
+     
     @staticmethod
-    def get_score(self, file_path:str) -> stream.Score:
+    def get_score(self, file_path:str) -> Score:
         score = None
-        file_info = music.Utils.get_file_info(file_path)
+        file_info = Utils.get_file_info(file_path)
         if file_info['exists']:
                 score = converter.parse(file_info['path_text'])
         return score
@@ -22,7 +31,7 @@ class Utils(object):
     # get intervals for a Part
     #
     @staticmethod
-    def get_part_intervals(apart:stream.Part) -> [dict]:
+    def get_part_intervals(apart:Part) -> [dict]:
         intrvals = []
         part_notes = apart.flat.getElementsByClass('Note')
         for ind in range(len(part_notes)-1):
@@ -34,16 +43,16 @@ class Utils(object):
         return intrvals
     
     @staticmethod
-    def get_part_notes(apart:stream.Part) -> [note.Note]:
+    def get_part_notes(apart:Part) -> [note.Note]:
         part_notes = apart.flat.getElementsByClass('Note')
         return part_notes
     
     @staticmethod
-    def get_score_intervals(ascore:stream.Score, partname:str=None) -> dict:
+    def get_score_intervals(ascore:Score, partname:str=None) -> dict:
         """ Get the intervals for all Parts of a Score as a dict
         
         """
-        parts = ascore.getElementsByClass(stream.Part)
+        parts = ascore.getElementsByClass(Part)
         pdict = dict()
         for p in parts:
             pname = p.partName
@@ -52,12 +61,12 @@ class Utils(object):
         return pdict
     
     @staticmethod
-    def get_score_notes(ascore:stream.Score, partname:str=None) -> dict:
+    def get_score_notes(ascore:Score, partname:str=None) -> dict:
         """Get the Notes for all Parts or the named part of a Score as a dict
         
         Note that this does not return Rest or Chord objects
         """
-        parts = ascore.getElementsByClass(stream.Part)
+        parts = ascore.getElementsByClass(Part)
         pdict = dict()
         for p in parts:
             pname = p.partName
@@ -67,7 +76,7 @@ class Utils(object):
         return pdict
 
     @staticmethod
-    def get_music21_objects_for_score(classinfo, ascore:stream.Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_music21_objects_for_score(classinfo, ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
         if classinfo is note.Note:
             return Utils.get_notes_for_score(ascore, partnames, partnumbers)
         elif classinfo is interval.Interval:
@@ -76,7 +85,7 @@ class Utils(object):
             raise TypeError
     
     @staticmethod
-    def get_intervals_for_score(ascore:stream.Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_intervals_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
         """Get the intervals of all Parts of a Score as a pandas.DataFrame
         
         DataFrame columns returned:
@@ -120,7 +129,7 @@ class Utils(object):
     
 
     @staticmethod
-    def get_notes_for_score(ascore:stream.Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_notes_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
         """Get the Notes of all Parts from a score as a pandas.DataFrame
         
         DataFrame columns returned:
@@ -133,8 +142,8 @@ class Utils(object):
             duration (music21.duration.Duration)
             pitchClass (int)
         
-        Returns a 3-tuplet consisting of the notes_df DataFrame,
-        an interger list of part numbers, and a str list of part names.
+        Returns a 3-tuple consisting of the notes_df DataFrame,
+        an integer list of part numbers, and a str list of part names.
         """
         pdict = Utils.get_score_notes(ascore)
         notes_df = pd.DataFrame()
@@ -234,16 +243,27 @@ class Utils(object):
         return intrvals_df, all_score_partnames, all_score_partnumbers
     
     @staticmethod
-    def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
+    def get_scores_from_corpus(composer=None, title=None):
+        scores = []
+        titles = []
         meta = Utils.get_metadata_bundle(composer, title)
+        for i in range(len(meta)):
+            md = meta[i].metadata
+            titles.append(md.title)
+            score = corpus.parse(meta[i])
+            scores.append(score)
+        return scores,titles
+    
+    @staticmethod
+    def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
+        scores, titles = Utils.get_scores_from_corpus(composer, title)
         notes_df = pd.DataFrame()
         all_score_partnames = set()
         all_score_partnumbers = set()
-        for i in range(len(meta)):
-            md = meta[i].metadata
-            score = corpus.parse(meta[i])
+        for i in range(len(scores)):
+            score = scores[i]
             df,pnames,pnums = Utils.get_notes_for_score(score, partnames, partnumbers)
-            df['title'] = md.title
+            df['title'] = titles[i]
             notes_df = notes_df.append(df)
             all_score_partnames = all_score_partnames.union(pnames)
             all_score_partnumbers = all_score_partnumbers.union(pnums)
@@ -341,7 +361,7 @@ class Utils(object):
     def random_notes(lower_ps:int, upper_ps:int, num:int=10, minval=0.5) -> [note.Note]:
         notes = []
         for n in range(num):
-            ps = random.randrange(lower_ps,upper_ps)    # random pitch (ps value) c4 to b6
+            ps = random.randrange(lower_ps,upper_ps)    # random pitch (ps values)
             dur = random.randrange(1, 8) * minval       # random durations as quarterLength
             notes.append(note.Note(ps=ps, quarterLength=dur))
         return notes
@@ -350,7 +370,7 @@ class Utils(object):
     def random_part(lower_ps:int, upper_ps:int, num:int=10, minval=0.5, 
                      clef=clef.TrebleClef(), instrument=instrument.Piano()):
         # minval is given as quarterLength, 0.5 is an eighth note, 0.25 is a 16th etc.
-        part = stream.Part()
+        part = Part()
         part.insert(0,instrument)
         notes = []
         notes.append(clef)
@@ -408,5 +428,119 @@ class Utils(object):
         delta = end_date - start_date
         return abs(int(delta.total_seconds()))
     
+    @staticmethod
+    def get_score_parts(aScore:Score):
+        """Get the Parts of a Score
+        Args:
+            aScore - a stream.Score instance
+        Returns:
+            A dict of stream.Part with the key partName
+        
+        """
+        parts_dict = dict()
+        if aScore is not None:
+            parts = aScore.getElementsByClass(Part)
+            for p in parts:
+                parts_dict[p.partName] = p
+        return parts_dict
+    
+    @staticmethod
+    def get_keySignatures(apart:Part):
+        """Gets the KeySignatures appearing in a given Part
+        
+            Args:
+                apart : a stream.Part instance
+            Returns:
+                a tupple consisting of 2 lists:
+                [KeySignature] in the order of appearance
+                [int] of measure numbers where the KeySignature occurs
+        """
+        measures = apart.getElementsByClass(Measure)
+        key_sigs = []
+        measure_numbers = []
+        for m in measures:
+            keys = m.getElementsByClass([key.Key,key.KeySignature])
+            for k in keys:
+                if k is not None:
+                    key_sigs.append(k)
+                    measure_numbers.append(m.measureNumber)
+        return key_sigs,measure_numbers
+
+    @staticmethod
+    def get_transposition_intervals(keys:[key.Key], key2:key.Key=C_Major) -> [interval.Interval]:
+        intval = []
+        for akey in keys:
+            k = akey.asKey()
+            p1 = k.getPitches()[0]
+            p2 = key2.getPitches()[0]
+            if Utils.verbose > 0:
+                print('transposition key pitches {}, {}'.format(p1.nameWithOctave,p2.nameWithOctave))
+            intval.append(interval.Interval(noteStart = p1,noteEnd = p2))
+        return intval
+    
+    @staticmethod
+    def transpose_part(apart:Part, target_key=C_Major, instruments:Instruments=None, inPlace=False) -> Part:
+        """Transpose the notes in a given Part
+            Args:
+                apart : a stream.Part instance
+                target_key : the transposition Key. Default is C-Major if not specified
+                instruments - music.Instruments instance, if not None Part ranges are enforced after the transposition
+                inplace - if True, transpose in place. Otherwise transpose a copy
+            Returns:
+                A Part with the notes transposed as specified.
+                The Part argument is not modified if inPlace is False.
+        """
+        key_sigs,measure_numbers = Utils.get_keySignatures(apart)
+        measure_numbers.append(len(apart))
+        transposition_intervals = Utils.get_transposition_intervals(key_sigs)
+        transposed_part = apart
+        if not inPlace:     # transpose a copy of the Part
+            transposed_part = copy.deepcopy(apart)
+            
+        for i in range(len(transposition_intervals)):
+            #
+            # no need to transpose if the measures are already in the target_key
+            #
+            intval = transposition_intervals[i]
+            if Utils.verbose > 0:
+                print(f"transposition interval: {intval}")
+            if intval == target_key:
+                continue
+            transposed_part.measures(measure_numbers[i], measure_numbers[i+1]-1).transpose(intval, inPlace=True)
+        
+        if instruments is not None:
+            #
+            # check if notes are in range for Instrument and adjust if necessary
+            #
+            for anote in transposed_part.flat.getElementsByClass('Note'):
+                instruments.adjust_to_range(apart.partName, anote, inPlace=True)
+        
+        return transposed_part
+    
+    @staticmethod
+    def transpose_score(ascore:Score, target_key=C_Major,  partnames:[str]=None, instruments:Instruments=None, inPlace=False) -> Score:
+        """Transpose an entire Score to a new Key
+        
+            Args:
+                ascore - the Score to transpose
+                target_key - the new Key, default is C-Major
+                partnames - part names to include (and transpose)
+                instruments - music.Instruments instance, if not None Part ranges are enforced after the transposition
+                inplace - if True, transpose in place. Otherwise transpose a copy
+            Returns:
+                a transposed Score. The original is not modified if inPlace is False
+        
+        """
+        parts = ascore.getElementsByClass(Part)
+        new_score = Score()
+        for p in parts:
+            pname = p.partName
+            if partnames is None or pname in partnames:
+                if Utils.verbose > 0:
+                    print('transpose {}'.format(pname))
+                tp = Utils.transpose_part(p, target_key=target_key, instruments=instruments, inPlace=inPlace)
+                new_score.append(tp)
+        return new_score
+
     if __name__ == '__main__':
         print(Utils.__doc__)

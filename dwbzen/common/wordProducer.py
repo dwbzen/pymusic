@@ -8,12 +8,11 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
-import pandas as pd
+from .producer import Producer
 import random
 
 
-class WordProducer(common.Producer):
+class WordProducer(Producer):
     
     def __init__(self, state_size, markovChain, source_file, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
         super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose, rand_seed)

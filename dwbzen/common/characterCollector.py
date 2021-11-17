@@ -13,10 +13,11 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
+from .collector import Collector
+from .utils import Utils
 import pandas as pd
 
-class CharacterCollector(common.Collector):
+class CharacterCollector(Collector):
 
     def __init__(self, state_size=2, verbose=0, source=None, text=None, ignoreCase=False):
         super().__init__(state_size, verbose, source)
@@ -99,7 +100,7 @@ class CharacterCollector(common.Collector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: common.Utils.round_values(x, 6))
+        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
         self.markovChain.chain_df = self.chain_df
         if self.verbose > 1:
             print(f" Counts:\n {self.counts_df}")

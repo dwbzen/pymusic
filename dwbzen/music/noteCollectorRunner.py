@@ -31,12 +31,20 @@ class NoteCollectorRunner(common.Collector):
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format",type=str, choices=['csv','json','chain'] )
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str)
+        parser.add_argument("-m", "--mode", \
+                            help="Collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class)", \
+                            type=str, choices=['ap','dp', 'apc','dpc'], default='ap')
+        parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments, applies to diatonic collection modes.", action="store_true", default=False)
+        parser.add_argument("--show", help="Show the original or transposed score when collection is complete. Does not apply when source is multiple scores.", \
+                            type=str, choices=['original', 'transposed', 'none'], default='none')
+
         args = parser.parse_args()
         if args.verbose > 0:
             print('run NoteCollector')
             print(args)
 
-        collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
+        collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, \
+                                        collection_mode=args.mode, enforce_range=args.enforceRange )
         collector.name = args.name
         collector.format = args.format
         collector.sort_chain = args.sort
@@ -55,4 +63,16 @@ class NoteCollectorRunner(common.Collector):
                 print(collector.markovChain.chain_df.to_csv(line_terminator='\n'))
             else:   # assume 'chain' and display the data frame
                 print(collector.markovChain.chain_df)
-                    
+                
+        nscores = collector.number_of_scores
+        if args.show != 'none' and nscores==1:
+            theScore = collector.score
+            if args.show == 'transposed':
+                theScore = collector.transposed_score
+            elif args.show == 'original':
+                theScore = collector.score
+                
+            if theScore is not None:
+                theScore.show()
+
+

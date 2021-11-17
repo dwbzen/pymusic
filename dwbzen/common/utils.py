@@ -1,21 +1,33 @@
+# ------------------------------------------------------------------------------
+# Name:          utils.py
+# Purpose:       Common utilities.
+#
+# Authors:      Donald Bacon
+#
+# Copyright:    Copyright (c) 2021 Donald Bacon
 
-import pandas as pd
+# License:      BSD, see license.txt
+# ------------------------------------------------------------------------------
+
 import pathlib
 import json
 
 class Utils(object):
-    #
-    # breaks up a path name into component parts
-    #
+    
+    known_extensions = ['json', 'txt', 'mxl', 'xml', 'musicxml', 'csv']
+
     @staticmethod
     def get_file_info(cpath, def_extension='json'):
-        known_extensions = [def_extension, 'txt', 'mxl','.xml','musicxml', 'csv']
+        """breaks up a path name into component parts
+        
+        """
+        
         x = cpath.split("/")
         paths = x[0:len(x)-1]
         filename = x[-1]
-        ext = filename.split(".")
+        ext = filename.split(".")       # name.extension as in "foo.csv"
         name = ext[0]
-        if len(ext)==2 and ext[1] in known_extensions:
+        if len(ext)==2 and ext[1] in Utils.known_extensions:
             ext = ext[1]
             path = cpath      
         else:

@@ -14,34 +14,70 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music
+from music import MusicCollector
+from music.utils import Utils
 import common
 import pandas as pd
 from music21 import  converter, corpus, note
 
-class NoteCollector(music.MusicCollector):
-
-    initial_object = note.Rest(quarterLength=0)
+class NoteCollector(MusicCollector):
+    """Collect Notes from one or more scores into a MarkovChain
+    
+    There are four collection modes: absolute, diatonic, absolute pitch class, diatonic pitch class.
+    In absolute mode the note pitches used are exactly those that appear in the score(s) without alteration.
+    In diatonic mode, the pitch used is the diatonic equivalent for the Key of C-major.
+    For example consider the note "F#5". Relative to the key of D-major this is the 3rd step in the scale.
+    Transposing to C-major this becomes "E5".
+    The same note relative to the score key of Bb-major is #5, so G# in C-Major.
+    
+    For minor keys, the natural minor scale is used (which is the same as melodic minor descending)
+    
+    Absolute pitch class collects only the pitch class of each note. 
+    Pitch class is a music21 pitch attribute that is an integer number from 0 to 11 where 0=C, 1=C# etc.
+    Diatonic pitch class collects the pitch class of each note transposed to C-Major.
+    The octave portion of the note is lost when collecting pitch class. 
+    However the MusicProducer provides ways to reinsert an octave (for each part)
+    when generating scores.
+    
+    """
+    
+    initial_object = note.Note('C0')
     terminal_object = note.Note('C#8')
         
-    def __init__(self, state_size=2, verbose=0, source=None, parts=None):
+    def __init__(self, state_size=2, verbose=0, source=None, parts=None, collection_mode='ap', enforce_range=True):
         super().__init__(state_size, verbose, source, parts)
         self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
         self.markovChain.collector = NoteCollector
-        self.countsFileName = '_noteCounts'
-        self.chainFileName = '_notesChain'
+        self.countsFileName = '_noteCounts_' + collection_mode
+        self.chainFileName = '_notesChain_' + collection_mode
+        self.collection_mode = collection_mode      # default is absolute pitch
+        self.enforce_range = enforce_range          # applies only to dp and dpc collection modes
+
+        self.number_of_scores = 0                   # can be >1 if searching a corpus
+        self.transposed_scores = []                 # if collection mode is diatonic pitch or pitch class
+        self.transposed_score = None                # a single score if diatonic collection
+        Utils.verbose = verbose
+        #
+        # collection_scores will reference self.scores if collection mode is absolute pitch or pitch class
+        # or self.transposed_scores if collection mode is diatonic
+        #
+        self.collection_scores = []
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
             
     @staticmethod
     def initialize_initial_terminal_objects() -> (pd.DataFrame, pd.DataFrame):
 
-        initial_dict = {'note':NoteCollector.initial_object, 'part_number':1, 'part_name':'rest', \
-               'nameWithOctave':'rest', 'pitch':'', 'duration':NoteCollector.initial_object.duration, \
-               'pitchClass':0, 'name':'rest'}
+        initial_dict = {'note':NoteCollector.initial_object, 'part_number':1, 'part_name':'note', \
+               'nameWithOctave':NoteCollector.initial_object.nameWithOctave, 'pitch':str(NoteCollector.initial_object.pitch), \
+               'duration':NoteCollector.initial_object.duration, \
+               'pitchClass':NoteCollector.initial_object.pitch.pitchClass, 'name':NoteCollector.initial_object.name}
+        
         terminal_dict = {'note':NoteCollector.terminal_object, 'part_number':1, 'part_name':'note', \
                'nameWithOctave':NoteCollector.terminal_object.nameWithOctave, 'pitch':str(NoteCollector.terminal_object.pitch), \
-               'duration':NoteCollector.terminal_object.duration, 'pitchClass':NoteCollector.terminal_object.pitch.pitchClass, 'name':NoteCollector.terminal_object.name}
+               'duration':NoteCollector.terminal_object.duration, \
+               'pitchClass':NoteCollector.terminal_object.pitch.pitchClass, 'name':NoteCollector.terminal_object.name}
+        
         initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
         terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
         return initial_object, terminal_object
@@ -59,7 +95,7 @@ class NoteCollector(music.MusicCollector):
         """Adds key_notes and next_note to counts_df DataFrame
         
         """
-        index_str = music.Utils.show_notes(key_notes,'nameWithOctave')
+        index_str = Utils.show_notes(key_notes,'nameWithOctave')
         col_str = str(next_note.nameWithOctave)
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
@@ -98,14 +134,19 @@ class NoteCollector(music.MusicCollector):
         --source '/data/music/Corpus/dwbzen/Prelude.mxl'    # a single musicXML file. The .mxl may be omitted
         --source [filename].json                    # load a serialized notes DataFrame (TODO)
         
+        
         """
         result = True
         title = None
         composer = None
-        if source.startswith('$CORPUS'):
-            corpus_file = self.corpus_folder + source[6:]
-            self.score = corpus.parse(corpus_file)
-        elif 'composer' in source or 'title' in source:
+        range_instruments = None
+        if self.enforce_range:
+            range_instruments = self.instruments
+               
+        if 'composer' in source or 'title' in source:
+            #
+            # multiple scores
+            #
             search_string = source.split(",")
             for ss in search_string:
                 st = ss.split('=')
@@ -113,32 +154,72 @@ class NoteCollector(music.MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
-            self.notes_df, self.score_partNames, self.score_partNumbers = music.Utils.get_all_score_music21_objects(note.Note, composer=composer, title=title) 
+
+            self.scores, self.titles = Utils.get_scores_from_corpus(composer=composer, title=title)
+            self.number_of_scores = len(self.scores)
+                
+            for ascore in self.scores:
+                if self.collection_mode.startswith('d'):
+                    #
+                    # transpose the score if collection mode is diatonic
+                    #                    
+                    transposed_score = Utils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
+                    self.transposed_scores.append(transposed_score)
+                    notesdf, pnames, pnums = Utils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
+                else:   # absolute pitch/pitch class - no transposition required
+                    notesdf, pnames, pnums = Utils.get_music21_objects_for_score(note.Note, ascore, self.part_names, self.part_numbers)
+                
+                self.notes_df.append(notesdf)
+                self.part_names.append(pnames)
+                self.part_numbers.append(pnums)
+                
             if self.notes_df is None or len(self.notes_df) == 0:
                 result = False
-        else:   # must be a single filename or path
-            file_info = music.Utils.get_file_info(source)
-            if file_info['Path'].exists():
-                self.score = converter.parse(file_info['path_text'])
-                if self.verbose > 2:
-                    print(self.score)
+        else:
+            #
+            # a single filename or path - one score
+            #
+            if source.startswith('$CORPUS'):
+                corpus_file = self.corpus_folder + source[6:]
+                self.score = corpus.parse(corpus_file)
+            else:
+                file_info = Utils.get_file_info(source)
+                if file_info['Path'].exists():
+                    self.score = converter.parse(file_info['path_text'])
+                    if self.verbose > 2:
+                        print(self.score)
             if self.score is not None:
-                self.notes_df, self.score_partNames, self.score_partNumbers = music.Utils.get_music21_objects_for_score(note.Note, self.score, self.part_names, self.part_numbers)
+                self.scores.append(self.score)
+                self.number_of_scores = 1
+                if self.collection_mode.startswith('d'):
+                    # diatonic pitch or pitch class - transpose the score to C-Major
+                    # and enforce instrument ranges if needed (enforce_range is True)
+                    #
+                    self.transposed_score = Utils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
+                    self.transposed_scores.append(self.transposed_score)
+                    self.notes_df, self.score_partNames, self.score_partNumbers = \
+                        Utils.get_music21_objects_for_score(note.Note, self.transposed_score, self.part_names, self.part_numbers)
+                else:   # absolute pitch/pitch class - no transposition required
+                    self.notes_df, self.score_partNames, self.score_partNumbers = \
+                        Utils.get_music21_objects_for_score(note.Note, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
+
         return result
     
     def collect(self) -> common.MarkovChain:
-        """Run collection on the notes_df DataFrame extracted from the source
+        """Run collection on the notes_df DataFrame created from the source score(s)
         
         The collection unit is a score part name. Score part_names are in self.score_partNames set.
         The first MarkovChain key entry will consists of the initial_object + the first order-1 notes.
         The last entry will have the terminal_object as the last note.
         Returns MarkovChain result
         """
+        
         if self.verbose > 1:
             print(f"notes: {self.notes_df}")
         for pname in self.score_partNames:
+                
             partNotes_df = self.notes_df[self.notes_df['part_name']==pname]
             df_len = len(partNotes_df)
             next_note = None
@@ -170,7 +251,7 @@ class NoteCollector(music.MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: music.Utils.round_values(x, 6))
+        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
         self.markovChain.chain_df = self.chain_df
         
         if self.verbose > 1:

@@ -10,7 +10,10 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
+from .characterCollector import CharacterCollector
+from .markovChain import MarkovChain
+from .utils import Utils
+from .wordProducer import WordProducer
 import argparse
 import sys
 import pandas as pd
@@ -53,12 +56,12 @@ class WordProducerRunner(object):
             print(args)
         if args.chainFile is None and not (args.source is None and args.text is None):   # run the collector first
             source_file = args.source
-            collector = common.CharacterCollector(state_size = args.order, verbose=args.verbose, source=source_file, text=args.text, ignoreCase=args.ignoreCase)
+            collector = CharacterCollector(state_size = args.order, verbose=args.verbose, source=source_file, text=args.text, ignoreCase=args.ignoreCase)
             collector.sort_chain = True
             markovChain = collector.collect()
         else:
             # use serialized MarkovChain file in JSON format (--chain )as input
-            file_info = common.Utils.get_file_info(args.chainFile)
+            file_info = Utils.get_file_info(args.chainFile)
             thepath = file_info["path_text"]
             ext = file_info['extension'].lower()
             if args.verbose > 0:
@@ -69,14 +72,14 @@ class WordProducerRunner(object):
             else:
                 if ext=='json':
                     mc_df = pd.read_json(thepath, orient="index")
-                    markovChain = common.MarkovChain(order, chain_df=mc_df)
+                    markovChain = MarkovChain(order, chain_df=mc_df)
                 elif ext=='pos':     # parts-of-speech file  TODO
                     pass
 
         #
         # markovChain will never, ever be None
         #
-        wordProducer = common.WordProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose )
+        wordProducer = WordProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose )
         if args.chainFile is not None:
             wordProducer.chain_file = args.chainFile
         wordProducer.initial = args.initial

@@ -8,12 +8,12 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music
-from music21 import key
 import pandas as pd
 
 class Keys(object):
-
+    """Defines Keys from keys.json as a DataFrame
+    
+    """
 
     def __init__(self, verbose=0, resource_folder ="/Compile/dwbzen/resources/music"):
         
@@ -23,7 +23,8 @@ class Keys(object):
         self.keys_pd = pd.read_json(self.keys_file, orient="index")
         self.keys_pd.fillna(value={'parallelKey':'0'}, inplace=True)
 
-    if __name__ == '__main__':
-        keys = music.Keys()
-        print(keys.keys_pd)
+if __name__ == '__main__':
+    print(Keys.__doc__)
+    keys = Keys()
+    print(keys.keys_pd)
 

@@ -21,7 +21,6 @@
  The order of the MarkovChain is the number of states that determine future states.
 '''
 
-import json
 import pandas as pd
 
 class MarkovChain(object):

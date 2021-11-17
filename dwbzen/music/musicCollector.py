@@ -10,21 +10,24 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
+from common import Collector
 import music
 import pandas as pd
 
-class MusicCollector(common.Collector):
+class MusicCollector(Collector):
     
     save_folder="/Compile/dwbzen/resources/music"
     
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source)
+        self.instruments = music.Instruments(self.verbose)
         self.save_folder=music.MusicCollector.save_folder
         self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes
         self.score = None       # if source is a single Score
+        self.scores = []        # a list of Score if collecting from a corpus
+        self.titles = []        # the titles of all Score(s)
         self.part_names = []    # optional part names used to filter parts of score(s)
         self.part_numbers = []  # optional part numbers used to filter parts
         self.parts = None       # comma-delimited part names from the command line
@@ -34,6 +37,7 @@ class MusicCollector(common.Collector):
         self.durations_df = None
         if parts is not None:
             self.add_parts(parts)
+        self.enforceRange = True
     
     def add_parts(self, parts) -> str:
         if parts is not None:

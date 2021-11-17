@@ -10,19 +10,25 @@
 # ------------------------------------------------------------------------------
 
 from music21 import instrument, Music21Object
-from music21 import note, clef
-import music
+from music21 import note, clef, interval
+
 import pandas as pd
 import importlib
 
 class Instruments(object):
-    """Encapsulates instrument information for supported instruments:
-       * Clef to use
-       * range (low, high)
+    """Encapsulates instrument information for the instruments supported by this framework:
+       * music21 module
        * associated music21 class and class instance
+       * range of the instrument - (low,high) as pitches
+       * pitchRange - (low,high) as pitch pitch space attribute
+       * Clef to use
+       * transposeDiatonic
+       * transposeChromatic
+       * transposeText
+
     Instrument information maintained in resources/music/instruments.json
     Clef information in resources/music/clefs.json
-    TODO - account for transposing instruments.
+
     """
     
     instrument_names=[ 'Alto', 'Bass', 'Bassoon', 'Clarinet', 'Flute', 'Harpsichord', 'Koto', 'Oboe', 'Piano', 'PianoLH', 'PianoRH', 'Soprano', 'Tenor']
@@ -36,6 +42,14 @@ class Instruments(object):
 
     @staticmethod
     def __create_instance(row:pd.Series) -> Music21Object:
+        """Create an instance of a given class.
+        
+            Args:
+                row - a pd.Series that has ''module' and 'class' members
+            Returns:
+                a module.class instance
+        
+        """
         module = row['module']
         class_name = row['class']
         my_module = importlib.import_module(module)
@@ -83,19 +97,78 @@ class Instruments(object):
             instance = self.instruments_pd.loc[instrument_name]['instance']
         return instance
     
-    def check_range(self, instrument_name:str, note:note.Note) -> bool:
+    def is_in_range(self, instrument_name:str, note:note.Note) -> bool:
+        """Return True if a Note is in the rage of a given Instrument, False otherwise
+        
+        """
         noteps = note.pitch.ps
         rng = self.instruments_pd.loc[instrument_name]['range_ps']
         inrange = (noteps >= rng[0] and noteps <= rng[1])
         return inrange
+    
+    def check_range(self, instrument_name:str, note:note.Note) -> int:
+        """Returns the number of steps a Note is for a given Instrument, 0 otherwise.
         
-    if __name__ == '__main__':
-        print(music.Instruments.__doc__)
-        instruments = music.Instruments()
-        if instruments.verbose > 0:
-            print(instruments.instruments_pd)
-            print(instruments.clefs_pd)
-        print(instruments.instruments_pd.loc['Flute'])
+            Args:
+                instrument_name - the name of a supported Insturment
+                note - the Note to test
+            Returns:
+                0 if in range
+                if not in range, the #steps (semitones) the note is beyond the range.
+                If <0, the Note is below by that number of steps
+                If >0 the note is above by that number of steps
         
+        """
+        steps_out_of_range = 0
+        noteps = note.pitch.ps
+        rng = self.instruments_pd.loc[instrument_name]['range_ps']
+        if noteps < rng[0]:
+            steps_out_of_range = noteps - rng[0]
+        elif noteps > rng[1]:
+            steps_out_of_range = noteps - rng[1]
+        return int(steps_out_of_range)
+    
+    def adjust_to_range(self, instrument_name:str, anote:note.Note, inPlace=False) -> note.Note:
+        """Adjust the pitch of a Note if out of range.
+            If below the instrument range, the note is transposed up an octave.
+            If above the instrument range, the note is transposed down an octave.
+        
+            Args:
+                instrument_name - the name of a supported Insturment
+                note - the Note to test and possibly transpose
+            Returns:
+                a new note that is in range. If inPlace is True, the note provided is transposed in place.
+        
+        """
+        steps_out_of_range = self.check_range(instrument_name, anote)
+        #
+        # if the note is out of range for this part (instrument)
+        # transpose up an octave is below the range, down an octave if above
+        if self.verbose > 0 and steps_out_of_range != 0:
+            print(f"newnote: {anote.nameWithOctave} out of range for {instrument_name}, by {steps_out_of_range} steps")
+        if steps_out_of_range <0:
+            tintval = interval.Interval('P8')
+        elif steps_out_of_range < 0:
+            tintval = interval.Interval('P-8')
+        else:
+            tintval = interval.Interval(0)
+        #
+        # transpose does not return a value if inPlace == True
+        #
+        if inPlace:
+            anote.transpose(tintval, inPlace=True)
+            return anote
+        else:
+            newnote = anote.transpose(tintval, inPlace=False)
+            return newnote
+    
+if __name__ == '__main__':
+    print(Instruments.__doc__)
+    instruments = Instruments()
+    if instruments.verbose > 0:
+        print(instruments.instruments_pd)
+        print(instruments.clefs_pd)
+    print(instruments.instruments_pd.loc['Flute'])
+    
     
     

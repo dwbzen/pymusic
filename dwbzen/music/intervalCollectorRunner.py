@@ -1,7 +1,6 @@
 
-#
 # ------------------------------------------------------------------------------
-# Name:          intervalCollector.py
+# Name:          intervalCollectorRunner.py
 # Purpose:       Run IntervalCollector
 #
 # Authors:      Donald Bacon
@@ -11,11 +10,11 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
-import music
+from common.collector import Collector
+from music.intervalCollector import IntervalCollector
 import argparse
 
-class IntervalCollectorRunner(common.Collector):
+class IntervalCollectorRunner(Collector):
     
     if __name__ == '__main__':
         parser = argparse.ArgumentParser()
@@ -32,7 +31,7 @@ class IntervalCollectorRunner(common.Collector):
             print('run IntervalCollector')
             print(args)
 
-        collector = music.IntervalCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
+        collector = IntervalCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
         collector.name = args.name
         collector.format = args.format
         collector.sort_chain = args.sort

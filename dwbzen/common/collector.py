@@ -1,35 +1,36 @@
-# -*- coding: utf-8 -*-
+
 # ------------------------------------------------------------------------------
 # Name:          collector.py
 # Purpose:       Base collector class.
-#                Collects data from a defined source and builds a MarkovChain
-#                of a given order.
-#                Collector subclasses are tailored to the specific data type
-#                being collected and how that data is sourced.
-#                A collector has a corresponding Producer class that takes
-#                a MarkovChain as input and produces data.
-#                For example, a CharacterCollector creates a MarkovChain
-#                from a word stream (strings). The WordProducer reverses the process.
-#                The terminal_object and initial_object must be set appropriately
-#                by derived (concrete) classes. 
-#                terminal_object should be set to a value that does not occur
-#                in the collection source data. For example, CharacterCollector
-#                sets the value to '~'. IntervalCollector sets the value to
-#                a interval.Interval to interval.Interval(99).
-#                initial_object represents the start of whatever unit is being collected
-#                This is used to identify an initial seed.
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright � 2021 Donald Bacon
+# Copyright:    Copyright (c) 2021 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
 import pandas as pd
-import common
-import json
+from .markovChain import MarkovChain
+from .utils import Utils
 
-class Collector:
+class Collector(object):
+    """Collects data from a defined source and builds a MarkovChain of a given order.
+    
+        Collector subclasses are tailored to the specific data type being collected and how that data is sourced.
+        A collector has a corresponding Producer class that takes
+        a MarkovChain as input and produces data.
+        For example, a CharacterCollector creates a MarkovChain
+        from a word stream (strings). The WordProducer reverses the process.
+        
+        The terminal_object and initial_object must be set appropriately
+        by derived (concrete) classes. 
+        terminal_object should be set to a value that does not occur
+        in the collection source data. For example, CharacterCollector
+        sets the value to '~'. IntervalCollector sets the value to
+        a interval.Interval to interval.Interval(99).
+        The initial_object represents the start of whatever unit is being collected
+        This is used to identify an initial seed
+    """
     
     def __init__(self, state_size=2, verbose=0, source=None):
         """Initialize elements common to all Collector subclasses.
@@ -41,7 +42,7 @@ class Collector:
         self.chain_df = pd.DataFrame()
         self.counts_df = pd.DataFrame()
         self.stateSpace_type = None
-        self.markovChain =  common.MarkovChain(state_size)
+        self.markovChain =  MarkovChain(state_size)
         self.name = None
         self.format = None
         self.source = source  # file input or DataFrame source
@@ -82,7 +83,7 @@ class Collector:
         return None
     
     def get_json_output(self):
-        return common.Utils.get_json_output(self.chain_df)
+        return Utils.get_json_output(self.chain_df)
     
     def save(self):
         """Saves the MarkovChain and counts DataFrame files
@@ -111,11 +112,11 @@ class Collector:
                     self.chain_df.to_csv(self.filename)
                     self.counts_df.to_csv(self.counts_file)
                 elif self.format == 'json':
-                    dumped = common.Utils.get_json_output(self.chain_df)
+                    dumped = Utils.get_json_output(self.chain_df)
                     with open(self.filename, 'w') as f:
                         f.write(str(dumped))
                     with open(self.counts_file, 'w') as f:
-                        f.write(str(common.Utils.get_json_output(self.counts_df)))
+                        f.write(str(Utils.get_json_output(self.counts_df)))
                 else: # must be excel
                     self.chain_df.to_excel(self.filename, sheet_name='Sheet 1',index=False)
                     self.counts_df.to_excel(self.counts_file, sheet_name='Sheet 1',index=False)

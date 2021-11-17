@@ -13,13 +13,14 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music
+from music import MusicCollector
+from music.utils import Utils
 import pandas as pd
 import sys
 from music21 import duration
 
 
-class DurationCollector(music.MusicCollector):
+class DurationCollector(MusicCollector):
 
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):          # this also executes self.set_source()
         super().__init__(state_size, verbose, source)
@@ -48,7 +49,7 @@ class DurationCollector(music.MusicCollector):
         return duration.Duration
     
     def process(self, key_durations, next_duration):
-        index_str = music.Utils.show_durations(key_durations)
+        index_str = Utils.show_durations(key_durations)
         col_str = next_duration.quarterLength   # str(next_duration.quarterLength)
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
@@ -86,7 +87,7 @@ class DurationCollector(music.MusicCollector):
         self.durations_df = None
         result = True
         if self.source_df is not None:   # create the durations DataFrame
-            self.durations_df = music.Utils.get_durations_from_notes(self.source_df)
+            self.durations_df = Utils.get_durations_from_notes(self.source_df)
         
         return result
 
@@ -120,7 +121,7 @@ class DurationCollector(music.MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: music.Utils.round_values(x, 3))
+        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 3))
         self.markovChain.chain_df = self.chain_df
         
         if self.verbose > 1:
