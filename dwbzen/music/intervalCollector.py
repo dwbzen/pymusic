@@ -106,7 +106,8 @@ class IntervalCollector(MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
-            self.intervals_df, self.score_partNames, self.score_partNumbers = Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title) 
+            self.intervals_df, self.score_partNames, self.score_partNumbers = \
+                Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title, partnames=self.part_names, partnumbers=self.part_numbers) 
             if self.intervals_df is None or len(self.intervals_df) == 0:
                 result = False
         else:   # must be a single filename or path
@@ -116,7 +117,8 @@ class IntervalCollector(MusicCollector):
                 if self.verbose > 2:
                     print(self.score)
             if self.score is not None:
-                self.intervals_df, self.score_partNames, self.score_partNumbers = Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
+                self.intervals_df, self.score_partNames, self.score_partNumbers = \
+                    Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
         return result

@@ -7,7 +7,8 @@
 # Copyright:    Copyright (c) 2021 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
-import music
+from music import Scale
+import argparse
 import json
 import pandas as pd
 
@@ -94,7 +95,7 @@ class Scales(object):
         self.scales = self.data['scales']
         for s in self.scales:
             self.scale_names.append(s['name'])
-            self.scale[s['name']] = music.Scale(s)
+            self.scale[s['name']] = Scale(s)
 
     def __iter__(self):
         """ Iterate over the scales
@@ -105,6 +106,18 @@ class Scales(object):
 if __name__ == '__main__':
     _scales = Scales()
     scales_df = _scales.scales_df
-    scales_df_blues = scales_df[scales_df['groups'].apply(lambda x:'blues' in x)]
-    print(scales_df_blues)
-        
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n","--name", help="Scale name", type=str, default=None)
+    parser.add_argument("-g", "--group", help="Group name", type=str, default=None)
+    args = parser.parse_args()
+    
+    if args.name is not None:
+        _scale = _scales.scale[args.name]
+        print('{} formula: {}'.format(args.name, _scale.formula))
+        _notes = _scale.notes(root='A', accidental_preference='mixed')
+        print('{} notes: {}'.format(args.name, _notes))
+        print(str(_scale))
+    if args.group is not None:
+        group_scales = scales_df[scales_df['groups'].apply(lambda x:args.group in x)]
+        print(group_scales)
+    

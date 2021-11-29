@@ -10,19 +10,18 @@
 
 import music, common
 import pandas as pd
-import random
-from music21 import note, clef, stream, interval, tempo, meter, key
+import random, math
+from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 
 class MusicProducer(common.Producer):
     """Produce music from interval or notes MarkovChains
     
-    TODO: fix reading csv format chains. Currently using the row# as the index which is incorrect. The column lable is "KEY"
+    TODO: consider making the dataframe keys a list (of intervals or notes, len=state_size) instead of a str of a list
+    TODO: fix reading csv format chains. Currently using the row# as the index which is incorrect. The column label is "KEY"
     TODO: fix reading durations_chain in json format. Currenly the columns are interpreted as datetime values, should be int.
     
     """
 
-    # TODO - consider making the dataframe keys a list instead of a str of a list
-    #
     def __init__(self, state_size, markovChain, durationsChain, source_file, parts, produceParts, num, verbose=0, rand_seed=42, producerType=None):
         super().__init__(state_size, markovChain, source_file, num=num, verbose=verbose,  rand_seed=rand_seed)
         self.instruments = music.Instruments(self.verbose)
@@ -30,6 +29,7 @@ class MusicProducer(common.Producer):
         self.producerType = producerType
         self.save_folder="/Compile/dwbzen/resources/music"
         self.score = stream.Score()
+        self.score.insert(0, metadata.Metadata())
         self.parts = parts                  # comma-delimited filter part names from the command line
         self.produceParts = produceParts    # comma-delimited production part names (instruments) from the command line
         self.part_names, self.part_numbers = MusicProducer.get_parts(parts)
@@ -43,7 +43,7 @@ class MusicProducer(common.Producer):
         self.fixed_duration = None   # duration.Duration(quarterLength=0.5)
         
         self.initial_keys = self.get_initial_keys()
-        self.key_values = self.keys.values
+        self.key_values = self.keys.values      # self.keys = pd.Series(self.chain_df.index)
         self.raw_seed = None
         self.score_key = key.Key('C')
 
@@ -52,10 +52,11 @@ class MusicProducer(common.Producer):
         #
         self.start_notes = dict()    # key is producePart name, value is a note.Note
 
-        self.tempo = tempo.MetronomeMark(number=60, referent=note.Note(type='quarter'))
-        self.timeSignature = meter.TimeSignature('3/4')
+        self.tempo = tempo.MetronomeMark(number=100, referent=note.Note(type='quarter'))
+        self.timeSignature = meter.TimeSignature('4/4')
         self.num_measures = self.num        # number of measures to produce
-        self.enforceRange = False
+        self.enforceRange = False           # force instruments to their range
+        self.trace_mode = False             # displays the notes/intervals as they are produced
     
     @staticmethod
     def get_parts(parts:str) -> ([str],[int]):
@@ -86,10 +87,10 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
     
     def get_initial_keys(self):
         initstr = None
-        if self.producerType.startswith('interval'):
+        if self.producerType == 'intervals':
             initobj = music.IntervalCollector.initial_object
             initstr = '[{}'.format(initobj.semitones)
-        elif self.producerType.startswith('note'):
+        elif self.producerType == 'notes':
             initstr="['rest'"
             
         self.initial_keys = self.keys[self.keys.apply(lambda x: x.startswith(initstr))]
@@ -98,7 +99,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
 
     def get_seed(self, aseed=None):
         if self.seed is None or aseed is None or len(self.raw_seed)!=self.order:
-            # need to pick one at random
+            # no seed provided so pick one at random
             if self.initial:
                 # pick a seed that starts a Part
                 theseed = self.initial_keys[random.randint(0, len(self.initial_keys)-1)]
@@ -156,7 +157,13 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             # 
             prob = random.random()
             p = row_probs[row_probs> prob].iat[0]
-            next_token = int(row_probs[row_probs> prob].index[0])
+            nt = row_probs[row_probs> prob].index[0]
+            #
+            # the reason for this odd code below is that 
+            # when reading a csv-formatted chain file, the "-1" column
+            # is sometimes read as "-1.1"
+            # 
+            next_token = int(math.trunc(float(nt)))
             if self.producerType == 'intervals':
                 ns = [int(x) for x in seed[1:len(seed)-1].split(',')]
             else:   # 'notes'
@@ -206,25 +213,38 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                     print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
                     
         return dict([ ('next_token', next_token), ('new_seed',new_seed)])
-        
+    
+    
     def produce(self):
-        """Produce a Score from a MarkovChain for producerType == 'intervals'
-
-        """
-        
         initial_seed = self.get_seed(self.seed)      # get the initial seed
         seed = initial_seed
         durations_seed = self.get_durations_seed()
         if self.verbose > 0:
             print(f"initial seeds: '{seed}' duration: {durations_seed}")
-        if self.verbose > 1:
+        if self.verbose > 2:
             print(f" MarkovChain:\n {self.markovChain}")
-
-        # partNotes_dict = dict()     # key is part name, value is [note.Notes]
         #
-        # total duration in quarter lengths of all measures
+        # partNotes_dict = dict(),  key is part name, value is [note.Note]
+        #
+        # total duration is sum of quarter lengths of all measures
         #
         total_duration = self.num_measures * self.timeSignature.numerator * self.timeSignature.beatDuration.quarterLength
+        
+        if self.producerType == 'intervals':
+            return self.produce_intervals(seed, total_duration)
+        else:
+            return self.produce_notes(seed, total_duration)
+    
+    def produce_notes(self, seed, total_duration):
+        """Produce a Score from a MarkovChain for 'notes' producerType
+
+        """        
+        pass
+    
+    def produce_intervals(self, seed, total_duration):
+        """Produce a Score from a MarkovChain for 'intervals' producerType
+
+        """
         
         for pname in self.producePart_names:    # the part name must also be an Instrument
             part = stream.Part()
@@ -237,14 +257,15 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             part.insert(self.score_key)
             part.insert(self.timeSignature)
             part_notes = []
-            part_duration = 0       # running total of the durations of all the part notes
+            
             more_to_go = True
             num_notes = 1
             first_note = self.start_notes[pname]
             part_notes.append(first_note)
+            part_duration = first_note.duration.quarterLength       # running total of the durations of all the part notes
             durations_seed = self.get_durations_seed()
             prev_note = self.start_notes[pname]
-            while more_to_go:       # more to go for this part
+            while more_to_go:       # more notes to add for this part
                 next_object_dict = self.get_next_object(seed)
                 next_duration_dict = self.get_next_durations_object(durations_seed)
                 if self.verbose > 1:
@@ -261,13 +282,14 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                     seed = self.get_seed()
                     continue
                 ainterval = interval.Interval(halfsteps)
-                if self.verbose > 2:
-                    print(f"halfsteps: {halfsteps}, interval: {ainterval}")
+                if self.trace_mode:
+                    print(f"halfsteps: {halfsteps}, interval: {ainterval.name}")
                 
-                dur = next_duration_dict['next_token']    # quarterLength 
-                if dur is None:
+                dur_str = next_duration_dict['next_token']    # quarterLength 
+                if dur_str is None:
                     durations_seed = self.get_durations_seed()
-                    continue             
+                    continue
+                dur = float(dur_str)           
                 newnote = prev_note.transpose(ainterval)
                 if self.enforceRange and not self.instruments.is_in_range(pname, newnote):
                     steps_out_of_range = self.instruments.check_range(pname, newnote)
@@ -281,7 +303,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                     else:
                         tintval = interval.Interval('P-8')
                     newnote = newnote.transpose(tintval)
-                                            
+
                 remaining_dur =  total_duration - part_duration
                 if part_duration + dur >= total_duration:
                     dur = remaining_dur     # make the last note fill out the measure

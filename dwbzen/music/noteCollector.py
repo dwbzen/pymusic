@@ -50,6 +50,8 @@ class NoteCollector(MusicCollector):
         self.markovChain.collector = NoteCollector
         self.countsFileName = '_noteCounts_' + collection_mode
         self.chainFileName = '_notesChain_' + collection_mode
+        self.notes_df_fileName = '_notes_df'       # self.notes_df saved if verbose > 0
+        self.notes_df = pd.DataFrame()
         self.collection_mode = collection_mode      # default is absolute pitch
         self.enforce_range = enforce_range          # applies only to dp and dpc collection modes
 
@@ -57,6 +59,12 @@ class NoteCollector(MusicCollector):
         self.transposed_scores = []                 # if collection mode is diatonic pitch or pitch class
         self.transposed_score = None                # a single score if diatonic collection
         Utils.verbose = verbose
+        
+        self.pitch_class_mode = (collection_mode == 'dpc' or collection_mode == 'apc')
+        self.pitch_mode = not self.pitch_class_mode
+        self.diatonic = collection_mode.startswith('d')
+        self.absolute = not self.diatonic
+
         #
         # collection_scores will reference self.scores if collection mode is absolute pitch or pitch class
         # or self.transposed_scores if collection mode is diatonic
@@ -91,31 +99,6 @@ class NoteCollector(MusicCollector):
     def get_base_type(self):
         return note.Note
     
-    def process(self, key_notes, next_note) -> (pd.DataFrame, pd.Series):
-        """Adds key_notes and next_note to counts_df DataFrame
-        
-        """
-        index_str = Utils.show_notes(key_notes,'nameWithOctave')
-        col_str = str(next_note.nameWithOctave)
-        if self.verbose > 1:
-            print(f"key_note: {index_str}, next_note: {col_str}")
-        
-        if len(self.counts_df) == 0:
-            # initialize the counts DataFrame
-            self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.nameWithOctave])
-        
-        else:
-            if index_str not in self.counts_df.index:   # add a new row
-                self.counts_df.loc[index_str, col_str] = 1
-                # self.counts_df.loc[index_str, col_name] = 1
-            else: # update existing index
-                if col_str in self.counts_df.columns:
-                    self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]
-                else:
-                    self.counts_df.loc[index_str, col_str] = 1
-        self.counts_df = self.counts_df.fillna(0)
-        
-    
     def set_source(self, source):
         """This method is called in the __init__ of the parent class, MusicCollector
         
@@ -145,7 +128,8 @@ class NoteCollector(MusicCollector):
                
         if 'composer' in source or 'title' in source:
             #
-            # multiple scores
+            # search the corpus for multiple scores
+            # for example: "composer=bach,title=bwv248*"
             #
             search_string = source.split(",")
             for ss in search_string:
@@ -159,18 +143,23 @@ class NoteCollector(MusicCollector):
             self.number_of_scores = len(self.scores)
                 
             for ascore in self.scores:
-                if self.collection_mode.startswith('d'):
+                if self.verbose > 0:
+                    print(f"working on {ascore.metadata.title}")
+                if self.diatonic:
                     #
                     # transpose the score if collection mode is diatonic
                     #                    
                     transposed_score = Utils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(transposed_score)
                     notesdf, pnames, pnums = Utils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
-                else:   # absolute pitch/pitch class - no transposition required
+                else:
+                    #
+                    # absolute pitch/pitch class - no transposition required
+                    #
                     notesdf, pnames, pnums = Utils.get_music21_objects_for_score(note.Note, ascore, self.part_names, self.part_numbers)
                 
-                self.notes_df.append(notesdf)
-                self.part_names.append(pnames)
+                self.notes_df = self.notes_df.append(notesdf)
+                self.part_names.append(pnames)     # TODO fix this - part_names is a list, pnums is a set
                 self.part_numbers.append(pnums)
                 
             if self.notes_df is None or len(self.notes_df) == 0:
@@ -191,9 +180,9 @@ class NoteCollector(MusicCollector):
             if self.score is not None:
                 self.scores.append(self.score)
                 self.number_of_scores = 1
-                if self.collection_mode.startswith('d'):
+                if self.diatonic:
                     # diatonic pitch or pitch class - transpose the score to C-Major
-                    # and enforce instrument ranges if needed (enforce_range is True)
+                    # and enforce instrument ranges if needed (if enforce_range is True)
                     #
                     self.transposed_score = Utils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(self.transposed_score)
@@ -206,7 +195,45 @@ class NoteCollector(MusicCollector):
                 result = False
 
         return result
-    
+
+    def process(self, key_notes:pd.DataFrame, next_note:pd.Series) -> (pd.DataFrame, pd.Series):
+        """Adds key_notes and next_note to counts_df DataFrame
+            In pitch mode the Note attribute counted is 'nameWithOctave' as in "C4"
+            In pitch class mode the attribute is 'name' - so no octave, just the pitch, as in "C"
+        
+            Args:
+                key_notes - a n-row DataFrame from notes_df where n = order of the MarkovChain
+                next_note - a single row Series from notes_df that represents the Note following the key_notes
+        """
+        
+        if self.pitch_mode:
+            index_str = Utils.show_notes(key_notes,'nameWithOctave')
+            col_str = str(next_note.loc['nameWithOctave'])
+        else:
+            index_str = Utils.show_notes(key_notes,'name')
+            col_str = str(next_note.loc['name'])
+
+        if self.verbose > 1:
+            print(f"key_note: {index_str}, next_note: {col_str}")
+        
+        if len(self.counts_df) == 0:
+            # initialize the counts DataFrame
+            if self.pitch_mode:
+                self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.nameWithOctave])
+            else:
+                self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.loc['name']])
+        
+        else:
+            if index_str not in self.counts_df.index:   # add a new row
+                self.counts_df.loc[index_str, col_str] = 1
+                # self.counts_df.loc[index_str, col_name] = 1
+            else: # update existing index
+                if col_str in self.counts_df.columns:
+                    self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]
+                else:
+                    self.counts_df.loc[index_str, col_str] = 1
+        self.counts_df = self.counts_df.fillna(0)
+            
     def collect(self) -> common.MarkovChain:
         """Run collection on the notes_df DataFrame created from the source score(s)
         
@@ -216,10 +243,13 @@ class NoteCollector(MusicCollector):
         Returns MarkovChain result
         """
         
-        if self.verbose > 1:
-            print(f"notes: {self.notes_df}")
+        if self.verbose > 0:
+            filename = "{}/{}{}.csv".format(self.save_folder, self.name, self.notes_df_fileName)
+            notes_dfx = self.notes_df[['name','nameWithOctave','pitchClass']]
+            notes_dfx.to_csv(path_or_buf=filename)
+            print(f"notes: {filename}")
         for pname in self.score_partNames:
-                
+
             partNotes_df = self.notes_df[self.notes_df['part_name']==pname]
             df_len = len(partNotes_df)
             next_note = None
@@ -262,7 +292,7 @@ class NoteCollector(MusicCollector):
         #
         # collect durations from the Score and notes_df DataFrame
         #
-        run_results = self.collect_durations(self.notes_df)
+        self.collect_durations(self.notes_df)
         return self.markovChain
 
     

@@ -31,8 +31,8 @@ class MusicCollector(Collector):
         self.part_names = []    # optional part names used to filter parts of score(s)
         self.part_numbers = []  # optional part numbers used to filter parts
         self.parts = None       # comma-delimited part names from the command line
-        self.score_partNumbers = []     # the part numbers extracted from the score or scores
-        self.score_partNames = []       # the part names extracted from the score or scores
+        self.score_partNumbers = set()     # the part numbers extracted from the score or scores
+        self.score_partNames = set()       # the part names extracted from the score or scores
         self.durationCollector = None
         self.durations_df = None
         if parts is not None:

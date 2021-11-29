@@ -86,7 +86,7 @@ class Utils(object):
     
     @staticmethod
     def get_intervals_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
-        """Get the intervals of all Parts of a Score as a pandas.DataFrame
+        """Get the intervals of specified Parts of a Score as a pandas.DataFrame
         
         DataFrame columns returned:
             interval  (interval.Interval)
@@ -105,10 +105,14 @@ class Utils(object):
         pdict = Utils.get_score_intervals(ascore)
         intrvals_df = pd.DataFrame()
         part_number = 1
+        df = None
         score_partnames = set()
         score_partnumbers = set()
+        have_partnames = not ( partnames is None or len(partnames)==0)
+        have_partnumbers = not (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers)
         for k in pdict.keys():  # part names
-                if (partnames is None or len(partnames)==0 or k in partnames) or (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers):
+                
+                if (have_partnames and k in partnames) or (have_partnumbers and part_number in partnumbers):
                     part_intervals = pdict[k]
                     intervals =  [x['interval'] for x in part_intervals]
                     df = pd.DataFrame(data=intervals, columns=['interval'])
@@ -120,17 +124,19 @@ class Utils(object):
                     score_partnumbers.add(part_number)
                     intrvals_df = intrvals_df.append(df)
                     part_number = part_number + 1
-    
-        intrvals_df['name'] = [x.name for x in intrvals_df['interval']]
-        intrvals_df['directedName'] = [x.directedName for x in intrvals_df['interval']]
-        intrvals_df['niceName'] = [x.niceName for x in intrvals_df['interval']]
-        intrvals_df['semitones'] = [x.semitones for x in intrvals_df['interval']]
+        if df is not None:
+            # else this score has none of the parts specified 
+            intrvals_df['name'] = [x.name for x in intrvals_df['interval']]
+            intrvals_df['directedName'] = [x.directedName for x in intrvals_df['interval']]
+            intrvals_df['niceName'] = [x.niceName for x in intrvals_df['interval']]
+            intrvals_df['semitones'] = [x.semitones for x in intrvals_df['interval']]
+            intrvals_df.reset_index(drop=True, inplace=True)       # make sure index is unique
         return intrvals_df, score_partnames, score_partnumbers
     
 
     @staticmethod
     def get_notes_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
-        """Get the Notes of all Parts from a score as a pandas.DataFrame
+        """Get the Notes of specified Parts from a score as a pandas.DataFrame
         
         DataFrame columns returned:
             part_name
@@ -147,11 +153,14 @@ class Utils(object):
         """
         pdict = Utils.get_score_notes(ascore)
         notes_df = pd.DataFrame()
+        df = None
         part_number = 1
         score_partnames = set()
         score_partnumbers = set()
+        have_partnames = not ( partnames is None or len(partnames)==0)
+        have_partnumbers = not (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers)
         for k in pdict.keys():
-            if (partnames is None or k in partnames) or (partnumbers is None or part_number in partnumbers):
+            if  (have_partnames and k in partnames) or (have_partnumbers and part_number in partnumbers):
                 df = pd.DataFrame(data=pdict[k], columns=['note'])
                 df['part_number'] = part_number
                 df['part_name'] = k
@@ -159,12 +168,14 @@ class Utils(object):
                 score_partnumbers.add(part_number)
                 notes_df = notes_df.append(df)
                 part_number = part_number + 1
-        
-        notes_df['name'] = [x.name for x in notes_df['note']]
-        notes_df['nameWithOctave'] = [x.nameWithOctave for x in notes_df['note']]
-        notes_df['pitch'] = [x.pitch for x in notes_df['note']]
-        notes_df['duration'] = [x.duration for x in notes_df['note']]
-        notes_df['pitchClass'] = [x.pitch.pitchClass for x in notes_df['note']]
+        if df is not None:
+            # else this score has none of the parts specified 
+            notes_df['name'] = [x.name for x in notes_df['note']]
+            notes_df['nameWithOctave'] = [x.nameWithOctave for x in notes_df['note']]
+            notes_df['pitch'] = [x.pitch for x in notes_df['note']]
+            notes_df['duration'] = [x.duration for x in notes_df['note']]
+            notes_df['pitchClass'] = [x.pitch.pitchClass for x in notes_df['note']]
+            notes_df.reset_index(drop=True, inplace=True)       # make sure index is unique
         return notes_df, score_partnames, score_partnumbers
     
     @staticmethod
@@ -225,7 +236,22 @@ class Utils(object):
             return Utils.get_all_score_intervals(composer, title, partnames, partnumbers)
         else:
             raise TypeError
-        
+
+    @staticmethod
+    def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
+        scores, titles = Utils.get_scores_from_corpus(composer, title)
+        notes_df = pd.DataFrame()
+        all_score_partnames = set()
+        all_score_partnumbers = set()
+        for i in range(len(scores)):
+            score = scores[i]
+            df,pnames,pnums = Utils.get_notes_for_score(score, partnames, partnumbers)
+            df['title'] = titles[i]
+            notes_df = notes_df.append(df)
+            all_score_partnames = all_score_partnames.union(pnames)
+            all_score_partnumbers = all_score_partnumbers.union(pnums)
+        return notes_df, all_score_partnames, all_score_partnumbers
+            
     @staticmethod
     def get_all_score_intervals(composer=None, title=None, partnames=None, partnumbers=None):
         meta = Utils.get_metadata_bundle(composer, title)
@@ -253,21 +279,6 @@ class Utils(object):
             score = corpus.parse(meta[i])
             scores.append(score)
         return scores,titles
-    
-    @staticmethod
-    def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
-        scores, titles = Utils.get_scores_from_corpus(composer, title)
-        notes_df = pd.DataFrame()
-        all_score_partnames = set()
-        all_score_partnumbers = set()
-        for i in range(len(scores)):
-            score = scores[i]
-            df,pnames,pnums = Utils.get_notes_for_score(score, partnames, partnumbers)
-            df['title'] = titles[i]
-            notes_df = notes_df.append(df)
-            all_score_partnames = all_score_partnames.union(pnames)
-            all_score_partnumbers = all_score_partnumbers.union(pnums)
-        return notes_df, all_score_partnames, all_score_partnumbers
     
     @staticmethod
     def show_measures(measures, how='text'):
@@ -473,7 +484,7 @@ class Utils(object):
             k = akey.asKey()
             p1 = k.getPitches()[0]
             p2 = key2.getPitches()[0]
-            if Utils.verbose > 0:
+            if Utils.verbose > 1:
                 print('transposition key pitches {}, {}'.format(p1.nameWithOctave,p2.nameWithOctave))
             intval.append(interval.Interval(noteStart = p1,noteEnd = p2))
         return intval
@@ -502,7 +513,7 @@ class Utils(object):
             # no need to transpose if the measures are already in the target_key
             #
             intval = transposition_intervals[i]
-            if Utils.verbose > 0:
+            if Utils.verbose > 1:
                 print(f"transposition interval: {intval}")
             if intval == target_key:
                 continue
@@ -536,7 +547,7 @@ class Utils(object):
         for p in parts:
             pname = p.partName
             if partnames is None or pname in partnames:
-                if Utils.verbose > 0:
+                if Utils.verbose > 1:
                     print('transpose {}'.format(pname))
                 tp = Utils.transpose_part(p, target_key=target_key, instruments=instruments, inPlace=inPlace)
                 new_score.append(tp)

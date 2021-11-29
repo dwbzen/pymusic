@@ -49,7 +49,7 @@ class MusicProducerRunner(object):
         #
         parser.add_argument("order", help="the order of the Markov Chain", type=int, choices=range(1,5))
         parser.add_argument("-s", "--source", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)", default=None)
-        parser.add_argument("-t", "--type", help="Source object type: note or interval", type=str, choices=['notes','intervals'], default='intervals')
+        parser.add_argument("-t", "--type", help="Source object type: notes or intervals", type=str, choices=['notes','intervals'], default='intervals')
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str, default=None)
         parser.add_argument("-f","--format", help="Save output format. Default is json", type=str, choices=['csv','json','xlsx'], default='json' )
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
@@ -59,7 +59,8 @@ class MusicProducerRunner(object):
         parser.add_argument("-c", "--chainFiles", help="Existing serialized MarkovChain and Durations files (--format type).",  type=str, default=None)
         
         parser.add_argument("--show", help="How to display resulting score", type=str, choices=['text','musicxml','midi'], default='musicxml')
-        parser.add_argument("--name", help="Name of resulting score, used to save to .musicxml file", type=str, default=None)
+        parser.add_argument("--name", help="Base name of generated files", type=str, default="MyScore")
+        parser.add_argument("--title", help="Title of the generated Score", type=str, default="MyScore")
         parser.add_argument("-n", "--num", help="Total number of measures per part to produce",  type=int, default=10)
         parser.add_argument("-v","--verbose", help="increase output verbosity", action="count", default=0)
         
@@ -67,11 +68,14 @@ class MusicProducerRunner(object):
                             type=str, action="extend", nargs="+", choices=music.Instruments.instrument_names,  default=None)
         parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)   
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
-        parser.add_argument("-k", "--key", help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
+        parser.add_argument("-k", "--key", \
+                            help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
          
         parser.add_argument("--seed", help="Initial seed, length must be equal to the order of source chain", type=str, default=None)
         parser.add_argument("--initial", help="choose initial seed only", action="store_true", default=False)
-        parser.add_argument("--recycle", help="How often to pick a new seed in terms of number of notes.", type=int, default=5)
+        parser.add_argument("--recycle", help="How often to pick a new seed in terms of number of notes/intervals.", type=int, default=5)
+        parser.add_argument("--trace", help="Show notes/intervals as they are produced", action="store_true", default=False)
+        parser.add_argument("--duration","-d", help="Specify fixed duration as a quarterLength.", type=float, default=None)
         args = parser.parse_args()
         markovChain = None
         if args.verbose > 0:
@@ -83,7 +87,7 @@ class MusicProducerRunner(object):
         collector = None
         if args.chainFiles is None and args.source is not None:
             #
-            # run the collector first to produce the MarkovChain
+            # run the appropriate collector first to produce the MarkovChains
             #
             if args.type.startswith('note'):
                 collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
@@ -102,7 +106,7 @@ class MusicProducerRunner(object):
             # use serialized MarkovChain and Durations files in JSON format as input
             file_list = []
             file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.format))
-            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', args.format))
+            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
 
             i = 0
             for chainFile in file_list:
@@ -115,22 +119,33 @@ class MusicProducerRunner(object):
                     print(f"{thepath} does not exist")
                     exit()
                 else:
-                    if args.format == 'json':
+                    if ext == 'json':
                         mc_df = pd.read_json(thepath, orient="index")
-                    elif args.format == 'csv':
+                    elif ext == 'csv':
                         mc_df = pd.read_csv(thepath)
+                        # need to reindex and then drop the KEY column
+                        new_index = mc_df['KEY']
+                        mc_df.index = new_index.values
+                        mc_df.drop(['KEY'],axis=1,inplace=True)
                     if i==0:
                         markovChain = common.MarkovChain(args.order, chain_df=mc_df)
                         i=i+1
                     else:
                         durationsChain = common.MarkovChain(args.order, chain_df=mc_df)
         
-        musicProducer = music.MusicProducer(args.order, markovChain, durationsChain, args.source, args.parts, args.produce, num=args.num, verbose=args.verbose, rand_seed=randomseed, producerType=args.type)
+        musicProducer = music.MusicProducer(
+            args.order, markovChain, durationsChain, \
+            args.source, args.parts, args.produce, \
+            num=args.num, verbose=args.verbose, \
+            rand_seed=randomseed, producerType=args.type )
+        
         musicProducer.show = args.show
         musicProducer.name = args.name
         musicProducer.recycle_seed_count = args.recycle
         musicProducer.initial = args.initial
         musicProducer.enforceRange = args.enforceRange
+        musicProducer.trace_mode = args.trace
+        musicProducer.fixed_duration = args.duration
         if args.key is not None:
             musicProducer.score_key = key.Key(args.key)
         #
@@ -148,5 +163,6 @@ class MusicProducerRunner(object):
                 
         theScore = musicProducer.produce()
         if theScore is not None:
+            theScore.metadata.title = args.title
             theScore.show(args.show)
             
