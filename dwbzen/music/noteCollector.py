@@ -39,6 +39,7 @@ class NoteCollector(MusicCollector):
     However the MusicProducer provides ways to reinsert an octave (for each part)
     when generating scores.
     
+    
     """
     
     initial_object = note.Note('C0')

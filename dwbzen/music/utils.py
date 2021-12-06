@@ -4,7 +4,6 @@ from music21 import note, clef, duration, metadata, key
 from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
-
 from music.instruments import Instruments
 
 import pandas as pd
@@ -262,10 +261,11 @@ class Utils(object):
             md = meta[i].metadata
             score = corpus.parse(meta[i])
             df,pnames,pnums = Utils.get_intervals_for_score(score, partnames, partnumbers)
-            df['title'] = md.title
-            intrvals_df = intrvals_df.append(df)
-            all_score_partnames = all_score_partnames.union(pnames)
-            all_score_partnumbers = all_score_partnumbers.union(pnums)
+            if len(df) > 0:
+                df['title'] = md.title
+                intrvals_df = intrvals_df.append(df)
+                all_score_partnames = all_score_partnames.union(pnames)
+                all_score_partnumbers = all_score_partnumbers.union(pnums)
         return intrvals_df, all_score_partnames, all_score_partnumbers
     
     @staticmethod
@@ -297,19 +297,33 @@ class Utils(object):
             measure.show(how)   # if None, displays in MuseScore
     
     @staticmethod
-    def show_intervals(df, what='name') -> pd.DataFrame:
-        int_string = str(df[what].values.tolist())
-        return int_string
+    def show_intervals(df, what='name') -> str:
+        int_string = ''
+        for ki in df[what].values.tolist():
+            int_string = int_string + str(ki) + ','
+        return int_string.rstrip(',')
     
     @staticmethod
-    def show_notes(df, what='name') -> pd.DataFrame:
-        note_string = str(df[what].values.tolist())
-        return note_string
+    def show_notes(df, what='name') -> str:
+        """Creates a stringified list of notes from a DataFrame
+            Args:
+                df - the source DataFrame
+                what - the column to select
+            For example, show_notes(notes_df, 'nameWithOctave'), len(notes_df)==2, would return
+            a string like 'F#4,C#5'
+        
+        """
+        notes_str = ''
+        for kn in df['nameWithOctave'].values.tolist():
+            notes_str = notes_str + kn + ','
+        return (notes_str.rstrip(','))
     
     @staticmethod
-    def show_durations(df, what='quarterLength'):
-        duration_string = str(df[what].values.tolist())
-        return duration_string
+    def show_durations(df, what='quarterLength') -> str:
+        duration_string = ''
+        for ds in df[what].values.tolist():
+            duration_string = duration_string + str(ds) + ','
+        return duration_string.rstrip(',')
     
     @staticmethod
     def note_info(note):

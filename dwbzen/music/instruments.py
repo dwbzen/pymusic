@@ -110,13 +110,17 @@ class Instruments(object):
         """Returns the number of steps a Note is for a given Instrument, 0 otherwise.
         
             Args:
-                instrument_name - the name of a supported Insturment
+                instrument_name - the name of a supported Instrument
                 note - the Note to test
             Returns:
                 0 if in range
                 if not in range, the #steps (semitones) the note is beyond the range.
                 If <0, the Note is below by that number of steps
                 If >0 the note is above by that number of steps
+            Note:
+                If note.octave is None, music21 assumes octave 4 for all notes.
+                So 'C' is treated as 'C4' with a pitch.ps value of 60.
+                and 'B' is treated as 'B4' with a pitch.ps value of 71.
         
         """
         steps_out_of_range = 0
@@ -130,37 +134,42 @@ class Instruments(object):
     
     def adjust_to_range(self, instrument_name:str, anote:note.Note, inPlace=False) -> note.Note:
         """Adjust the pitch of a Note if out of range.
-            If below the instrument range, the note is transposed up an octave.
-            If above the instrument range, the note is transposed down an octave.
+            If below the instrument range, the note is transposed up by the number of octaves needed to be back in range.
+            If above the instrument range, the note is transposed down by the number of octaves needed to be back in range.
         
             Args:
-                instrument_name - the name of a supported Insturment
-                note - the Note to test and possibly transpose
+                instrument_name - the name of a supported Instrument
+                anote - the Note to test and possibly transpose
+                inPlace - if True anote is transposed in place, else a new Note is returned and the original unchanged.
             Returns:
                 a new note that is in range. If inPlace is True, the note provided is transposed in place.
+                The original note is returned unchanged if already in range.
         
         """
         steps_out_of_range = self.check_range(instrument_name, anote)
         #
         # if the note is out of range for this part (instrument)
         # transpose up an octave is below the range, down an octave if above
-        if self.verbose > 0 and steps_out_of_range != 0:
-            print(f"newnote: {anote.nameWithOctave} out of range for {instrument_name}, by {steps_out_of_range} steps")
-        if steps_out_of_range <0:
-            tintval = interval.Interval('P8')
-        elif steps_out_of_range < 0:
-            tintval = interval.Interval('P-8')
+        if steps_out_of_range != 0:
+            if self.verbose > 0:
+                print(f"newnote: {anote.nameWithOctave} out of range for {instrument_name}, by {steps_out_of_range} steps")
+            
+            noctaves = 1 + ( (abs(steps_out_of_range)-1) // 12)
+            semitones = 12 * noctaves
+            if steps_out_of_range <0:
+                tintval = interval.Interval(semitones)
+            elif steps_out_of_range > 0:
+                tintval = interval.Interval(-semitones)
+            else:
+                tintval = interval.Interval(0)
+            #
+            # transpose does not return a value if inPlace == True
+            #
+            newnote = anote.transpose(tintval, inPlace=inPlace)
         else:
-            tintval = interval.Interval(0)
-        #
-        # transpose does not return a value if inPlace == True
-        #
-        if inPlace:
-            anote.transpose(tintval, inPlace=True)
-            return anote
-        else:
-            newnote = anote.transpose(tintval, inPlace=False)
-            return newnote
+            newnote = anote
+            
+        return newnote
     
 if __name__ == '__main__':
     print(Instruments.__doc__)

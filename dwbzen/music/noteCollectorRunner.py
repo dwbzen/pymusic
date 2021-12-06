@@ -23,7 +23,7 @@ class NoteCollectorRunner(common.Collector):
     
     if __name__ == '__main__':
         parser = argparse.ArgumentParser()
-        parser.add_argument("order", help="the order of the Markov Chain", type=int, choices=range(1,5))
+        parser.add_argument("--order", "-o", help="the order of the Markov Chain", type=int, choices=range(1,5))
         parser.add_argument("-s", "--source", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)")
         parser.add_argument("-v","--verbose", help="increase output verbosity", action="count", default=0)
         parser.add_argument("-n","--name", help="Name of resulting MarkovChain, used to save to file", type=str)

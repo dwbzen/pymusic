@@ -35,15 +35,15 @@ class IntervalCollector(MusicCollector):
     @staticmethod
     def initialize_initial_terminal_objects() -> (pd.DataFrame, pd.DataFrame):
         initial_dict = {'interval':IntervalCollector.initial_object, 'name':IntervalCollector.initial_object.name, 'directedName':IntervalCollector.initial_object.directedName,\
-                        'niceName':IntervalCollector.initial_object.niceName, 'semitones':IntervalCollector.initial_object.semitones, 'part_number':1, 'part_name':'rest'}
+                        'niceName':IntervalCollector.initial_object.niceName, 'semitones':IntervalCollector.initial_object.semitones, 'part_number':1, 'part_name':'initial'}
         terminal_dict = {'interval':IntervalCollector.terminal_object, 'name':IntervalCollector.terminal_object.name, 'directedName':IntervalCollector.terminal_object.directedName,\
-                        'niceName':IntervalCollector.terminal_object.niceName, 'semitones':IntervalCollector.terminal_object.semitones, 'part_number':1, 'part_name':'rest'}
+                        'niceName':IntervalCollector.terminal_object.niceName, 'semitones':IntervalCollector.terminal_object.semitones, 'part_number':1, 'part_name':'terminal'}
         initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
         terminal_object = pd.DataFrame(data=terminal_dict, index=[0])
         return initial_object, terminal_object
         
     def __repr__(self):
-        # this should return a serialized form 
+        # TODO: this should return a serialized form 
         return f"IntervalCollector {self.order}"
     
     def __str__(self):
@@ -66,7 +66,6 @@ class IntervalCollector(MusicCollector):
         else:
             if index_str not in self.counts_df.index:   # add a new row
                 self.counts_df.loc[index_str, col_str] = 1
-                # self.counts_df.loc[index_str, col_name] = 1
             else: # update existing index
                 if col_str in self.counts_df.columns:
                     self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]

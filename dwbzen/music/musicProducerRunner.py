@@ -47,28 +47,34 @@ class MusicProducerRunner(object):
         #
         # Collector arguments
         #
-        parser.add_argument("order", help="the order of the Markov Chain", type=int, choices=range(1,5))
-        parser.add_argument("-s", "--source", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)", default=None)
-        parser.add_argument("-t", "--type", help="Source object type: notes or intervals", type=str, choices=['notes','intervals'], default='intervals')
-        parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str, default=None)
-        parser.add_argument("-f","--format", help="Save output format. Default is json", type=str, choices=['csv','json','xlsx'], default='json' )
+        parser.add_argument("--order", "-o", help="the order of the Markov Chain", type=int, choices=range(1,5))
+        parser.add_argument("--source", "-s", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)", default=None)
+        parser.add_argument("--type", "-t", help="Source object type: notes or intervals", type=str, choices=['notes','intervals'], default='intervals')
+        parser.add_argument("--parts", "-p", help="part name(s) or number(s) to include in building the MarkovChain", type=str, default=None)
+        #
+        # mode only applies to 'notes' type
+        #
+        parser.add_argument("--mode", \
+                            help="Notes collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class)", \
+                            type=str, choices=['ap','dp', 'apc','dpc'], default='dp')
+        parser.add_argument("--format", "-f",help="Save output format. Default is json", type=str, choices=['csv','json','xlsx'], default='json' )
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         #
         # Producer arguments
         #
-        parser.add_argument("-c", "--chainFiles", help="Existing serialized MarkovChain and Durations files (--format type).",  type=str, default=None)
+        parser.add_argument("--chainFiles", "-c", help="Existing serialized MarkovChain and Durations files (--format type).",  type=str, default=None)
         
         parser.add_argument("--show", help="How to display resulting score", type=str, choices=['text','musicxml','midi'], default='musicxml')
         parser.add_argument("--name", help="Base name of generated files", type=str, default="MyScore")
         parser.add_argument("--title", help="Title of the generated Score", type=str, default="MyScore")
-        parser.add_argument("-n", "--num", help="Total number of measures per part to produce",  type=int, default=10)
-        parser.add_argument("-v","--verbose", help="increase output verbosity", action="count", default=0)
+        parser.add_argument("--measures", "-m",  help="Total number of measures per part to produce",  type=int, default=10)
+        parser.add_argument("--verbose", "-v", help="increase output verbosity", action="count", default=0)
         
         parser.add_argument("--produce", help="Comma-delimited list of Part name(s) to produce. A part name must also be a valid instrument name", \
                             type=str, action="extend", nargs="+", choices=music.Instruments.instrument_names,  default=None)
         parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)   
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
-        parser.add_argument("-k", "--key", \
+        parser.add_argument("--key", "-k", \
                             help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
          
         parser.add_argument("--seed", help="Initial seed, length must be equal to the order of source chain", type=str, default=None)
@@ -89,9 +95,9 @@ class MusicProducerRunner(object):
             #
             # run the appropriate collector first to produce the MarkovChains
             #
-            if args.type.startswith('note'):
-                collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
-            elif args.type.startswith('interval'):
+            if args.type== 'notes':
+                collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, collection_mode=args.mode )
+            elif args.type == 'intervals':
                 collector = music.IntervalCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
             
             collector.name = args.name
@@ -103,7 +109,7 @@ class MusicProducerRunner(object):
             markovChain = collector.markovChain
             durationsChain = collector.durationCollector.markovChain
         else:
-            # use serialized MarkovChain and Durations files in JSON format as input
+            # use serialized MarkovChain in specified format, and Durations files in csv format as input
             file_list = []
             file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.format))
             file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
@@ -136,7 +142,7 @@ class MusicProducerRunner(object):
         musicProducer = music.MusicProducer(
             args.order, markovChain, durationsChain, \
             args.source, args.parts, args.produce, \
-            num=args.num, verbose=args.verbose, \
+            num=args.measures, verbose=args.verbose, \
             rand_seed=randomseed, producerType=args.type )
         
         musicProducer.show = args.show
@@ -146,17 +152,18 @@ class MusicProducerRunner(object):
         musicProducer.enforceRange = args.enforceRange
         musicProducer.trace_mode = args.trace
         musicProducer.fixed_duration = args.duration
+        musicProducer.collection_mode = args.mode
         if args.key is not None:
             musicProducer.score_key = key.Key(args.key)
         #
         # order 2 examples:
-        #  --seed "-1, -2"  for intervals
-        #  --seed "-C4, D4" for notes 
+        #  --seed "-1,-2"  for intervals
+        #  --seed "-C4,D4" for notes (dp, ap) "C,D" for notes (dpc, apc)
         if args.seed is not None:
             musicProducer.set_seed(args.seed)
         
         #
-        # intervals producerType need a starting note for each Part
+        # intervals producerType needs starting note(s) for each Part
         #
         if args.type == 'intervals':
             musicProducer.add_part_notes(args.notes)
