@@ -9,6 +9,7 @@ from music.instruments import Instruments
 import pandas as pd
 import pathlib, random, copy
 from datetime import date
+from builtins import isinstance
 
 class Utils(object):
     """Music utilities
@@ -17,6 +18,7 @@ class Utils(object):
     
     verbose = 0
     C_Major = key.Key('C')
+    A_Minor = key.Key('a')
      
     @staticmethod
     def get_score(self, file_path:str) -> Score:
@@ -308,13 +310,13 @@ class Utils(object):
         """Creates a stringified list of notes from a DataFrame
             Args:
                 df - the source DataFrame
-                what - the column to select
+                what - the DataFrame column to select
             For example, show_notes(notes_df, 'nameWithOctave'), len(notes_df)==2, would return
             a string like 'F#4,C#5'
         
         """
         notes_str = ''
-        for kn in df['nameWithOctave'].values.tolist():
+        for kn in df[what].values.tolist():
             notes_str = notes_str + kn + ','
         return (notes_str.rstrip(','))
     
@@ -325,6 +327,18 @@ class Utils(object):
             duration_string = duration_string + str(ds) + ','
         return duration_string.rstrip(',')
     
+    @staticmethod
+    def to_string(alist:[int]) -> str:
+        """Stringifies an integer list.
+            For example [-2,3] --> "-2,3", because of str(alist) formatting
+            str([-2,3]) --> "['2', '3']"
+            
+        """
+        lstr = ''
+        for x in alist:
+            lstr = lstr + str(x) + ','
+        return lstr.rstrip(',')
+
     @staticmethod
     def note_info(note):
         dur = note.duration
@@ -492,23 +506,33 @@ class Utils(object):
         return key_sigs,measure_numbers
 
     @staticmethod
-    def get_transposition_intervals(keys:[key.Key], key2:key.Key=C_Major) -> [interval.Interval]:
+    def get_transposition_intervals(keys:[key.Key], key2:key.Key=C_Major, key2_minor:key.Key=A_Minor) -> [interval.Interval]:
         intval = []
+        p2 = None
         for akey in keys:
-            k = akey.asKey()
+            k = akey
+            if not isinstance(akey, key.Key):
+                k = akey.asKey()
             p1 = k.getPitches()[0]
-            p2 = key2.getPitches()[0]
+            if k.mode == 'major':
+                p2 = key2.getPitches()[0]
+            else:
+                p2 = key2_minor.getPitches()[0]
+                
             if Utils.verbose > 1:
                 print('transposition key pitches {}, {}'.format(p1.nameWithOctave,p2.nameWithOctave))
-            intval.append(interval.Interval(noteStart = p1,noteEnd = p2))
+            interval_p1p2 = interval.Interval(noteStart = p1,noteEnd = p2)
+            interval_p2p1 = interval.Interval(noteStart = p2,noteEnd = p1)
+            intval.append(interval_p1p2)
         return intval
     
     @staticmethod
-    def transpose_part(apart:Part, target_key=C_Major, instruments:Instruments=None, inPlace=False) -> Part:
+    def transpose_part(apart:Part, target_key=C_Major, target_key_minor=A_Minor, instruments:Instruments=None, inPlace=False) -> Part:
         """Transpose the notes in a given Part
             Args:
                 apart : a stream.Part instance
                 target_key : the transposition Key. Default is C-Major if not specified
+                target_key_minor : the transposition Key if original key is minor mode. Default is C-Minor if not specified
                 instruments - music.Instruments instance, if not None Part ranges are enforced after the transposition
                 inplace - if True, transpose in place. Otherwise transpose a copy
             Returns:
@@ -517,7 +541,7 @@ class Utils(object):
         """
         key_sigs,measure_numbers = Utils.get_keySignatures(apart)
         measure_numbers.append(len(apart))
-        transposition_intervals = Utils.get_transposition_intervals(key_sigs)
+        transposition_intervals = Utils.get_transposition_intervals(key_sigs, key2=target_key, key2_minor=target_key_minor)
         transposed_part = apart
         if not inPlace:     # transpose a copy of the Part
             transposed_part = copy.deepcopy(apart)
@@ -529,7 +553,7 @@ class Utils(object):
             intval = transposition_intervals[i]
             if Utils.verbose > 1:
                 print(f"transposition interval: {intval}")
-            if intval == target_key:
+            if intval.semitones == 0:
                 continue
             transposed_part.measures(measure_numbers[i], measure_numbers[i+1]-1).transpose(intval, inPlace=True)
         
@@ -543,7 +567,7 @@ class Utils(object):
         return transposed_part
     
     @staticmethod
-    def transpose_score(ascore:Score, target_key=C_Major,  partnames:[str]=None, instruments:Instruments=None, inPlace=False) -> Score:
+    def transpose_score(ascore:Score, target_key=C_Major, target_key_minor=A_Minor, partnames:[str]=None, instruments:Instruments=None, inPlace=False) -> Score:
         """Transpose an entire Score to a new Key
         
             Args:
@@ -563,7 +587,7 @@ class Utils(object):
             if partnames is None or pname in partnames:
                 if Utils.verbose > 1:
                     print('transpose {}'.format(pname))
-                tp = Utils.transpose_part(p, target_key=target_key, instruments=instruments, inPlace=inPlace)
+                tp = Utils.transpose_part(p, target_key=target_key, target_key_minor=target_key_minor, instruments=instruments, inPlace=inPlace)
                 new_score.append(tp)
         return new_score
 

@@ -76,8 +76,9 @@ class MusicProducerRunner(object):
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
         parser.add_argument("--key", "-k", \
                             help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
-         
-        parser.add_argument("--seed", help="Initial seed, length must be equal to the order of source chain", type=str, default=None)
+        
+        parser.add_argument("--seedNotes", help="Initial seed, number of args must be equal to the order of source chain", type=str, nargs='*', default=None)
+        parser.add_argument("--seedIntervals", help="Initial seed, number of args must be equal to the order of source chain", type=int, nargs='*', default=None)
         parser.add_argument("--initial", help="choose initial seed only", action="store_true", default=False)
         parser.add_argument("--recycle", help="How often to pick a new seed in terms of number of notes/intervals.", type=int, default=5)
         parser.add_argument("--trace", help="Show notes/intervals as they are produced", action="store_true", default=False)
@@ -157,10 +158,12 @@ class MusicProducerRunner(object):
             musicProducer.score_key = key.Key(args.key)
         #
         # order 2 examples:
-        #  --seed "-1,-2"  for intervals
-        #  --seed "-C4,D4" for notes (dp, ap) "C,D" for notes (dpc, apc)
-        if args.seed is not None:
-            musicProducer.set_seed(args.seed)
+        #  --seedIntervals -1 -2   for intervals
+        #  --seedNotes C4 D4   for notes (dp, ap) --seed C D   for notes (dpc, apc)
+        if args.seedIntervals is not None:
+            musicProducer.set_seed(args.seedIntervals, args.type)
+        if args.seedNotes is not None:
+            musicProducer.set_seed(args.seedNotes, args.type)
         
         #
         # intervals producerType needs starting note(s) for each Part

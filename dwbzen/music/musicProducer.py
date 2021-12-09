@@ -9,14 +9,14 @@
 # ------------------------------------------------------------------------------
 
 import music, common
+from music.utils import Utils
 import pandas as pd
 import random, math, sys
 from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 
 class MusicProducer(common.Producer):
     """Produce music from interval or notes MarkovChains
-    
-    TODO: consider making the dataframe keys a list (of intervals or notes, len=state_size) instead of a str of a list
+
     TODO: fix reading durations_chain in json format. Currenly the columns are interpreted as datetime values, should be int.
 
     """
@@ -108,9 +108,12 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         return self.initial_keys
 
     def get_seed(self, aseed=None):
-        if self.seed is None or aseed is None or len(self.raw_seed)!=self.order:
-            # no seed provided so pick one at random
-            if self.initial:
+        theseed = self.seed
+        if self.seed is None:
+            # no seed already exists, so use the aseed argument if it's not None or pick one at random
+            if aseed is not None:
+                theseed = aseed
+            elif self.initial:
                 # pick a seed that starts a Part
                 ind = random.randint(0, len(self.initial_keys)-1)
                 theseed = self.initial_keys.iloc[ind]
@@ -118,22 +121,30 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                 # pick any old seed from the chain's index
                 ind = random.randint(0, len(self.keys)-1)
                 theseed = self.keys.iloc[ind]
-            notes_list = theseed.strip("[]").replace(" ","").replace("'","").split(',')
-        else:
-            notes_list = aseed
-        return notes_list
+        return theseed
     
     def get_durations_seed(self):
             # pick any old seed from the durations chain's index
             return self.durationKeys[random.randint(0, len(self.durationKeys)-1)]
         
-    def set_seed(self, theseed):
-        if self.producerType == 'notes':
-            self.raw_seed = theseed.replace(" ","").replace("'","").split(',')
-        elif self.producerType == 'intervals':
-            self.raw_seed = [int(x) for x in theseed.split(',')]
-
-        self.seed = str(self.raw_seed).replace(' ','')
+    def set_seed(self, raw_seed, collector_type):
+        """Creates a seed for Notes or Intervals from a list
+            Arguments:
+                raw_seed - a [str] or [int] depending on collector_type
+                collector_type - 'notes' or 'intervals'
+            Returns:
+                For collector_type of notes, the input is a [str], for example: ['A4', 'G4'],
+                the result is a single string "A4,G4" in this case.
+                For collector_type of intervals, the input is a [int], for example [-2, -1]
+                the result is a single string, "-2,-1" in this case
+        
+        """
+        if collector_type == "intervals":
+            theseed = Utils.to_string(raw_seed)
+        elif collector_type == "notes":
+            theseed = ",".join(raw_seed)
+        
+        self.seed = theseed
         return self.seed
 
     def get_next_seed(self):
@@ -164,8 +175,6 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         next_token = None
         if self.trace_mode:
             print(f"get_next_object(seed): \"{seed}\"")
-            if " " in seed:
-                print("Invalid seed: {}".format(seed))
         if seed in self.key_values:
             row = self.chain_df.loc[seed]
             row_probs = row[row > 0].cumsum()
@@ -175,21 +184,16 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             prob = random.random()
             p = row_probs[row_probs> prob].iat[0]
             nt = row_probs[row_probs> prob].index[0]
-            #
-            # the reason for this odd code below is that 
-            # when reading a csv-formatted intervals chain file, the "-1" column
-            # is sometimes read as "-1.1"
-            # 
             
-            if self.producerType == 'intervals':
-                ns = [int(x) for x in seed[1:len(seed)-1].split(',')]
+            if self.producerType == 'intervals':    # intervals can only be integers (for now)
+                ns = [int(x) for x in seed.split(',')]
                 next_token = int(math.trunc(float(nt)))
             else:   # 'notes'
-                ns = seed.strip('[]').replace(" ","").replace("'","").split(',')
+                ns = seed.split(',')
                 next_token = nt
                 
             ns.append(next_token)
-            new_seed = str(ns[1:]).replace(' ', '')
+            new_seed =  Utils.to_string(ns[1:])
             if self.verbose > 1:
                 print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
         

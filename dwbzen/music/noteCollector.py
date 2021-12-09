@@ -62,9 +62,9 @@ class NoteCollector(MusicCollector):
         Utils.verbose = verbose
         
         self.pitch_class_mode = (collection_mode == 'dpc' or collection_mode == 'apc')
-        self.pitch_mode = not self.pitch_class_mode
+        self.pitch_mode =  (collection_mode == 'dp' or collection_mode == 'ap')
         self.diatonic = collection_mode.startswith('d')
-        self.absolute = not self.diatonic
+        self.absolute = collection_mode.startswith('a')
 
         #
         # collection_scores will reference self.scores if collection mode is absolute pitch or pitch class
@@ -182,7 +182,7 @@ class NoteCollector(MusicCollector):
                 self.scores.append(self.score)
                 self.number_of_scores = 1
                 if self.diatonic:
-                    # diatonic pitch or pitch class - transpose the score to C-Major
+                    # diatonic pitch or pitch class - transpose the score to C-Major or C-Minor
                     # and enforce instrument ranges if needed (if enforce_range is True)
                     #
                     self.transposed_score = Utils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
