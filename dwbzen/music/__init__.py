@@ -20,5 +20,5 @@ from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner
 from common import Collector
 from common import Producer
-from .utils import Utils
+from .musicUtils import MusicUtils
 from .instruments import Instruments

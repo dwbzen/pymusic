@@ -9,7 +9,7 @@
 # ------------------------------------------------------------------------------
 
 import music, common
-from music.utils import Utils
+from music.musicUtils import MusicUtils
 import pandas as pd
 import random, math, sys
 from music21 import note, clef, stream, interval, tempo, meter, key, metadata
@@ -140,7 +140,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         
         """
         if collector_type == "intervals":
-            theseed = Utils.to_string(raw_seed)
+            theseed = MusicUtils.to_string(raw_seed)
         elif collector_type == "notes":
             theseed = ",".join(raw_seed)
         
@@ -193,7 +193,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                 next_token = nt
                 
             ns.append(next_token)
-            new_seed =  Utils.to_string(ns[1:])
+            new_seed =  MusicUtils.to_string(ns[1:])
             if self.verbose > 1:
                 print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
         

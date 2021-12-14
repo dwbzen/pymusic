@@ -11,6 +11,8 @@
 
 import pathlib
 import json
+import math
+from datetime import datetime
 
 class Utils(object):
     
@@ -55,6 +57,24 @@ class Utils(object):
         parsed = json.loads(result)
         return json.dumps(parsed, indent=4)
     
+    @staticmethod
+    def time_since(base_date:datetime=datetime(2000, 1, 1, 0, 0),  end_date=datetime.now(), what='seconds') -> int:
+        """Gets the elapsed seconds or days between two given base date/datetime
+            Arguments:
+                base_date : the base date, default is 12:00 AM 2000-01-01
+                end_date : the ending date/datetime, default is now()
+                what : 'seconds' or 'days'
+            Returns:
+                The seconds or days since the base date to end_date as an integer
+            Note - useful in setting a random seed as in random.seed(time_since())
+        """
+        
+        delta = end_date-base_date
+        if what=='seconds':
+            return math.trunc(delta.total_seconds())
+        else:   # assume days
+            return delta.days
+        
     if __name__ == '__main__':
         print(Utils.__doc__)
     

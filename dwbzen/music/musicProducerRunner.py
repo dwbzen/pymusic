@@ -10,8 +10,7 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music
-import common
+import common, music
 import argparse
 import pandas as pd
 from music21 import key
@@ -88,7 +87,7 @@ class MusicProducerRunner(object):
         if args.verbose > 0:
             print('run ScoreProducer')
             print(args)
-        randomseed = music.Utils.get_timedelta()
+        randomseed = common.Utils.time_since()
         durationsChain = None
         markovChain = None
         collector = None

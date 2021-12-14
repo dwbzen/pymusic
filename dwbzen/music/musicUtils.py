@@ -11,7 +11,7 @@ import pathlib, random, copy
 from datetime import date
 from builtins import isinstance
 
-class Utils(object):
+class MusicUtils(object):
     """Music utilities
     
     """
@@ -23,7 +23,7 @@ class Utils(object):
     @staticmethod
     def get_score(self, file_path:str) -> Score:
         score = None
-        file_info = Utils.get_file_info(file_path)
+        file_info = MusicUtils.get_file_info(file_path)
         if file_info['exists']:
                 score = converter.parse(file_info['path_text'])
         return score
@@ -58,7 +58,7 @@ class Utils(object):
         for p in parts:
             pname = p.partName
             if partname is None or pname==partname:
-                pdict[pname] = Utils.get_part_intervals(p)
+                pdict[pname] = MusicUtils.get_part_intervals(p)
         return pdict
     
     @staticmethod
@@ -72,16 +72,16 @@ class Utils(object):
         for p in parts:
             pname = p.partName
             if partname is None or pname==partname:
-                notes = Utils.get_part_notes(p)
+                notes = MusicUtils.get_part_notes(p)
                 pdict[pname] = notes
         return pdict
 
     @staticmethod
     def get_music21_objects_for_score(classinfo, ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
         if classinfo is note.Note:
-            return Utils.get_notes_for_score(ascore, partnames, partnumbers)
+            return MusicUtils.get_notes_for_score(ascore, partnames, partnumbers)
         elif classinfo is interval.Interval:
-            return Utils.get_intervals_for_score(ascore, partnames, partnumbers)
+            return MusicUtils.get_intervals_for_score(ascore, partnames, partnumbers)
         else:
             raise TypeError
     
@@ -103,7 +103,7 @@ class Utils(object):
         Returns a 3-tuplet consisting of the intervals_df DataFrame,
         a [int] of part numbers, and a [str] of part names.
         """
-        pdict = Utils.get_score_intervals(ascore)
+        pdict = MusicUtils.get_score_intervals(ascore)
         intrvals_df = pd.DataFrame()
         part_number = 1
         df = None
@@ -152,7 +152,7 @@ class Utils(object):
         Returns a 3-tuple consisting of the notes_df DataFrame,
         an integer list of part numbers, and a str list of part names.
         """
-        pdict = Utils.get_score_notes(ascore)
+        pdict = MusicUtils.get_score_notes(ascore)
         notes_df = pd.DataFrame()
         df = None
         part_number = 1
@@ -232,21 +232,21 @@ class Utils(object):
     @staticmethod
     def get_all_score_music21_objects(classinfo, composer=None, title=None, partnames=None, partnumbers=None):
         if classinfo is note.Note:
-            return Utils.get_all_score_notes(composer, title, partnames, partnumbers)
+            return MusicUtils.get_all_score_notes(composer, title, partnames, partnumbers)
         elif classinfo is interval.Interval:
-            return Utils.get_all_score_intervals(composer, title, partnames, partnumbers)
+            return MusicUtils.get_all_score_intervals(composer, title, partnames, partnumbers)
         else:
             raise TypeError
 
     @staticmethod
     def get_all_score_notes(composer=None, title=None, partnames=None, partnumbers=None):
-        scores, titles = Utils.get_scores_from_corpus(composer, title)
+        scores, titles = MusicUtils.get_scores_from_corpus(composer, title)
         notes_df = pd.DataFrame()
         all_score_partnames = set()
         all_score_partnumbers = set()
         for i in range(len(scores)):
             score = scores[i]
-            df,pnames,pnums = Utils.get_notes_for_score(score, partnames, partnumbers)
+            df,pnames,pnums = MusicUtils.get_notes_for_score(score, partnames, partnumbers)
             df['title'] = titles[i]
             notes_df = notes_df.append(df)
             all_score_partnames = all_score_partnames.union(pnames)
@@ -255,14 +255,14 @@ class Utils(object):
             
     @staticmethod
     def get_all_score_intervals(composer=None, title=None, partnames=None, partnumbers=None):
-        meta = Utils.get_metadata_bundle(composer, title)
+        meta = MusicUtils.get_metadata_bundle(composer, title)
         intrvals_df = pd.DataFrame()
         all_score_partnames = set()
         all_score_partnumbers = set()
         for i in range(len(meta)):
             md = meta[i].metadata
             score = corpus.parse(meta[i])
-            df,pnames,pnums = Utils.get_intervals_for_score(score, partnames, partnumbers)
+            df,pnames,pnums = MusicUtils.get_intervals_for_score(score, partnames, partnumbers)
             if len(df) > 0:
                 df['title'] = md.title
                 intrvals_df = intrvals_df.append(df)
@@ -274,7 +274,7 @@ class Utils(object):
     def get_scores_from_corpus(composer=None, title=None):
         scores = []
         titles = []
-        meta = Utils.get_metadata_bundle(composer, title)
+        meta = MusicUtils.get_metadata_bundle(composer, title)
         for i in range(len(meta)):
             md = meta[i].metadata
             titles.append(md.title)
@@ -358,7 +358,7 @@ class Utils(object):
     
     @staticmethod
     def get_interval_stats(ascore, partnames=None, partnumbers=None):
-        int_df,pnames,pnums = Utils.get_intervals_for_score(ascore, partnames, partnumbers)
+        int_df,pnames,pnums = MusicUtils.get_intervals_for_score(ascore, partnames, partnumbers)
         int_df = int_df.groupby(by=['semitones']).count()[['interval']]
         int_df.rename(columns={'interval':'count'}, inplace=True)
         int_df.reset_index(inplace=True)       
@@ -519,7 +519,7 @@ class Utils(object):
             else:
                 p2 = key2_minor.getPitches()[0]
                 
-            if Utils.verbose > 1:
+            if MusicUtils.verbose > 1:
                 print('transposition key pitches {}, {}'.format(p1.nameWithOctave,p2.nameWithOctave))
             interval_p1p2 = interval.Interval(noteStart = p1,noteEnd = p2)
             interval_p2p1 = interval.Interval(noteStart = p2,noteEnd = p1)
@@ -539,9 +539,9 @@ class Utils(object):
                 A Part with the notes transposed as specified.
                 The Part argument is not modified if inPlace is False.
         """
-        key_sigs,measure_numbers = Utils.get_keySignatures(apart)
+        key_sigs,measure_numbers = MusicUtils.get_keySignatures(apart)
         measure_numbers.append(len(apart))
-        transposition_intervals = Utils.get_transposition_intervals(key_sigs, key2=target_key, key2_minor=target_key_minor)
+        transposition_intervals = MusicUtils.get_transposition_intervals(key_sigs, key2=target_key, key2_minor=target_key_minor)
         transposed_part = apart
         if not inPlace:     # transpose a copy of the Part
             transposed_part = copy.deepcopy(apart)
@@ -551,7 +551,7 @@ class Utils(object):
             # no need to transpose if the measures are already in the target_key
             #
             intval = transposition_intervals[i]
-            if Utils.verbose > 1:
+            if MusicUtils.verbose > 1:
                 print(f"transposition interval: {intval}")
             if intval.semitones == 0:
                 continue
@@ -585,11 +585,11 @@ class Utils(object):
         for p in parts:
             pname = p.partName
             if partnames is None or pname in partnames:
-                if Utils.verbose > 1:
+                if MusicUtils.verbose > 1:
                     print('transpose {}'.format(pname))
-                tp = Utils.transpose_part(p, target_key=target_key, target_key_minor=target_key_minor, instruments=instruments, inPlace=inPlace)
+                tp = MusicUtils.transpose_part(p, target_key=target_key, target_key_minor=target_key_minor, instruments=instruments, inPlace=inPlace)
                 new_score.append(tp)
         return new_score
 
-    if __name__ == '__main__':
-        print(Utils.__doc__)
+if __name__ == '__main__':
+    print(MusicUtils.__doc__)

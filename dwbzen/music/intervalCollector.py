@@ -11,7 +11,7 @@
 # ------------------------------------------------------------------------------
 
 from music import MusicCollector
-from music.utils import Utils
+from music.musicUtils import MusicUtils
 import common
 import pandas as pd
 from music21 import  interval, converter, corpus
@@ -53,7 +53,7 @@ class IntervalCollector(MusicCollector):
         return interval.Interval
     
     def process(self, key_intervals, next_interval):
-        index_str = Utils.show_intervals(key_intervals,'semitones')
+        index_str = MusicUtils.show_intervals(key_intervals,'semitones')
         col_str = str(next_interval.semitones)
         col_name = next_interval.interval.directedName
         
@@ -106,18 +106,18 @@ class IntervalCollector(MusicCollector):
                 elif st[0] == 'title':
                     title = st[1]
             self.intervals_df, self.score_partNames, self.score_partNumbers = \
-                Utils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title, partnames=self.part_names, partnumbers=self.part_numbers) 
+                MusicUtils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title, partnames=self.part_names, partnumbers=self.part_numbers) 
             if self.intervals_df is None or len(self.intervals_df) == 0:
                 result = False
         else:   # must be a single filename or path
-            file_info = Utils.get_file_info(source)
+            file_info = MusicUtils.get_file_info(source)
             if file_info['Path'].exists():
                 self.score = converter.parse(file_info['path_text'])
                 if self.verbose > 2:
                     print(self.score)
             if self.score is not None:
                 self.intervals_df, self.score_partNames, self.score_partNumbers = \
-                    Utils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
+                    MusicUtils.get_music21_objects_for_score(interval.Interval, self.score, self.part_names, self.part_numbers)
             else:
                 result = False
         return result
@@ -163,7 +163,7 @@ class IntervalCollector(MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
+        self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 6))
         self.markovChain.chain_df = self.chain_df
         
         if self.verbose > 1:
