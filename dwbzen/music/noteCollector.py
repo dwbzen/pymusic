@@ -160,8 +160,10 @@ class NoteCollector(MusicCollector):
                     notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, ascore, self.part_names, self.part_numbers)
                 
                 self.notes_df = self.notes_df.append(notesdf)
-                self.part_names.append(pnames)     # TODO fix this - part_names is a list, pnums is a set
-                self.part_numbers.append(pnums)
+                if len(pnames) > 0:
+                    self.score_partNames = self.score_partNames.union(pnames)
+                if len(pnums) > 0:
+                    self.score_partNumbers = self.score_partNumbers.union(pnums)
                 
             if self.notes_df is None or len(self.notes_df) == 0:
                 result = False

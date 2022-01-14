@@ -151,7 +151,7 @@ class Instruments(object):
         # if the note is out of range for this part (instrument)
         # transpose up an octave is below the range, down an octave if above
         if steps_out_of_range != 0:
-            if self.verbose > 0:
+            if self.verbose > 1:
                 print(f"newnote: {anote.nameWithOctave} out of range for {instrument_name}, by {steps_out_of_range} steps")
             
             noctaves = 1 + ( (abs(steps_out_of_range)-1) // 12)

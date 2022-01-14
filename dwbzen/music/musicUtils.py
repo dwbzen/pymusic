@@ -77,7 +77,7 @@ class MusicUtils(object):
         return pdict
 
     @staticmethod
-    def get_music21_objects_for_score(classinfo, ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_music21_objects_for_score(classinfo, ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,{str},{int}):
         if classinfo is note.Note:
             return MusicUtils.get_notes_for_score(ascore, partnames, partnumbers)
         elif classinfo is interval.Interval:
@@ -86,7 +86,7 @@ class MusicUtils(object):
             raise TypeError
     
     @staticmethod
-    def get_intervals_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_intervals_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,{str},{int}):
         """Get the intervals of specified Parts of a Score as a pandas.DataFrame
         
         DataFrame columns returned:
@@ -136,7 +136,7 @@ class MusicUtils(object):
     
 
     @staticmethod
-    def get_notes_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,[str],[int]):
+    def get_notes_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,{str},{int}):
         """Get the Notes of specified Parts from a score as a pandas.DataFrame
         
         DataFrame columns returned:

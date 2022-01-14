@@ -2,7 +2,7 @@
 	"Alto" : {
 		"module": "music21.instrument",
 		"class" : "Alto",
-		"range" : "E3,F5",
+		"range" : "G3,F5",
 		"pitchRange" : "52,77",
 		"clef"  : "Treble"
 	},
