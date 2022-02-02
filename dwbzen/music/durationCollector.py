@@ -50,14 +50,14 @@ class DurationCollector(MusicCollector):
     
     def process(self, key_durations, next_duration):
         index_str = MusicUtils.show_durations(key_durations)
-        col_str = next_duration.quarterLength   # str(next_duration.quarterLength)
+        col_str = next_duration.duration.quarterLengthNoTuplets   # str(next_duration.quarterLength)
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
         
         if len(self.counts_df) == 0:
             # initialize the counts DataFrame
             # self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[str(next_duration.quarterLength)] )
-            self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_duration.quarterLength] )
+            self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_duration.duration.quarterLengthNoTuplets] )
         
         else:
             if index_str not in self.counts_df.index:   # add a new row

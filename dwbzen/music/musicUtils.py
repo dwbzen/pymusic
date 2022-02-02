@@ -5,7 +5,7 @@ from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
 from music.instruments import Instruments
-
+import re
 import pandas as pd
 import pathlib, random, copy
 from datetime import date
@@ -13,12 +13,14 @@ from builtins import isinstance
 
 class MusicUtils(object):
     """Music utilities
+    TODO - the method names are confusing, like score_notes vs. notes_for_score etc. Need to refactor
     
     """
     
     verbose = 0
     C_Major = key.Key('C')
     A_Minor = key.Key('a')
+    default_pitch_map = {'Db':'C#', "D-":'C#', 'D#':'Eb', 'Gb':'F#', 'G-':'F#', 'Ab':'G#', 'A-':'G#', 'A#':'Bb' }
      
     @staticmethod
     def get_score(self, file_path:str) -> Score:
@@ -63,7 +65,7 @@ class MusicUtils(object):
     
     @staticmethod
     def get_score_notes(ascore:Score, partname:str=None) -> dict:
-        """Get the Notes for all Parts or the named part of a Score as a dict
+        """Get the Notes for all Parts or the named part of a Score as a dict with the part name as the key, and a [note.Note] as the value.
         
         Note that this does not return Rest or Chord objects
         """
@@ -88,6 +90,9 @@ class MusicUtils(object):
     @staticmethod
     def get_intervals_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,{str},{int}):
         """Get the intervals of specified Parts of a Score as a pandas.DataFrame
+        Arguments:
+            ascore - a Score instance
+            partnames - a list of part names to extract from Score. If None then intervals from all parts are extracted.
         
         DataFrame columns returned:
             interval  (interval.Interval)
@@ -109,6 +114,8 @@ class MusicUtils(object):
         df = None
         score_partnames = set()
         score_partnumbers = set()
+        if partnames is None:
+            partnames = list(pdict.keys())
         have_partnames = not ( partnames is None or len(partnames)==0)
         have_partnumbers = not (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers)
         for k in pdict.keys():  # part names
@@ -138,7 +145,11 @@ class MusicUtils(object):
     @staticmethod
     def get_notes_for_score(ascore:Score, partnames:[str]=None, partnumbers:[int]=None) ->  (pd.DataFrame,{str},{int}):
         """Get the Notes of specified Parts from a score as a pandas.DataFrame
-        
+        Arguments:
+            ascore - a Score instance
+            partnames - a list of part names to extract from Score. If None, no parts are extracted.
+                        If ['*'] (the default), then notes from all parts are extracted.
+                                
         DataFrame columns returned:
             part_name
             part_number
@@ -158,6 +169,8 @@ class MusicUtils(object):
         part_number = 1
         score_partnames = set()
         score_partnumbers = set()
+        if partnames is None:
+            partnames = list(pdict.keys())
         have_partnames = not ( partnames is None or len(partnames)==0)
         have_partnumbers = not (partnumbers is None or len(partnumbers)==0 or part_number in partnumbers)
         for k in pdict.keys():
@@ -203,7 +216,7 @@ class MusicUtils(object):
             durations_df['ordinal'] = [x.ordinal for x in notes_df['duration']]
             durations_df['dots'] = [x.dots for x in notes_df['duration']]
             durations_df['fullName'] = [x.fullName for x in notes_df['duration']]
-            durations_df['quarterLength'] = [x.quarterLength for x in notes_df['duration']]
+            durations_df['quarterLength'] = [x.quarterLengthNoTuplets for x in notes_df['duration']]
             durations_df['tuplets'] = [x.tuplets for x in notes_df['duration']]
         else:
             intervals_df = source_df
@@ -213,20 +226,31 @@ class MusicUtils(object):
             durations_df['ordinal'] = [x.duration.ordinal for x in intervals_df['note1']]
             durations_df['dots'] = [x.duration.dots for x in intervals_df['note1']]
             durations_df['fullName'] = [x.duration.fullName for x in intervals_df['note1']]
-            durations_df['quarterLength'] = [x.duration.quarterLength for x in intervals_df['note1']]
+            durations_df['quarterLength'] = [x.duration.quarterLengthNoTuplets for x in intervals_df['note1']]
             durations_df['tuplets'] = [x.duration.tuplets for x in intervals_df['note1']]
             durations_df.rename(columns={'note1':'note'}, inplace=True)
         return durations_df
     
     @staticmethod
     def get_metadata_bundle(composer:str=None, title:str=None) -> metadata.bundles.MetadataBundle:
+        """Gets a MetadataBundle for a composer and title.
+            Arguments:
+                composer - composer name, can be None
+                title - a regular expression string used to do a title search.
+            If title is just a string (no re characters) it will do an exact match.
+            For example, to search for all Bach's works (in the corpus) that starts with "bwv1"
+            specify get_metadata_bundle(composer='bach', title='^bwv1+')
+        
+        """
         meta = None
+        if title is not None:
+            titles_re = re.compile(title, re.IGNORECASE)
         if composer is not None:
             meta = corpus.search(composer,'composer')
             if title is not None:
-                meta = meta.intersection(corpus.search(title,'title'))
+                meta = meta.intersection(corpus.search(titles_re,'title'))
         elif title is not None:
-            meta = corpus.search(title,'title')
+            meta = corpus.search(titles_re,'title')
         return meta
     
     @staticmethod
@@ -261,6 +285,8 @@ class MusicUtils(object):
         all_score_partnumbers = set()
         for i in range(len(meta)):
             md = meta[i].metadata
+            if MusicUtils.verbose > 0:
+                    print(f"working on {md.title}")
             score = corpus.parse(meta[i])
             df,pnames,pnums = MusicUtils.get_intervals_for_score(score, partnames, partnumbers)
             if len(df) > 0:
@@ -506,6 +532,64 @@ class MusicUtils(object):
         return key_sigs,measure_numbers
 
     @staticmethod
+    def adjust_accidental(aNote:note.Note, preference:object=default_pitch_map, inPlace=True) -> note.Note:
+        adjusted_note = aNote
+        if not inPlace:
+            adjusted_note = copy.deepcopy(aNote)
+        if isinstance(preference, dict):
+            keys = preference.keys()
+
+        p = adjusted_note.pitch.simplifyEnharmonic()
+        if p.accidental is None:
+            accidental = 'natural'
+        else:
+            accidental = p.accidental.name
+        if isinstance(preference, dict):
+            if p.name in keys:
+                p = p.getEnharmonic()
+        elif preference=='sharp' and 'flat' in accidental:
+                p = p.getEnharmonic()
+        elif preference=='flat'  and 'sharp' in accidental:
+                p = p.getEnharmonic()
+        adjusted_note.pitch = p
+        
+        return adjusted_note
+                
+    @staticmethod
+    def adjust_accidentals(apart: Part, preference:object=default_pitch_map, inPlace=True) -> Part:
+        """Adjusts the accidentals on all notes in a given Part.
+            Arguments:
+                apart - a music21.stream.Part instance which can be the entire part, or measures()
+                preference - "sharp", "flat" or dict() of pitch mappings. Default is default_pitch_map:
+                             {'Db':'C#', "D-":'C#', 'D#':'Eb', 'Gb':'F#', 'G-':'F#', 'Ab':'G#', 'A-':'G#', 'A#':'Bb' }
+                inPlace - if True changes are applied to the Part argument
+            Returns:
+                The adjusted Part
+        """
+        adjusted_part = apart
+        if not inPlace:
+            adjusted_part = copy.deepcopy(apart)
+        part_notes = MusicUtils.get_part_notes(adjusted_part)
+
+        for aNote in part_notes:
+            aNote = MusicUtils.adjust_accidental(aNote, preference, inPlace=True)
+        return adjusted_part
+
+    @staticmethod
+    def adjust_score_accidentals(ascore:Score, preference:object=default_pitch_map, partnames:[str]=None, inPlace=True) -> Score:
+        """Adjusts the accidentals on all notes in a given score for specified part names
+        
+        """
+        parts = ascore.getElementsByClass(Part)
+        new_score = Score()
+        for apart in parts:
+            pname = apart.partName
+            if partnames is None or pname in partnames:
+                tp = MusicUtils.adjust_accidentals(apart, preference, inPlace)
+                new_score.append(tp)
+        return new_score
+    
+    @staticmethod
     def get_transposition_intervals(keys:[key.Key], key2:key.Key=C_Major, key2_minor:key.Key=A_Minor) -> [interval.Interval]:
         intval = []
         p2 = None
@@ -519,22 +603,25 @@ class MusicUtils(object):
             else:
                 p2 = key2_minor.getPitches()[0]
                 
-            if MusicUtils.verbose > 1:
-                print('transposition key pitches {}, {}'.format(p1.nameWithOctave,p2.nameWithOctave))
             interval_p1p2 = interval.Interval(noteStart = p1,noteEnd = p2)
-            interval_p2p1 = interval.Interval(noteStart = p2,noteEnd = p1)
+            if abs(interval_p1p2.semitones) > 6:
+                interval_p1p2 = interval_p1p2.complement
+            if MusicUtils.verbose > 1:
+                print('transposition key pitches {}, {} intervals p1p2 {}'.format(p1.nameWithOctave,p2.nameWithOctave, interval_p1p2.semitones))
             intval.append(interval_p1p2)
         return intval
     
     @staticmethod
-    def transpose_part(apart:Part, target_key=C_Major, target_key_minor=A_Minor, instruments:Instruments=None, inPlace=False) -> Part:
+    def transpose_part(apart:Part, target_key=C_Major, target_key_minor=A_Minor, \
+                       instruments:Instruments=None, inPlace=False, adjustAccidentals=True) -> Part:
         """Transpose the notes in a given Part
             Args:
                 apart : a stream.Part instance
                 target_key : the transposition Key. Default is C-Major if not specified
-                target_key_minor : the transposition Key if original key is minor mode. Default is C-Minor if not specified
+                target_key_minor : the transposition Key if original key is minor mode. Default is A-Minor if not specified
                 instruments - music.Instruments instance, if not None Part ranges are enforced after the transposition
-                inplace - if True, transpose in place. Otherwise transpose a copy
+                inPlace - if True, transpose in place. Otherwise transpose a copy
+                adjustAccidentals - if True (the default) adjust all accidentals according to the caller's preference
             Returns:
                 A Part with the notes transposed as specified.
                 The Part argument is not modified if inPlace is False.
@@ -549,13 +636,16 @@ class MusicUtils(object):
         for i in range(len(transposition_intervals)):
             #
             # no need to transpose if the measures are already in the target_key
+            # but still need to adjust accidentals
             #
             intval = transposition_intervals[i]
             if MusicUtils.verbose > 1:
                 print(f"transposition interval: {intval}")
-            if intval.semitones == 0:
-                continue
-            transposed_part.measures(measure_numbers[i], measure_numbers[i+1]-1).transpose(intval, inPlace=True)
+            part_measures = transposed_part.measures(measure_numbers[i], measure_numbers[i+1]-1)
+            if intval.semitones != 0:
+                part_measures.transpose(intval, inPlace=True)
+            if adjustAccidentals:
+                MusicUtils.adjust_accidentals(part_measures)   # use defaults for preference and inPlace (True)
         
         if instruments is not None:
             #
@@ -567,7 +657,8 @@ class MusicUtils(object):
         return transposed_part
     
     @staticmethod
-    def transpose_score(ascore:Score, target_key=C_Major, target_key_minor=A_Minor, partnames:[str]=None, instruments:Instruments=None, inPlace=False) -> Score:
+    def transpose_score(ascore:Score, target_key=C_Major, target_key_minor=A_Minor, partnames:[str]=None, \
+                        instruments:Instruments=None, inPlace=False, adjustAccidentals=True) -> Score:
         """Transpose an entire Score to a new Key
         
             Args:
@@ -587,7 +678,8 @@ class MusicUtils(object):
             if partnames is None or pname in partnames:
                 if MusicUtils.verbose > 1:
                     print('transpose {}'.format(pname))
-                tp = MusicUtils.transpose_part(p, target_key=target_key, target_key_minor=target_key_minor, instruments=instruments, inPlace=inPlace)
+                tp = MusicUtils.transpose_part(p, target_key=target_key, target_key_minor=target_key_minor, \
+                                               instruments=instruments, inPlace=inPlace, adjustAccidentals=adjustAccidentals)
                 new_score.append(tp)
         return new_score
 

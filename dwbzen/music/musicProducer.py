@@ -214,8 +214,8 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         """
         new_seed = None
         next_token = None
-        if self.verbose > 2:
-            print(f"get_next_object(seed): '{seed}'")
+        if self.trace_mode:
+            print(f"get_next_durations_object(seed): \"{seed}\"")
         if self.fixed_duration is not None:
             next_token = self.fixed_duration
             new_seed = seed
@@ -229,9 +229,10 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                 prob = random.random()
                 p = row_probs[row_probs> prob].iat[0]
                 next_token = row_probs[row_probs> prob].index[0]
-                ns = [float(x) for x in seed[1:len(seed)-1].split(',')]
+                ns = [float(x) for x in seed.split(',')]
                 ns.append(next_token)
                 new_seed = str(ns[1:]).replace(' ', '')
+                new_seed = new_seed[1:len(new_seed)-1]   # drop the []
                 if self.verbose > 1:
                     print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
                     

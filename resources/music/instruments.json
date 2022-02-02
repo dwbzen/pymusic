@@ -99,8 +99,11 @@
 	"Tenor" : {
 		"module": "music21.instrument",
 		"class" : "Tenor",
-		"range" : "C3,C5",
-		"pitchRange" : "48,72",
-		"clef"  : "Bass"
+		"range" : "C4,C6",
+		"pitchRange" : "60,84",
+		"clef"  : "Treble8vb",
+		"transposeDiatonic" : "-12",
+		"transposeChromatic" : "-12",
+		"transposeText" : "Sounds an octave lower than written"
 	}	
 }

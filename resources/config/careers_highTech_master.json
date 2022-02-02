@@ -1,0 +1,11 @@
+{
+	"Game Name" : "Careers Hi-Tech Edition",
+	"version" : "1.0",
+	"Help" : "Rule Book v2 booklet.pdf",
+	"Game Parameters" : "gameParameters.json",
+	"Opportunity Cards" : "opportunityCards.json",
+	"Experience Cards" : "experienceCards.json",
+	"Occupations" : "occupations.json",
+	"Border Squares" : "borderSquares.json",
+	"Rules" : "rules.json"
+}

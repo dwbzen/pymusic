@@ -49,8 +49,8 @@ class NoteCollector(MusicCollector):
         super().__init__(state_size, verbose, source, parts)
         self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
         self.markovChain.collector = NoteCollector
-        self.countsFileName = '_noteCounts_' + collection_mode
-        self.chainFileName = '_notesChain_' + collection_mode
+        self.countsFileName = '_noteCounts_' + collection_mode + '_0{}'.format(state_size)
+        self.chainFileName = '_notesChain_' + collection_mode + '_0{}'.format(state_size)
         self.notes_df_fileName = '_notes_df'       # self.notes_df saved if verbose > 0
         self.notes_df = pd.DataFrame()
         self.collection_mode = collection_mode      # default is absolute pitch
@@ -130,9 +130,9 @@ class NoteCollector(MusicCollector):
         if 'composer' in source or 'title' in source:
             #
             # search the corpus for multiple scores
-            # for example: "composer=bach,title=bwv248*"
+            # for example: "composer=bach,title=^bwv4+"
             #
-            search_string = source.split(",")
+            search_string = source.split(",", maxsplit=1)    # title can be a regular expression with embedded commas
             for ss in search_string:
                 st = ss.split('=')
                 if st[0] == 'composer':
@@ -155,10 +155,15 @@ class NoteCollector(MusicCollector):
                     notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
                 else:
                     #
-                    # absolute pitch/pitch class - no transposition required
+                    # absolute pitch/pitch class  no transposition, but still need to adjust_accidentals
                     #
-                    notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, ascore, self.part_names, self.part_numbers)
+                    transposed_score = MusicUtils.adjust_score_accidentals(ascore, partnames=self.part_names, inPlace=False)
+                    self.transposed_scores.append(transposed_score)
+                    notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
                 
+                if self.verbose > 2 and len(notesdf)>0 and 3 in notesdf['pitchClass']:  # temporary debugging code
+                    print(notesdf[notesdf['pitchClass']==3][['part_name','pitch']])
+                    
                 self.notes_df = self.notes_df.append(notesdf)
                 if len(pnames) > 0:
                     self.score_partNames = self.score_partNames.union(pnames)
@@ -179,12 +184,12 @@ class NoteCollector(MusicCollector):
                 if file_info['Path'].exists():
                     self.score = converter.parse(file_info['path_text'])
                     if self.verbose > 2:
-                        print(self.score)
+                        self.score.show()
             if self.score is not None:
                 self.scores.append(self.score)
                 self.number_of_scores = 1
                 if self.diatonic:
-                    # diatonic pitch or pitch class - transpose the score to C-Major or C-Minor
+                    # diatonic pitch - transpose the score to C-Major or C-Minor
                     # and enforce instrument ranges if needed (if enforce_range is True)
                     #
                     self.transposed_score = MusicUtils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)

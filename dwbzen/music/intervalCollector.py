@@ -27,8 +27,8 @@ class IntervalCollector(MusicCollector):
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source, parts)
         self.initial_object, self.terminal_object = IntervalCollector.initialize_initial_terminal_objects()
-        self.markovChain.collector = IntervalCollector        self.countsFileName = '_intervalCounts'
-        self.chainFileName = '_intervalsChain'
+        self.markovChain.collector = IntervalCollector        self.countsFileName = '_intervalCounts' + '_0{}'.format(state_size)
+        self.chainFileName = '_intervalsChain' + '_0{}'.format(state_size)
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
     
@@ -105,6 +105,7 @@ class IntervalCollector(MusicCollector):
                     composer = st[1]
                 elif st[0] == 'title':
                     title = st[1]
+            MusicUtils.verbose = self.verbose
             self.intervals_df, self.score_partNames, self.score_partNumbers = \
                 MusicUtils.get_all_score_music21_objects(interval.Interval, composer=composer, title=title, partnames=self.part_names, partnumbers=self.part_numbers) 
             if self.intervals_df is None or len(self.intervals_df) == 0:

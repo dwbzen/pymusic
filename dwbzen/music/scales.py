@@ -7,7 +7,7 @@
 # Copyright:    Copyright (c) 2021 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
-from music import Scale
+import music
 import argparse
 import json
 import pandas as pd
@@ -95,7 +95,7 @@ class Scales(object):
         self.scales = self.data['scales']
         for s in self.scales:
             self.scale_names.append(s['name'])
-            self.scale[s['name']] = Scale(s)
+            self.scale[s['name']] = music.Scale(s)
 
     def __iter__(self):
         """ Iterate over the scales

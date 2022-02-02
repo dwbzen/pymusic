@@ -168,7 +168,7 @@ class Instruments(object):
             newnote = anote.transpose(tintval, inPlace=inPlace)
         else:
             newnote = anote
-            
+
         return newnote
     
 if __name__ == '__main__':
