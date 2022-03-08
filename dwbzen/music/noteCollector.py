@@ -51,7 +51,7 @@ class NoteCollector(MusicCollector):
         self.markovChain.collector = NoteCollector
         self.countsFileName = '_noteCounts_' + collection_mode + '_0{}'.format(state_size)
         self.chainFileName = '_notesChain_' + collection_mode + '_0{}'.format(state_size)
-        self.notes_df_fileName = '_notes_df'       # self.notes_df saved if verbose > 0
+        self.notes_df_fileName = '_notes_df'        # self.notes_df saved
         self.notes_df = pd.DataFrame()
         self.collection_mode = collection_mode      # default is absolute pitch
         self.enforce_range = enforce_range          # applies only to dp and dpc collection modes
@@ -251,11 +251,10 @@ class NoteCollector(MusicCollector):
         Returns MarkovChain result
         """
         
-        if self.verbose > 0:
-            filename = "{}/{}{}.csv".format(self.save_folder, self.name, self.notes_df_fileName)
-            notes_dfx = self.notes_df[['name','nameWithOctave','pitchClass']]
-            notes_dfx.to_csv(path_or_buf=filename)
-            print(f"notes: {filename}")
+        filename = "{}/{}{}.csv".format(self.save_folder, self.name, self.notes_df_fileName)
+        self.notes_df.to_csv(path_or_buf=filename)
+        print(f"notes: {filename}")
+        
         for pname in self.score_partNames:
 
             partNotes_df = self.notes_df[self.notes_df['part_name']==pname]
@@ -311,7 +310,7 @@ class NoteCollector(MusicCollector):
             # optionally save notes_df as .csv
             #
             filename = "{}/{}_notes.{}".format(self.save_folder, self.name, "csv")
-            df = self.notes_df[['name','nameWithOctave','pitchClass','part_name','part_number']]
+            df = self.notes_df[['name','nameWithOctave','pitchClass','part_name','part_number','quarterLength']]
             df.to_csv(filename)
         return save_result
     

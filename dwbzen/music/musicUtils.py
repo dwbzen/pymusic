@@ -187,8 +187,13 @@ class MusicUtils(object):
             notes_df['name'] = [x.name for x in notes_df['note']]
             notes_df['nameWithOctave'] = [x.nameWithOctave for x in notes_df['note']]
             notes_df['pitch'] = [x.pitch for x in notes_df['note']]
-            notes_df['duration'] = [x.duration for x in notes_df['note']]
             notes_df['pitchClass'] = [x.pitch.pitchClass for x in notes_df['note']]
+            notes_df['duration'] = [x.duration for x in notes_df['note']]
+            notes_df['type'] = [x.duration.type for x in notes_df['note']]
+            notes_df['ordinal'] = [x.duration.ordinal for x in notes_df['note']]
+            notes_df['quarterLength'] = [x.duration.quarterLength for x in notes_df['note']]
+            notes_df['quarterLengthNoTuplets'] = [x.duration.quarterLengthNoTuplets for x in notes_df['note']]
+            
             notes_df.reset_index(drop=True, inplace=True)       # make sure index is unique
         return notes_df, score_partnames, score_partnumbers
     
@@ -369,17 +374,15 @@ class MusicUtils(object):
     def note_info(note):
         dur = note.duration
         if note.isRest:
-            info = f'name: {note.name}, fullName: {note.fullName}, type: {dur.type}, dots: {dur.dots},\
-            quarterLength: {dur.quarterLength}'
+            info = f'name: {note.name}, fullName: {note.fullName}, type: {dur.type}, dots: {dur.dots}, quarterLength: {dur.quarterLength}'
         else:
-            info = f'{note.nameWithOctave}, type: {dur.type}, dots: {dur.dots},\
-            fullName: {dur.fullName}, quarterLength: {dur.quarterLength}, tuplets: {dur.tuplets}'
+            info = f'{note.nameWithOctave}, type: {dur.type}, dots: {dur.dots}, fullName: {dur.fullName}, quarterLength: {dur.quarterLength}, tuplets: {dur.tuplets}'
         return info
 
     @staticmethod
     def duration_info(dur) -> duration.Duration:
         info = f'type: {dur.type}, ordinal: {dur.ordinal}, dots: {dur.dots}, fullName: {dur.fullName}, \
-        quarterLength {dur.quarterLength}, tuplets: {dur.tuplets}'
+        quarterLength {dur.quarterLength}, quarterLengthNoTuplets {dur.quarterLengthNoTuplets}, tuplets: {dur.tuplets}'
         return info
     
     @staticmethod
@@ -445,6 +448,22 @@ class MusicUtils(object):
             notes.append(note.Note(ps=ps, quarterLength=dur))
         part.append(notes)
         return part
+    
+    @staticmethod
+    def random_score(partnames:[str] = ['Soprano','Alto','Tenor','Bass'], length:int=20, min_duration:float=0.5, scale_name=None) -> Score:
+        score_instruments = []
+        score = Score()
+        instruments_info = Instruments()
+        instruments_pd = instruments_info.instruments_pd
+        for pn in partnames:
+            part_instrument = instruments_pd.loc[pn].instance
+            score_instruments.append(part_instrument)
+            pitch_range = instruments_pd.loc[pn]['range_ps']
+            clef_name = instruments_pd.loc[pn]['clef']
+            clef = instruments_info.clefs_pd.loc[clef_name]['instance']
+            part = MusicUtils.random_part(pitch_range[0], pitch_range[1], length, min_duration, clef, instrument=part_instrument)
+            score.append(part)
+        return score
     
     @staticmethod
     def get_file_info(cpath:str, def_extension:str='mxl') -> dict:
