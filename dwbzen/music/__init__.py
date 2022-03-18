@@ -4,6 +4,11 @@ from .__version__ import __title__, __description__, __version__
 from .__version__ import __author__, __author_email__, __license__
 from .__version__ import __copyright__
 
+from common import Collector
+from common import Producer
+from common import RuleSet
+from common import SubstitutionSystem
+
 from .song import Song
 from .keys import Keys
 from .scale  import Scale
@@ -18,7 +23,10 @@ from .intervalCollectorRunner import IntervalCollectorRunner
 from .noteCollectorRunner import NoteCollectorRunner
 from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner
-from common import Collector
-from common import Producer
 from .musicUtils import MusicUtils
 from .instruments import Instruments
+from .musicScale import MusicScale
+from .musicSubstitutionSystem import MusicSubstitutionSystem
+from .musicSubstitutionRules import MusicSubstitutionRules
+from .scoreGen import ScoreGen
+from .scoreGenRunner import ScoreGenRunner

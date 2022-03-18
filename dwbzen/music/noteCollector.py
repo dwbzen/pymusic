@@ -149,6 +149,8 @@ class NoteCollector(MusicCollector):
                 if self.diatonic:
                     #
                     # transpose the score if collection mode is diatonic
+                    # default target key of C-Major  or A-minor is used
+                    # based on the mode (major or minor) of the original Key
                     #                    
                     transposed_score = MusicUtils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(transposed_score)
