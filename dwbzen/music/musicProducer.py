@@ -17,7 +17,7 @@ from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 class MusicProducer(common.Producer):
     """Produce music from interval or notes MarkovChains
 
-    TODO: fix reading durations_chain in json format. Currenly the columns are interpreted as datetime values, should be int.
+    TODO: fix reading durations_chain in json format. Currently the columns are interpreted as datetime values, should be int.
 
     """
 
@@ -55,7 +55,7 @@ class MusicProducer(common.Producer):
         # for producerType of 'notes' need to have the collection mode (dp, dpc, ap, apc)
         #
         self.collection_mode = None
-        self.tempo = tempo.MetronomeMark(number=100, referent=note.Note(type='quarter'))
+        self.tempo = tempo.MetronomeMark(number=80, referent=note.Note(type='quarter'))
         self.timeSignature = meter.TimeSignature('4/4')
         self.num_measures = self.num        # number of measures to produce
         self.enforceRange = False           # force instruments to their range

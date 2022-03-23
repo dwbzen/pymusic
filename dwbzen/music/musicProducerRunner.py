@@ -111,7 +111,8 @@ class MusicProducerRunner(object):
         else:
             # use serialized MarkovChain in specified format, and Durations files in csv format as input
             file_list = []
-            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.format))
+            order = f'0{args.order}'
+            file_list.append('{}/{}_{}Chain_{}_{}.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.mode, order, args.format))
             file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
 
             i = 0
