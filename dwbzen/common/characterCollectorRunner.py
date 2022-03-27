@@ -10,10 +10,11 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
+from .collector import Collector
+from .characterCollector import CharacterCollector
 import argparse
 
-class CharacterCollectorRunner(common.Collector):
+class CharacterCollectorRunner(Collector):
     
     if __name__ == '__main__':
         parser = argparse.ArgumentParser()
@@ -31,7 +32,7 @@ class CharacterCollectorRunner(common.Collector):
             print('run CharacterCollector')
             print(args)
             
-        collector = common.CharacterCollector(state_size = args.order, verbose=args.verbose, source=args.source, text=args.text, ignoreCase=args.ignoreCase)
+        collector = CharacterCollector(state_size = args.order, verbose=args.verbose, source=args.source, text=args.text, ignoreCase=args.ignoreCase)
         collector.name = args.name
         collector.format = args.format
         collector.sort_chain = args.sort

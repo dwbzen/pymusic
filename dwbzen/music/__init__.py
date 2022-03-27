@@ -4,12 +4,33 @@ from .__version__ import __title__, __description__, __version__
 from .__version__ import __author__, __author_email__, __license__
 from .__version__ import __copyright__
 
-from common import Collector
-from common import Producer
-from common import RuleSet
-from common import SubstitutionSystem
 
-from .song import Song
+__all__ = [
+    'chord', 
+    'chords', 
+    'durationCollector', 
+    'instruments', 
+    'intervalCollector',
+    'intervalCollectorRunner',
+    'keys',
+    'musicCollector',
+    'musicProducer',
+    'musicProducerRunner',
+    'musicScale',
+    'musicSubstitutionRules',
+    'musicSubstitutionSystem',
+    'musicUtils',
+    'noteCollector',
+    'noteCollectorRunner',
+    'sample_usage',
+    'scale',
+    'scales',
+    'scoreGen',
+    'scoreGenRunner',
+    'song'
+]
+
+from music.song import Song
 from .keys import Keys
 from .scale  import Scale
 from .scales import Scales

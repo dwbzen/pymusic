@@ -15,7 +15,7 @@ requirements = [
 
 setup(
     name="dwbzen",
-    version="0.1.0",
+    version="0.1.1",
     author="Don Bacon",
     author_email="dwbzen@gmail.com",
     description="Music and Math package including MarkovChain generation from text and music source, and production",
@@ -33,8 +33,8 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT",
         "Operating System :: OS Independent",
-	    "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+	    "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     python_requires='>=3.8',
     zip_safe=False,

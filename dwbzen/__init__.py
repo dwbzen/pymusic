@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+
 import sys
 minPythonVersion = (3, 9)
 minPythonVersionStr = '.'.join([str(x) for x in minPythonVersion])
@@ -6,8 +8,6 @@ minPythonVersionStr = '.'.join([str(x) for x in minPythonVersion])
 del sys
 del minPythonVersion
 del minPythonVersionStr
-
-from __future__ import absolute_import
 
 __author__ = "Donald Bacon"
 __version__ = "0.1.1"
@@ -31,4 +31,5 @@ __all__ = [
 # -----------------------------------------------------------------------------
 # this brings all of our own __all__ names into the dwbzen package namespace
 # pylint: disable=wildcard-import
-# from dwbzen import *
+from dwbzen import *
+
