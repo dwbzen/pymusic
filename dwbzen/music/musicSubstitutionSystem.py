@@ -70,7 +70,7 @@ class MusicSubstitutionSystem(SubstitutionSystem):
         
         substitution_rules = {\
             r'(?P<interval>[+-]?0)/(?P<duration>\d+\.\d+)':['0/0.5', '+1/1.0', '-2/1.0', '+1/2.0'], \
-            r'(?P<interval>[+-]?1)/(?P<duration>\d+\.\d+)' : ['0/1.0', '1/0.5']        }
+            r'(?P<interval>[+-]?1)/(?P<duration>\d+\.\d+)' : ['0/1.0', '1/0.5', '2/1.0']        }
         command_rules = {'interval' : music.MusicSubstitutionRules.interval_rule, 'duration' : music.MusicSubstitutionRules.duration_rule}
         rules = {'commands':command_rules}
         splitter = r'(?P<interval>[+-]?\d+)/(?P<duration>\d+\.\d+)'

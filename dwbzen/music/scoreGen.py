@@ -48,7 +48,8 @@ class ScoreGen(object):
         '''The start_note must have a pitch with octave and a duration in quarterLengths
         
         ''' 
-        self.musicScale = MusicScale(resource_folder=self.resource_folder, scale_name=self.scale_name, root_note=start_note)
+        root_note = note.Note(self.key.tonic)  # the scale root is determined by the key
+        self.musicScale = MusicScale(resource_folder=self.resource_folder, scale_name=self.scale_name, root_note=root_note)
         self.scale = self.musicScale.scale
         self.start_note = start_note
         

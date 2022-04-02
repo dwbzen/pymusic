@@ -5,9 +5,10 @@ from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
 from music.instruments import Instruments
+from music21.meter import TimeSignature
 import re
 import pandas as pd
-import pathlib, random, copy
+import pathlib, random, copy, math
 from datetime import date
 from builtins import isinstance
 
@@ -701,6 +702,29 @@ class MusicUtils(object):
                                                instruments=instruments, inPlace=inPlace, adjustAccidentals=adjustAccidentals)
                 new_score.append(tp)
         return new_score
+    
+    @staticmethod
+    def extend_parts(ascore:Score, padlen:duration.Duration, time_signature = None):
+        '''
+        Extend each Part in a Score to padlen (total duration in quarterLengths)
+        by adding rests.
+        '''
+        measureLen = 4.0
+        if time_signature is not None:
+            measureLen = time_signature.numerator * time_signature.beatDuration.quarterLength
+        
+        parts = ascore.getElementsByClass(Part)
+        for p in parts:
+            plen = p.duration.quarterLength
+            padding = math.ceil(padlen.quarterLength/measureLen) * measureLen - plen
+            if MusicUtils.verbose > 0:
+                print(f'{p.partName} duration: {plen}')
+                print(f' extend {p.partName} by {padding} quarterLengths')
+            if padding > 0:
+                r = note.Rest()
+                r.duration.quarterLength = padding
+                p.append(r)
+
 
 if __name__ == '__main__':
     print(MusicUtils.__doc__)
