@@ -4,15 +4,16 @@ Created on Feb 22, 2021
 @author: don_bacon
 '''
 import json
-import music
-import  pandas as pd
+from music.keys import Keys
+from music.song import Song
+from music.scales import Scales
 
 def keys_usage(keys_file):   
     with open(keys_file, "r") as read_file:
         raw_data = json.load(read_file)
     # print(raw_data)
     
-    keys = music.Keys(raw_data)
+    keys = Keys(raw_data)
     
     print('Key names: {}'.format(keys.key_names))
     print(keys.key['B-Major'])
@@ -20,7 +21,7 @@ def keys_usage(keys_file):
 def song_usage(song_file):
     with open(song_file, "r") as read_file:
         song_data = json.load(read_file)
-    song = music.Song(song_data)
+    song = Song(song_data)
     df_notes = song.df_notes
     df_harmony = song.df_harmony
     
@@ -32,7 +33,7 @@ def song_usage(song_file):
     print(df_harmony[df_harmony['chord'].isin(['Bb', 'F7'])])
     
 def scales_usage(scales_file):
-    _scales = music.Scales(json_file_name=scales_file)
+    _scales = Scales(json_file_name=scales_file)
     print("scales file: {}".format(_scales.scales_file))
     print("scale names: {}".format(_scales.scale_names))
     # select a specific scale
@@ -42,9 +43,7 @@ def scales_usage(scales_file):
     scales_df_blues = scales_df[scales_df['groups'].apply(lambda x:'blues' in x)]
     
     print('blues scales with 7 notes: \n{}'.format( scales_df_blues[scales_df_blues['size']==7][['name', 'formula_str']]))
-    
-    for ser in scales_df_blues:
-        pass
+
 
 if __name__ == '__main__':
     print('Sample usage of Keys and Song')

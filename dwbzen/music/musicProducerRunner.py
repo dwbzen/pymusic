@@ -10,7 +10,14 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common, music
+from music.musicCollector import MusicCollector
+from music.musicProducer import MusicProducer
+from music.noteCollector import NoteCollector
+from music.intervalCollector import IntervalCollector
+from music.instruments import Instruments
+from common.utils import Utils
+from common.markovChain import MarkovChain
+
 import argparse
 import pandas as pd
 from music21 import key
@@ -70,7 +77,7 @@ class MusicProducerRunner(object):
         parser.add_argument("--verbose", "-v", help="increase output verbosity", action="count", default=0)
         
         parser.add_argument("--produce", help="Comma-delimited list of Part name(s) to produce. A part name must also be a valid instrument name", \
-                            type=str, action="extend", nargs="+", choices=music.Instruments.instrument_names,  default=None)
+                            type=str, action="extend", nargs="+", choices=Instruments.instrument_names,  default=None)
         parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)   
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
         parser.add_argument("--key", "-k", \
@@ -87,7 +94,7 @@ class MusicProducerRunner(object):
         if args.verbose > 0:
             print('run ScoreProducer')
             print(args)
-        randomseed = common.Utils.time_since()
+        randomseed = Utils.time_since()
         durationsChain = None
         markovChain = None
         collector = None
@@ -96,9 +103,9 @@ class MusicProducerRunner(object):
             # run the appropriate collector first to produce the MarkovChains
             #
             if args.type== 'notes':
-                collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, collection_mode=args.mode )
+                collector = NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, collection_mode=args.mode )
             elif args.type == 'intervals':
-                collector = music.IntervalCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
+                collector = IntervalCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts )
             
             collector.name = args.name
             collector.format = args.format
@@ -112,12 +119,12 @@ class MusicProducerRunner(object):
             # use serialized MarkovChain in specified format, and Durations files in csv format as input
             file_list = []
             order = f'0{args.order}'
-            file_list.append('{}/{}_{}Chain_{}_{}.{}'.format(music.MusicCollector.save_folder, args.chainFiles, args.type, args.mode, order, args.format))
-            file_list.append('{}/{}_{}Chain.{}'.format(music.MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
+            file_list.append('{}/{}_{}Chain_{}_{}.{}'.format(MusicCollector.save_folder, args.chainFiles, args.type, args.mode, order, args.format))
+            file_list.append('{}/{}_{}Chain.{}'.format(MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
 
             i = 0
             for chainFile in file_list:
-                file_info = common.Utils.get_file_info(chainFile)
+                file_info = Utils.get_file_info(chainFile)
                 thepath = file_info["path_text"]
                 ext = file_info['extension'].lower()
                 if args.verbose > 0:
@@ -135,12 +142,12 @@ class MusicProducerRunner(object):
                         mc_df.index = new_index.values
                         mc_df.drop(['KEY'],axis=1,inplace=True)
                     if i==0:
-                        markovChain = common.MarkovChain(args.order, chain_df=mc_df)
+                        markovChain = MarkovChain(args.order, chain_df=mc_df)
                         i=i+1
                     else:
-                        durationsChain = common.MarkovChain(args.order, chain_df=mc_df)
+                        durationsChain = MarkovChain(args.order, chain_df=mc_df)
         
-        musicProducer = music.MusicProducer(
+        musicProducer = MusicProducer(
             args.order, markovChain, durationsChain, \
             args.source, args.parts, args.produce, \
             num=args.measures, verbose=args.verbose, \

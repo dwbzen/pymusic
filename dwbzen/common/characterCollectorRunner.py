@@ -10,8 +10,8 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .collector import Collector
-from .characterCollector import CharacterCollector
+from common.collector import Collector
+from common.characterCollector import CharacterCollector
 import argparse
 
 class CharacterCollectorRunner(Collector):

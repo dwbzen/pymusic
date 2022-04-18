@@ -10,8 +10,9 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from common import Collector
+from common.collector import Collector
 import music
+from music.instruments import Instruments
 import pandas as pd
 
 class MusicCollector(Collector):
@@ -20,8 +21,8 @@ class MusicCollector(Collector):
     
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source)
-        self.instruments = music.Instruments(self.verbose)
-        self.save_folder=music.MusicCollector.save_folder
+        self.instruments = Instruments(self.verbose)
+        self.save_folder=MusicCollector.save_folder
         self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes

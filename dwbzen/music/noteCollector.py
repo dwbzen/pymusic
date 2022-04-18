@@ -14,9 +14,9 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from music import MusicCollector
+from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
-import common
+from common.markovChain import MarkovChain
 import pandas as pd
 from music21 import  converter, corpus, note
 
@@ -244,7 +244,7 @@ class NoteCollector(MusicCollector):
                     self.counts_df.loc[index_str, col_str] = 1
         self.counts_df = self.counts_df.fillna(0)
             
-    def collect(self) -> common.MarkovChain:
+    def collect(self) -> MarkovChain:
         """Run collection on the notes_df DataFrame created from the source score(s)
         
         The collection unit is a score part name. Score part_names are in self.score_partNames set.

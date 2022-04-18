@@ -6,7 +6,7 @@ Created on Feb 18, 2021
 import json
 import pandas as pd
 
-class Song:
+class Song(object):
     '''
     Represents a JSON formatted song
     '''

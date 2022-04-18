@@ -19,13 +19,14 @@ __all__ = [
     'wordProducerRunner'
 ]
 
-from .utils import Utils
-from .collector import Collector
 from .characterCollector import CharacterCollector
 from .characterCollectorRunner import CharacterCollectorRunner
+from .collector import Collector
+from .geometry import Geometry
 from .markovChain import MarkovChain
 from .producer import Producer
-from .wordProducer import WordProducer
-from .wordProducerRunner  import WordProducerRunner
 from .ruleSet  import RuleSet
 from .substitutionSystem import SubstitutionSystem
+from .utils import Utils
+from .wordProducer import WordProducer
+from .wordProducerRunner  import WordProducerRunner

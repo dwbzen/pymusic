@@ -5,7 +5,7 @@ from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
 from music.instruments import Instruments
-from music21.meter import TimeSignature
+
 import re
 import pandas as pd
 import pathlib, random, copy, math

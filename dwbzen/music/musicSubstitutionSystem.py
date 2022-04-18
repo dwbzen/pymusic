@@ -1,5 +1,6 @@
 
-from common import RuleSet, SubstitutionSystem
+from common.ruleSet import RuleSet
+from common.substitutionSystem import SubstitutionSystem
 import music
 import argparse
 

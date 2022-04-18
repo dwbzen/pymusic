@@ -10,14 +10,16 @@ if __name__ == '__main__':
         text = f.read()
     
     # Build the model.
-    text_model = markovify.Text(text)
+    text_model = markovify.Text(text, state_size=2)
     
     # Print five randomly-generated sentences
     for i in range(5):
-        print(text_model.make_sentence())
+        print(f'{i}: {text_model.make_sentence()}' )
     
     # Print three randomly-generated sentences of no more than 280 characters
     for i in range(3):
-        print(text_model.make_short_sentence(280))
+        print(f'{i}  {text_model.make_short_sentence(280)}' )
     
-    json = text_model.to_json()
+    json_text = text_model.to_json()
+    print(f'json: {json_text}')
+    

@@ -10,7 +10,7 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from music import MusicCollector
+from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
 import common
 import pandas as pd

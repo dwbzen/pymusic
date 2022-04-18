@@ -30,24 +30,27 @@ __all__ = [
     'song'
 ]
 
-from music.song import Song
-from .keys import Keys
-from .scale  import Scale
-from .scales import Scales
 from .chords import Chords
 from .chord import Chord
-from .musicCollector import MusicCollector
-from .noteCollector import NoteCollector
-from .intervalCollector import IntervalCollector
 from .durationCollector import DurationCollector
+from .instruments import Instruments
+from .intervalCollector import IntervalCollector
 from .intervalCollectorRunner import IntervalCollectorRunner
-from .noteCollectorRunner import NoteCollectorRunner
+from .keys import Keys
+from .musicCollector import MusicCollector
 from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner
-from .musicUtils import MusicUtils
-from .instruments import Instruments
 from .musicScale import MusicScale
 from .musicSubstitutionSystem import MusicSubstitutionSystem
 from .musicSubstitutionRules import MusicSubstitutionRules
+from .musicUtils import MusicUtils
+from .noteCollector import NoteCollector
+from .noteCollectorRunner import NoteCollectorRunner
+from .sample_usage import keys_usage, scales_usage, song_usage
+from .scale  import Scale
+from .scales import Scales
 from .scoreGen import ScoreGen
 from .scoreGenRunner import ScoreGenRunner
+from .song import Song
+
+

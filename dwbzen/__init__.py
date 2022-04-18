@@ -22,14 +22,23 @@ __version__ = "0.1.1"
 __all__ = [
     # sub folders
     'common',
-    'music'
+    'music',
     # individual modules
     # KEEP ALPHABETICAL unless necessary for load reasons, if so
     # put a note.  Keep one letter per line.
+    'environment',
+    'chain_test',
+    'geo_test',
+    'path_titles'
 ]
 
 # -----------------------------------------------------------------------------
 # this brings all of our own __all__ names into the dwbzen package namespace
 # pylint: disable=wildcard-import
-from dwbzen import *
+# 
+import common
+import music
+import environment
+
+environmentGlobal = environment.Environment('dwbzen')
 

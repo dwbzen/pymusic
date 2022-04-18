@@ -1,8 +1,12 @@
 
-from common import RuleSet
-import music
+from common.ruleSet import RuleSet
+from music.scoreGen import ScoreGen
+from music.musicSubstitutionRules import MusicSubstitutionRules
+from music.musicSubstitutionSystem import MusicSubstitutionSystem
+from music.musicUtils import MusicUtils
 from music21 import key, note
 import argparse, json
+import environment
 
 class ScoreGenRunner(object):
     '''Runs MusicSustitutionSystem and passes the result to ScoreGen
@@ -11,7 +15,8 @@ class ScoreGenRunner(object):
     '''
     if __name__ == '__main__':
         
-        resource_folder ="/Compile/dwbzen/resources/music"
+        env = environment.Environment.get_environment()
+        resource_folder = env.get_resource_folder('music')
         start = ['0/1.0', '+1/0.5', '-2/1.0', '1/2.0']
         parser = argparse.ArgumentParser()
         parser.add_argument("--scale", "-s", help="Scale name", type=str, default='Major')
@@ -53,18 +58,18 @@ class ScoreGenRunner(object):
                 jdoc = json.loads(jtxt)
                 substitution_rules = jdoc[args.rulenames[partnum]]
                 
-            command_rules = {'interval' : music.MusicSubstitutionRules.interval_rule, 'duration' : music.MusicSubstitutionRules.duration_rule}
+            command_rules = {'interval' : MusicSubstitutionRules.interval_rule, 'duration' : MusicSubstitutionRules.duration_rule}
             rules = {'commands':command_rules}
             splitter = r'(?P<interval>[+-]?\d+)/(?P<duration>\d+\.\d+)'
             rule_set = RuleSet(substitution_rules, rules=rules, splitter=splitter)
             
-            music.MusicSubstitutionRules.trace = args.trace
-            music.MusicUtils.verbose = args.verbose
-            ss = music.MusicSubstitutionSystem(rule_set, verbose=args.verbose)
+            MusicSubstitutionRules.trace = args.trace
+            MusicUtils.verbose = args.verbose
+            ss = MusicSubstitutionSystem(rule_set, verbose=args.verbose)
             commands = ss.apply(start,args.steps)
             print(f'{len(commands)} commands:\n{commands} \n')
             
-            score_gen = music.ScoreGen(rule_set, scale_name=args.scale, instrument_name=partname, key=key.Key(args.key), verbose=args.verbose)
+            score_gen = ScoreGen(rule_set, scale_name=args.scale, instrument_name=partname, key=key.Key(args.key), verbose=args.verbose)
             start_note=note.Note(args.notes[partnum], quarterLength=args.duration)
             score_gen.run(commands, start_note=start_note)
             if ascore is None:
@@ -75,7 +80,7 @@ class ScoreGenRunner(object):
                     maxpartlen = score_gen.part.duration
                 ascore.append(score_gen.part)
                 
-        music.MusicUtils.extend_parts(ascore, maxpartlen)
+        MusicUtils.extend_parts(ascore, maxpartlen)
         ascore.show(args.show)
         
         

@@ -49,10 +49,11 @@ class WordProducer(Producer):
         """
         self.seed_count = self.seed_count + 1
         aseed = self.seed
-        if self.seed_count >= self.recycle_seed_count:
+        if self.seed_count >= self.recycle_seed_count or aseed is None:
             # pick a new seed
             aseed = self.get_seed()
             self.seed_count = 0
+            self.seed = aseed
         return aseed
     
     def get_next_character(self, seed):
@@ -100,6 +101,7 @@ class WordProducer(Producer):
         words = []
         initial_seed = self.get_seed(self.seed)      # get the initial seed
         seed = initial_seed
+        self.seed = seed
         if self.verbose > 0:
             print(f"initial seed: '{seed}'")
         if self.verbose > 1:

@@ -10,10 +10,10 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .characterCollector import CharacterCollector
-from .utils import Utils
-from .markovChain import MarkovChain
-from .wordProducer import WordProducer
+from common.characterCollector import CharacterCollector
+from common.utils import Utils
+from common.markovChain import MarkovChain
+from common.wordProducer import WordProducer
 import argparse
 import sys
 import pandas as pd

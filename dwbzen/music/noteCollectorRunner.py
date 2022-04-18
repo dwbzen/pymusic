@@ -12,11 +12,11 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import common
-import music
+from common.collector import Collector
+from music.noteCollector import NoteCollector
 import argparse
 
-class NoteCollectorRunner(common.Collector):
+class NoteCollectorRunner(Collector):
     """ Executes NoteRunner with the parameters provided in the command line
     
     """
@@ -43,7 +43,7 @@ class NoteCollectorRunner(common.Collector):
             print('run NoteCollector')
             print(args)
 
-        collector = music.NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, \
+        collector = NoteCollector(state_size = args.order, verbose=args.verbose, source=args.source, parts=args.parts, \
                                         collection_mode=args.mode, enforce_range=args.enforceRange )
         collector.name = args.name
         collector.format = args.format

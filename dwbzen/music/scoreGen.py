@@ -1,7 +1,8 @@
 
-from common import RuleSet
-from music import MusicScale, Instruments
-from music21 import stream, instrument, clef, key, meter
+from common.ruleSet import RuleSet
+from music.musicScale import MusicScale
+from music.instruments import Instruments
+from music21 import stream, instrument, key, meter
 from music21 import note, tempo, metadata
 
 
