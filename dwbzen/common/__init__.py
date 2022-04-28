@@ -14,6 +14,7 @@ __all__ = [
     'producer',
     'ruleSet',
     'substitutionSystem',
+    'textParser',
     'utils',
     'wordProducer',
     'wordProducerRunner'
@@ -27,6 +28,7 @@ from .markovChain import MarkovChain
 from .producer import Producer
 from .ruleSet  import RuleSet
 from .substitutionSystem import SubstitutionSystem
+from .textParser import TextParser
 from .utils import Utils
 from .wordProducer import WordProducer
 from .wordProducerRunner  import WordProducerRunner
