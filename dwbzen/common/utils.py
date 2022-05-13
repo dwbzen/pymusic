@@ -75,6 +75,6 @@ class Utils(object):
         else:   # assume days
             return delta.days
         
-    if __name__ == '__main__':
-        print(Utils.__doc__)
+if __name__ == '__main__':
+    print(Utils.__doc__)
     

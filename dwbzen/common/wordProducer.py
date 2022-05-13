@@ -41,20 +41,7 @@ class WordProducer(Producer):
         else:
             theseed = aseed
         return theseed
-    
-    def get_next_seed(self):
-        """
-        checks the seed_count against the recycle_seed_count
-        and if >= gets a new seed, otherwise returns the existing one
-        """
-        self.seed_count = self.seed_count + 1
-        aseed = self.seed
-        if self.seed_count >= self.recycle_seed_count or aseed is None:
-            # pick a new seed
-            aseed = self.get_seed()
-            self.seed_count = 0
-            self.seed = aseed
-        return aseed
+
     
     def get_next_character(self, seed):
         """Gets the next character based on the seed argument
@@ -143,6 +130,6 @@ class WordProducer(Producer):
             words = words.sort(key=str.lower, reverse=False)
         return words
 
-    if __name__ == '__main__':
-        print(WordProducer.__doc__)
+if __name__ == '__main__':
+    print(WordProducer.__doc__)
 

@@ -26,7 +26,6 @@ __all__ = [
     # individual modules
     # KEEP ALPHABETICAL unless necessary for load reasons, if so
     # put a note.  Keep one letter per line.
-    'environment',
     'chain_test',
     'geo_test',
     'path_titles'
@@ -38,7 +37,5 @@ __all__ = [
 # 
 import common
 import music
-import environment
 
-environmentGlobal = environment.Environment('dwbzen')
 

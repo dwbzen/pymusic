@@ -10,14 +10,16 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import numpy as np
+import random
 import pandas as pd
+from .environment import Environment
 
 class Producer(object):
     
-    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=20, verbose=0, rand_seed=42):
+    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=20, verbose=0, domain='text', rand_seed=None):
         self.markovChain = markovChain        # a MarkovChain instance, provided by a ProducerRunner
         self.order = state_size
+        self.domain = domain
         self.min_size = min_size
         self.max_size = max_size
         self.num = num      # units defined in Producer subclass
@@ -30,7 +32,7 @@ class Producer(object):
         self.seed=None
         self.sort=None
         self.chain_file = None          # serialized MarkovChain.chain_df json file
-        self.initial=False
+        self.initial=True
         self.chain_df = self.markovChain.chain_df
         self.keys = pd.Series(self.chain_df.index)
         #
@@ -38,14 +40,33 @@ class Producer(object):
         # when >= self.recycle_seed_count, a new seed is picked
         self.seed_count = 0
         self.recycle_seed_count = 1     # pick a new seed every n things produced
+        #
+        # update to reflect your environment
+        #
+        env = Environment.get_environment()
+        self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"
+
+        random.seed(a=rand_seed)
         
-        np.random.seed(rand_seed)
         
     def __repr__(self):
         return f"Producer {self.order}"
     
     def get_seed(self):  # override in derived class
         return None
+    
+    def get_next_seed(self):
+        """Checks the seed_count against the recycle_seed_count and if >= gets a new seed, otherwise returns the existing one
+        
+        """
+        self.seed_count = self.seed_count + 1
+        aseed = self.seed
+        if self.seed_count >= self.recycle_seed_count or aseed is None:
+            # pick a new seed
+            aseed = self.get_seed()
+            self.seed_count = 0
+            self.seed = aseed
+        return aseed
     
     def produce(self):
         """

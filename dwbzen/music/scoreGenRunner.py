@@ -6,16 +6,15 @@ from music.musicSubstitutionSystem import MusicSubstitutionSystem
 from music.musicUtils import MusicUtils
 from music21 import key, note
 import argparse, json
-import environment
+from common.environment import Environment
 
 class ScoreGenRunner(object):
     '''Runs MusicSustitutionSystem and passes the result to ScoreGen
-        For now, the RuleSet is hard-coded. TODO - make json
 
     '''
     if __name__ == '__main__':
         
-        env = environment.Environment.get_environment()
+        env = Environment.get_environment()
         resource_folder = env.get_resource_folder('music')
         start = ['0/1.0', '+1/0.5', '-2/1.0', '1/2.0']
         parser = argparse.ArgumentParser()

@@ -10,7 +10,7 @@ class Environment(object):
         self.package_name = package_name
         self.resources = {}
         self.resources['music'] = self.resource_base + '/music'
-        self.resources['common'] = self.resource_base
+        self.resources['text'] = self.resource_base + '/text'
         self.items = {}
         
     def __repr__(self):

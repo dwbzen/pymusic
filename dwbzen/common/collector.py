@@ -12,6 +12,7 @@
 import pandas as pd
 from .markovChain import MarkovChain
 from .utils import Utils
+from .environment import Environment
 
 class Collector(object):
     """Collects data from a defined source and builds a MarkovChain of a given order.
@@ -32,12 +33,15 @@ class Collector(object):
         This is used to identify an initial seed
     """
     
-    def __init__(self, state_size=2, verbose=0, source=None):
+    def __init__(self, state_size=2, verbose=0, source=None, domain='text'):
         """Initialize elements common to all Collector subclasses.
         
+        The chain_df and counts_df DataFrames index and columns are set by the subclass 
+        and is totally dependent on the target domain (for example 'text') and units (for example, characters or words)
         """
         
         self.order = state_size
+        self.domain = domain
         self.verbose = verbose
         self.chain_df = pd.DataFrame()
         self.counts_df = pd.DataFrame()
@@ -47,7 +51,12 @@ class Collector(object):
         self.format = None
         self.source = source  # file input or DataFrame source
         self.sort_chain = False
-        self.save_folder="/Compile/dwbzen/resources"
+        #
+        # update to reflect your environment
+        #
+        env = Environment.get_environment()
+        self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"
+
         self.filename = None                # MarkovChain filename
         self.counts_file = None
         self.terminal_object = None         # must be set in derived classes
@@ -58,6 +67,26 @@ class Collector(object):
         
     def __repr__(self, *args, **kwargs):
         return "Collector"
+    
+    def _create_chain(self):
+        """Create the MarkovChain from the counts by summing probabilities
+        
+        This works for any Collector implementation
+        """
+        #
+        # update the counts DataFrame and sort if needed
+        #
+        self.counts_df.rename_axis('KEY', inplace=True)
+        if self.sort_chain:
+            self.counts_df.sort_index('index', ascending=True, inplace=True)
+            self.counts_df.sort_index(axis=1, ascending=True, inplace=True)
+
+        sums = self.counts_df.sum(axis=1)
+        self.chain_df = self.counts_df.div(sums, axis=0)
+        self.chain_df.rename_axis('KEY', inplace=True)
+        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
+        self.markovChain.chain_df = self.chain_df
+        
 
     def run(self):
         """Invokes the derived class's collect() function and invokes save()
@@ -71,9 +100,16 @@ class Collector(object):
         save_result = False
         collect_result = False
         self.collect()
+        if self.verbose > 1:
+            print(f" Counts:\n {self.counts_df}")
+            print(f" MarkovChain:\n {self.markovChain}")
+            if self.verbose > 2:
+                print(self.markovChain.__repr__())        
+        
         if self.markovChain is not None and len(self.markovChain.chain_df) > 0:
             collect_result = True
             save_result = self.save()
+            
         return {'collect_result' : collect_result, 'save_result' : save_result}
 
     def collect(self):
@@ -126,6 +162,6 @@ class Collector(object):
                     print("Empty MarkovChain")
         return save_result
 
-    if __name__ == '__main__':
-        print(Collector.__doc__)
+if __name__ == '__main__':
+    print(Collector.__doc__)
         

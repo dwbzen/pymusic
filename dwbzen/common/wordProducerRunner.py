@@ -23,7 +23,7 @@ class WordProducerRunner(object):
     if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         #
-        # Collector arguments
+        # CharacterCollector arguments
         #
         parser.add_argument("order", help="the order of the Markov Chain", type=int, choices=range(1,5))
         parser.add_argument("-t", "--text", help="in-line text input. One of --text or --source must be specified")
@@ -31,7 +31,7 @@ class WordProducerRunner(object):
         parser.add_argument("-i","--ignoreCase", help="ignore input case", action="store_true", default=False)
 
         #
-        # Producer arguments
+        # WordProducer arguments
         #
         parser.add_argument("-c", "--chainFile", help="Existing serialized MarkovChain file (json), or POS file name .",  type=str, default=None)
         parser.add_argument('outfile', nargs='?', help="Optional output file name", type=argparse.FileType('w'), default=sys.stdout)
@@ -48,6 +48,7 @@ class WordProducerRunner(object):
         parser.add_argument("--pos", help="Source is a part-of-speech file", action="store_true",default=False)
         parser.add_argument("--recycle", help="How often to pick a new seed, default is pick a new seed after each word produced", type=int, default=1)
         args = parser.parse_args()
+        
         markovChain = None
         order = args.order
         source_file = None
@@ -56,7 +57,7 @@ class WordProducerRunner(object):
             print(args)
         if args.chainFile is None and not (args.source is None and args.text is None):   # run the collector first
             source_file = args.source
-            collector = CharacterCollector(state_size = args.order, verbose=args.verbose, source=source_file, text=args.text, ignoreCase=args.ignoreCase)
+            collector = CharacterCollector(state_size = args.order, verbose=args.verbose, source=source_file, text=args.text, ignore_case=args.ignoreCase)
             collector.sort_chain = True
             markovChain = collector.collect()
         else:

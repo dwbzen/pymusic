@@ -14,15 +14,14 @@
 # ------------------------------------------------------------------------------
 
 from .collector import Collector
-from .utils import Utils
 import pandas as pd
 
 class CharacterCollector(Collector):
 
-    def __init__(self, state_size=2, verbose=0, source=None, text=None, ignoreCase=False):
-        super().__init__(state_size, verbose, source)
+    def __init__(self, state_size=2, verbose=0, source=None, text=None, ignore_case=False):
+        super().__init__(state_size, verbose, source,  domain='text')
         self.text = text
-        self.ignoreCase = ignoreCase
+        self.ignore_case = ignore_case
         self.terminal_object = '~'
         self.initial_object = ' '
 
@@ -32,13 +31,13 @@ class CharacterCollector(Collector):
         self.markovChain.collector = CharacterCollector
 
     def __str__(self):
-        return f"CharacterCollector order={self.order} verbose={self.verbose} name={self.name} format={self.format}, source={self.source}, text={self.text}, ignoreCase={self.ignoreCase}"
+        return f"CharacterCollector order={self.order} verbose={self.verbose} name={self.name} format={self.format}, source={self.source}, text={self.text}, ignoreCase={self._ignore_case}"
     
     def process(self, line):
         line = line.replace('\n', self.terminal_object)
         #
         #
-        if self.ignoreCase:
+        if self.ignore_case:
             line = line.lower()
         line_len = len(line)
         ind = 0         # index of current character
@@ -90,23 +89,10 @@ class CharacterCollector(Collector):
             # add initial and terminal characters if needed
             txt = self.initial_object + self.text.strip() + self.terminal_object
             self.process(txt)
-        self.counts_df.rename_axis('KEY', inplace=True)
-        if self.sort_chain:
-            self.counts_df.sort_index('index', ascending=True, inplace=True)
-            self.counts_df.sort_index(axis=1, ascending=True, inplace=True)
         #
-        # create the MarkovChain from the counts by added probabilities
+        # create the MarkovChain from the counts
         #
-        sums = self.counts_df.sum(axis=1)
-        self.chain_df = self.counts_df.div(sums, axis=0)
-        self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
-        self.markovChain.chain_df = self.chain_df
-        if self.verbose > 1:
-            print(f" Counts:\n {self.counts_df}")
-            print(f" MarkovChain:\n {self.markovChain}")
-            if self.verbose > 2:
-                print(self.markovChain.__repr__())
+        super()._create_chain()
         
         return self.markovChain
         
@@ -114,5 +100,5 @@ class CharacterCollector(Collector):
         save_result = super().save()
         return save_result
     
-    if __name__ == '__main__':
-        print(CharacterCollector.__doc__())
+if __name__ == '__main__':
+    print(CharacterCollector.__doc__())
