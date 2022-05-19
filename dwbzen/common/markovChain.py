@@ -25,10 +25,13 @@ import pandas as pd
 
 class MarkovChain(object):
 
-    def __init__(self, state_size=2, chain_df=pd.DataFrame(), myname=None):
+    def __init__(self, state_size=2, chain_df:pd.DataFrame=None, chain_dict:dict = None, myname:str=None):
         self.order = state_size
         self.name = myname          # used when persisting to CSV, Excel, or JSON
         self.chain_df = chain_df
+        self.chain_dict = chain_dict
+        if chain_dict is not None:
+            self._create_chain_from_dict()
         self.collector = None       # the Collector type
     
     def __repr__(self, *args, **kwargs):
@@ -36,6 +39,14 @@ class MarkovChain(object):
     
     def __str__(self):
         return self.chain_df.to_csv(path_or_buf = None, line_terminator='\n')
+    
+    def _create_chain_from_dict(self):
+            for key in self.chain_dict.keys():
+                keycount_df = self.chain_dict[key]
+                if self.chain_df is None:
+                    self.chain_df = pd.DataFrame(keycount_df)
+                else:
+                    self.chain_df = pd.concat([self.chain_df, keycount_df], ignore_index= True)
     
     if __name__ == '__main__':
         print('MarkovChain')

@@ -134,9 +134,13 @@ class SentenceProducer(Producer):
                         else:
                             more_to_go = True
                             seed = nseed
-                else:   # this is a problem - there should always be a new seed
-                    print("Warning - next token is None", file=sys.stderr)
-                    break
+                else:  
+                    # this can happen when the collector is in processing sentences mode
+                    # add the sentence as is and get a new seed
+                    sentence = self.add_sentence_to_set(sentences, sentence + '.')
+                    seed = self.get_seed()
+                    nwords = self.order
+                    more_to_go = False
                 
         return sentences
 

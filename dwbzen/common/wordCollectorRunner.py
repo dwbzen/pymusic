@@ -30,7 +30,7 @@ class WordCollectorRunner(object):
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format",type=str, choices=['csv','json','chain'] ) 
         parser.add_argument("-r", "--remove_stop_words", help="remove common stop words", action="store_true", default=False)
-        parser.add_argument("-p", "--processing_mode", help="specify words of sentences", choices=['words','sentences'], default='words')
+        parser.add_argument("-p", "--processing_mode", help="specify words of sentences", choices=['words','sentences', 'lines'], default='sentences')
         args = parser.parse_args()
         
         if args.verbose > 0:

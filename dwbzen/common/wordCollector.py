@@ -15,6 +15,7 @@
 
 from common.collector import Collector
 from common.textParser import TextParser
+from common.markovChain import MarkovChain
 import pandas as pd
 
 from datetime import datetime
@@ -56,14 +57,25 @@ class WordCollector(Collector):
         self.chainFileName = '_wordsChain'
         
         self.markovChain.collector = WordCollector
-        self.words_re = re.compile(r'[,; ]')
+        self.words_re = re.compile(r'[,;: ]')    # regular expression to split a line into words
         
 
     def __str__(self):
         return f"WordCollector order={self.order} verbose={self.verbose} name={self.name} format={self.format}, source={self.source}, text={self.text}, ignoreCase={self.ignoreCase}"
 
-    def process_sentences(self, sentences:[]) -> pd.DataFrame:
+    def process_lines(self, lines:[])  -> pd.DataFrame:
+        """Process lines of text to create a counts DataFrame
+        
+        """
+        pass
 
+    def process_sentences(self, sentences:[]) -> pd.DataFrame:
+        """Process sentences to create a counts DataFrame
+        
+        In this context a sentence is a string of words separated by a space
+        or other punctuation (, : ; )
+        and optionally terminated by a sentence ending character:  . ! or ?
+        """
         now = datetime.now()
         sentence_number = 1
         size = len(sentences)
@@ -71,7 +83,7 @@ class WordCollector(Collector):
             s = TextParser.remove_quotes(sentence)    # strip double quotes
             if self.ignore_case:
                 s = s.lower()
-            if self.verbose > 1:
+            if self.verbose > 2:
                 print(f'{sentence_number}  {sentence}\n    {s}\n')
             
             sentence_number += 1
@@ -84,7 +96,12 @@ class WordCollector(Collector):
             # the first word of a sentence has a leading space
             #
             words[0] = f' {words[0]}'
+            if self.verbose > 3:
+                print(words)
             self.process_words(words)
+            #
+            # track processing
+            #
             if sentence_number%100 == 0:
                 print(f'{sentence_number} of {size}')
             
@@ -110,8 +127,8 @@ class WordCollector(Collector):
         while more:
             index_str = ' '.join(words[ind:ind+self.order])
             col_str = words[ind+self.order]
-            if self.verbose > 1:
-                print(f"index_str: '{index_str}'  word: '{col_str}'")
+            if self.verbose > 2:
+                print(f" '{index_str}' '{col_str}'")
             #
             # add the token index_str and the character that follows, col_str,
             # to the index and column list respectively
@@ -133,6 +150,7 @@ class WordCollector(Collector):
             self.counts_df = self.counts_df.fillna(0)
             ind = ind + 1
             more = text_len > (ind + self.order)
+            
         delta = datetime.now() - now
         
         if self.verbose > 1:
@@ -143,11 +161,15 @@ class WordCollector(Collector):
     def collect(self):
         if self.processing_mode == 'words':
             self.collect_words()
-        else:
+        elif self.processing_mode == 'sentences':
             self.collect_sentences()
+        elif self.processing_mode == 'lines':
+            self.collect_lines()
 
+    def collect_lines(self) -> MarkovChain:
+        pass
         
-    def collect_sentences(self):
+    def collect_sentences(self) -> MarkovChain:
         """Run collection on a list of sentences using the set parameters
         
         Returns: MarkovChain result
@@ -168,14 +190,15 @@ class WordCollector(Collector):
         
         return self.markovChain
 
-    def collect_words(self):
+    def collect_words(self) -> MarkovChain:
         """Run collection on a list of words using the set parameters
         
         This is an alternative to processing on sentences (which is the default).
         Returns: MarkovChain result
         """
         self._text_parser = \
-            TextParser(txt=self.text, source=self._source, maxlines=self._maxlines, ignore_case=self._ignoreCase, remove_stop_words=self._remove_stop_words)
+            TextParser(txt=self.text, source=self._source, maxlines=self._maxlines, ignore_case=self._ignoreCase, \
+                       remove_stop_words=self._remove_stop_words)
         self.word_counts = self._text_parser.get_word_counts(sort_counts=True, reverse=True)
         self.words_df = self._text_parser.counts_df
         #

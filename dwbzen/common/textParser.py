@@ -28,6 +28,7 @@ class TextParser(object):
     def __init__(self, txt = None, source = None, maxlines=None, ignore_case=True, remove_stop_words=False):
         self._words = []        # words in order of appearance. Does not include stop words if remove_stop_words is True
         self._all_words = []    # words in order of appearance including stop words
+        self._sentence_words = []    # words in sentence order with initial word of each sentence prefixed with a space
         self._lines = []
         self._sentences = []
         self._word_set = None
@@ -96,6 +97,9 @@ class TextParser(object):
     def get_all_words(self):
         return self._all_words
     
+    def get_sentence_words(self):
+        return self._sentence_words
+    
     def get_lines(self):
         return self._lines
     
@@ -141,10 +145,22 @@ class TextParser(object):
                 words = s_rempunc.split(' ')
                 allwords = [str.lower(w) for w in words if len(w) > 0]
                 self._all_words += allwords
+                sentence_words = []
                 if self._remove_stop_words:
-                    self._words += [str.lower(w) for w in words if len(w) > 0 and w.lower() not in TextParser._sw ]
+                    if self._ignore_case:
+                        sentence_words = [str.lower(w) for w in words if len(w) > 0 and w.lower() not in TextParser._sw ]
+                    else:
+                        sentence_words = [w for w in words if len(w) > 0 and w.lower() not in TextParser._sw ]
                 else:
-                    self._words += [str.lower(w) for w in words if len(w) > 0]
+                    if self._ignore_case:
+                        sentence_words = [str.lower(w) for w in words if len(w) > 0]
+                    else:
+                        sentence_words = [w for w in words if len(w) > 0]
+                self._words += sentence_words
+                
+                if len(sentence_words) > 0:
+                    sentence_words[0] = ' ' + sentence_words[0]
+                    self._sentence_words += sentence_words
                     
                 self._sentences.append(s)
             self._lines.append(l)
