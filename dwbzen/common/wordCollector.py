@@ -18,7 +18,6 @@ from common.textParser import TextParser
 from common.markovChain import MarkovChain
 import pandas as pd
 
-from datetime import datetime
 import re
 
 class WordCollector(Collector):
@@ -33,9 +32,13 @@ class WordCollector(Collector):
     
     Features used in the corresponding SentenceProducer class:
     Sentence ending punctuation (. ! ?) is retained as a word to indicate the end of a sentence.
-    A space is prepended to the first word of each sentence to indicate a sentence starting word.
+    A prefix (default is a space) is prepended to the first word of each sentence/line to indicate an initial word.
     
-    TODO - add optional support for quotations by retaining the starting and ending double quotes on words.
+    There are three collection modes: words, sentences, and lines.
+    The collection mode determines the set of initial keys. An initial key indicates the
+    start of some unit - a sentence or line (which may have > 1 sentence).
+    In 'words' collection mode, there are no initial keys - all the words treated equally.
+    
 
     """
     
@@ -56,151 +59,97 @@ class WordCollector(Collector):
         self.countsFileName = '_wordCounts'
         self.chainFileName = '_wordsChain'
         
-        self.markovChain.collector = WordCollector
         self.words_re = re.compile(r'[,;: ]')    # regular expression to split a line into words
-        
 
     def __str__(self):
         return f"WordCollector order={self.order} verbose={self.verbose} name={self.name} format={self.format}, source={self.source}, text={self.text}, ignoreCase={self.ignoreCase}"
 
-    def process_lines(self, lines:[])  -> pd.DataFrame:
-        """Process lines of text to create a counts DataFrame
-        
-        """
-        pass
 
-    def process_sentences(self, sentences:[]) -> pd.DataFrame:
-        """Process sentences to create a counts DataFrame
-        
-        In this context a sentence is a string of words separated by a space
-        or other punctuation (, : ; )
-        and optionally terminated by a sentence ending character:  . ! or ?
-        """
-        now = datetime.now()
-        sentence_number = 1
-        size = len(sentences)
-        for sentence in sentences:
-            s = TextParser.remove_quotes(sentence)    # strip double quotes
-            if self.ignore_case:
-                s = s.lower()
-            if self.verbose > 2:
-                print(f'{sentence_number}  {sentence}\n    {s}\n')
-            
-            sentence_number += 1
-            if  len(s) == 0:
-                continue
-            words = [w for w in re.split(self.words_re, s) if len(w)>0]
-            if s[-1] in ".?!":
-                words.append(s[-1])
-            #
-            # the first word of a sentence has a leading space
-            #
-            words[0] = f' {words[0]}'
-            if self.verbose > 3:
-                print(words)
-            self.process_words(words)
-            #
-            # track processing
-            #
-            if sentence_number%100 == 0:
-                print(f'{sentence_number} of {size}')
-            
-        delta = datetime.now() - now
-        if self.verbose > 0:
-            print(f'process_sentences execution time: {delta}')
-          
-        return self.counts_df
-        
-    def process_words(self, words:list) -> pd.DataFrame:
-        """Process a list of words to create a counts DataFrame
+    def _process_words(self, words:list) -> pd.DataFrame:
+        """Process a list of words to create a counts_df DataFrame
         
         The algorithm is identical to that used in CharacterCollector
         the difference being this operates on words instead of individual characters.
-        
-        TODO speed this up 1218 sentences took process_sentences execution time: 0:24:14.364982
+        counts_df DataFrame has 3 columns: 'key', 'word', and 'count' and a range index.
+        key is a string of n-words where n is the order (state space size) of the MarkovChain model
+        Initial keys are prefixed by TextParser._prefix, which defaults to a space.
         
         """
-        text_len = len(words)
-        ind = 0         # index of current word
-        more = text_len > self.order
-        now = datetime.now()
-        while more:
-            index_str = ' '.join(words[ind:ind+self.order])
-            col_str = words[ind+self.order]
-            if self.verbose > 2:
-                print(f" '{index_str}' '{col_str}'")
-            #
-            # add the token index_str and the character that follows, col_str,
-            # to the index and column list respectively
-            # These will be the index= and columns= of the MarkovChain DataFrame
-            #
-            if len(self.counts_df) == 0:
-                # initialize the counts DataFrame
-                self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[col_str])
-            else:
-                if index_str not in self.counts_df.index:   # add a new row
-                    self.counts_df.loc[index_str, col_str] = 1
-                
-                else:  # update existing index
-                    if col_str in self.counts_df.columns:
-                        self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]
-                    else:
-                        self.counts_df.loc[index_str, col_str] = 1
-                        
-            self.counts_df = self.counts_df.fillna(0)
-            ind = ind + 1
-            more = text_len > (ind + self.order)
-            
-        delta = datetime.now() - now
-        
-        if self.verbose > 1:
-            print(f'process_words execution time: {delta}')
+        word_keys =  [ (' '.join(words[i:i+self.order]), words[i+self.order]) for i in range(0, len(words)-2) ]
+        word_keys_df =  pd.DataFrame(data=word_keys, columns=['key','word'])
+        words_ser = word_keys_df.value_counts(ascending=False)
+        df = pd.DataFrame(words_ser, columns=['count'])
+        self.counts_df = df.reset_index()
+        if self.sort_chain:
+            self.counts_df.sort_values(by=['key','word'], ignore_index=True, inplace=True)
             
         return self.counts_df
 
+    def _set_keys(self):
+        prefix = self._text_parser.initial_word_prefix
+        self._initial_keys_df = self.counts_df[ [x.startswith(prefix) for x in self.counts_df['key']] ]
+        #
+        # initiial_keys and keys are both sets and so the values are unique
+        #
+        self._initial_keys = set(self._initial_keys_df['key'].values.tolist())
+        self._keys = set(self.counts_df['key'].values.tolist())
+        if self.verbose > 0:
+            print(f'total number of keys: {len(self._keys)}')
+            print(f'number of initial keys: {len(self._initial_keys)}')
+    
     def collect(self):
+        self._text_parser = TextParser(txt=self.text, source=self._source, \
+                   maxlines=self._maxlines, ignore_case=self.ignore_case, \
+                   remove_stop_words=self._remove_stop_words)
+        #
+        # word counts are informational only
+        #
+        self.word_counts = self._text_parser.get_word_counts(sort_counts=True, reverse=True)
+        self.words_df = self._text_parser.counts_df
+                
         if self.processing_mode == 'words':
-            self.collect_words()
+            self._collect_words()
         elif self.processing_mode == 'sentences':
-            self.collect_sentences()
+            self._collect_sentences()
         elif self.processing_mode == 'lines':
-            self.collect_lines()
-
-    def collect_lines(self) -> MarkovChain:
-        pass
+            self._collect_lines()
         
-    def collect_sentences(self) -> MarkovChain:
+        # create the MarkovChain from the counts by summing probabilities
+        if self.counts_df.size > 0:
+            self._set_keys()
+            self._create_chain(initial=True)
+            
+
+    def _collect_lines(self) -> pd.DataFrame:
+        """Run collection on a list of lines  using the set parameters
+        
+        Returns: MarkovChain result
+        """
+        #
+        # get the words in the order they appear in the text
+        #
+        self._words = self._text_parser.get_line_words()
+        return self._process_words(self._words)
+        
+            
+    def _collect_sentences(self) -> pd.DataFrame:
         """Run collection on a list of sentences using the set parameters
         
         Returns: MarkovChain result
         """
-        now = datetime.now()
-        self._text_parser = \
-            TextParser(txt=self.text, source=self._source, maxlines=self._maxlines, ignore_case=self.ignore_case, \
-                       remove_stop_words=self._remove_stop_words)
-        delta = datetime.now() - now
-        if self.verbose > 0:
-            print(f'text_parser execution time: {delta}')
-            
-        self.process_sentences(self._text_parser.get_sentences())
+        #
+        # get the words in the order they appear in the text
+        #
+        self._words = self._text_parser.get_sentence_words()
+        return self._process_words(self._words)
         
-        # create the MarkovChain from the counts by summing probabilities
-        if self.counts_df.size > 0:
-            super()._create_chain()
-        
-        return self.markovChain
 
-    def collect_words(self) -> MarkovChain:
-        """Run collection on a list of words using the set parameters
+    def _collect_words(self) -> pd.DataFrame:
+        """Run collection on a list of words
         
-        This is an alternative to processing on sentences (which is the default).
         Returns: MarkovChain result
         """
-        self._text_parser = \
-            TextParser(txt=self.text, source=self._source, maxlines=self._maxlines, ignore_case=self._ignoreCase, \
-                       remove_stop_words=self._remove_stop_words)
-        self.word_counts = self._text_parser.get_word_counts(sort_counts=True, reverse=True)
-        self.words_df = self._text_parser.counts_df
+
         #
         # get the words in the order they appear in the text
         #
@@ -212,13 +161,8 @@ class WordCollector(Collector):
         #
         # create a counts_df DataFrame
         #
-        self.process_words(self._words)
-        
-        # create the MarkovChain from the counts by summing probabilities
-        super()._create_chain()
-        
-        return self.markovChain
-        
+        return self._process_words(self._words)
+
 
     def save(self):
         save_result = super().save()

@@ -12,9 +12,9 @@
 import pandas as pd
 from .markovChain import MarkovChain
 from .utils import Utils
-from .environment import Environment
+from .collectorProducer import CollectorProducer
 
-class Collector(object):
+class Collector(CollectorProducer):
     """Collects data from a defined source and builds a MarkovChain of a given order.
     
         Collector subclasses are tailored to the specific data type being collected and how that data is sourced.
@@ -33,61 +33,74 @@ class Collector(object):
         This is used to identify an initial seed
     """
     
-    def __init__(self, state_size=2, verbose=0, source=None, domain='text'):
+    def __init__(self, state_size, verbose=0, source=None, domain='text'):
         """Initialize elements common to all Collector subclasses.
         
         The chain_df and counts_df DataFrames index and columns are set by the subclass 
         and is totally dependent on the target domain (for example 'text') and units (for example, characters or words)
         """
+        super().__init__(state_size, verbose=verbose, source=source, domain=domain)
         
-        self.order = state_size
-        self.domain = domain
-        self.verbose = verbose
-        self.chain_df = pd.DataFrame()
-        self.counts_df = pd.DataFrame()
         self.stateSpace_type = None
-        self.markovChain =  MarkovChain(state_size)
-        self.name = None
-        self.format = None
-        self.source = source  # file input or DataFrame source
-        self.sort_chain = False
-        #
-        # update to reflect your environment
-        #
-        env = Environment.get_environment()
-        self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"
+        self.markovChain =  None
 
-        self.filename = None                # MarkovChain filename
-        self.counts_file = None
+        self.sort_chain = True
+
         self.terminal_object = None         # must be set in derived classes
         self.initial_object = None          # must be set in derived classes
         
-        self.chainFileName = '_chain'       # appended to self.name for the MarkovChain file
-        self.countsFileName = '_counts'     # appended to self.name for the counts file
+        self._initial_keys_df = None     # DataFrame created by collect() from counts_df
+        self._initial_keys = None        # set of key values of initial_keys_df
+        self._keys = None                # set of key values of counts_df
+        
         
     def __repr__(self, *args, **kwargs):
         return "Collector"
     
-    def _create_chain(self):
-        """Create the MarkovChain from the counts by summing probabilities
+     
+    def get_initial_keys(self):
+        return self._initial_keys
+    
+    def get_keys(self):
+        return self._keys
+           
+           
+    def _add_counts_to_model(self, model: dict, countsdf: pd.DataFrame, akey: str):
+        key_df = countsdf[countsdf['key'] ==  akey]
+        s = (key_df['count']/key_df['count'].sum()).cumsum()
+        model[akey] = key_df.assign(prob=s )
+
+            
+    def _create_chain(self, initial=True) -> MarkovChain:
+        """Creates a MarkovChain instance from a set of keys
         
-        This works for any Collector implementation
+        
+        The MarkovChain model is a dictionary of DataFrames
+        where the key is a string of n-words (n=order of the chain) that appear in the source text,
+        and the value is a DataFrame with the columns: key, word, count (from count_df) and prob (the probability)
+        The probabilities are computed from the counts.
+        
+        Parameters:
+            initial - if True (the default) create the MarkovChain from initial_keys only
         """
+        markov_chain_dict = dict()
         #
-        # update the counts DataFrame and sort if needed
-        #
-        self.counts_df.rename_axis('KEY', inplace=True)
-        if self.sort_chain:
-            self.counts_df.sort_index('index', ascending=True, inplace=True)
-            self.counts_df.sort_index(axis=1, ascending=True, inplace=True)
-
-        sums = self.counts_df.sum(axis=1)
-        self.chain_df = self.counts_df.div(sums, axis=0)
-        self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: Utils.round_values(x, 6))
-        self.markovChain.chain_df = self.chain_df
+        # create the MarkovChain dict() model from keys or initial keys
+        # 
+        keyz = self._initial_keys
+        if not initial:
+            keyz = self._keys
+            
+        for akey in keyz:
+            self._add_counts_to_model(markov_chain_dict, self.counts_df, akey)
         
-
+        self.markovChain = MarkovChain(self.order, self.counts_df, chain_df=None, chain_dict=markov_chain_dict, myname=self.name)
+        if self.sort_chain:
+            self.chain_df = self.markovChain.chain_df.sort_values(by=['key','word'], ignore_index=True, inplace=False)
+            self.markovChain.chain_df = self.chain_df
+        
+        return self.markovChain
+    
     def run(self):
         """Invokes the derived class's collect() function and invokes save()
         
@@ -114,53 +127,16 @@ class Collector(object):
 
     def collect(self):
         """
-        Override in derived classes
+        Override in subclass
         """
         return None
+
+    def save(self):
+        save_result = super().save()
+        return save_result
     
     def get_json_output(self):
         return Utils.get_json_output(self.chain_df)
-    
-    def save(self):
-        """Saves the MarkovChain and counts DataFrame files
-        
-        The chain_df DataFrame of the MarkovChain is saved in the specified format,
-        csv, xls or json, to the self.save_folder directory.
-        The filename is the name of the MarkovChain (self.name) + the chainFileName.
-        The chainFileName default is '_chain' and this is typically set
-        to something more appropriate in Collector subclasses.
-        For example, '_charsChain'.
-        
-        Similarly, the counts_df DataFrame is saved using the self.countsFileName
-        to create the save filename. For example, '_charsCounts'
-        
-        """
-        save_result = True
-        if self.name is not None:   # format will always be set to something, even if name is None
-            self.markovChain.name = self.name
-            
-            self.filename = "{}/{}{}.{}".format(self.save_folder, self.name, self.chainFileName, self.format)
-            self.counts_file = "{}/{}{}.{}".format(self.save_folder, self.name, self.countsFileName, self.format)
-            if self.verbose > 1:
-                print(f"output filename '{self.filename}' counts: {self.counts_file}")
-            if len(self.chain_df) > 0:
-                if self.format == 'csv':
-                    self.chain_df.to_csv(self.filename)
-                    self.counts_df.to_csv(self.counts_file)
-                elif self.format == 'json':
-                    dumped = Utils.get_json_output(self.chain_df)
-                    with open(self.filename, 'w') as f:
-                        f.write(str(dumped))
-                    with open(self.counts_file, 'w') as f:
-                        f.write(str(Utils.get_json_output(self.counts_df)))
-                else: # must be excel
-                    self.chain_df.to_excel(self.filename, sheet_name='Sheet 1',index=False)
-                    self.counts_df.to_excel(self.counts_file, sheet_name='Sheet 1',index=False)
-            else:
-                save_result = False
-                if self.verbose > 0:
-                    print("Empty MarkovChain")
-        return save_result
 
 if __name__ == '__main__':
     print(Collector.__doc__)

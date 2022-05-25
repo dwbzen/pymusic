@@ -14,6 +14,7 @@
 # ------------------------------------------------------------------------------
 
 from .collector import Collector
+from common.textParser import TextParser
 import pandas as pd
 
 class CharacterCollector(Collector):
@@ -28,71 +29,67 @@ class CharacterCollector(Collector):
         self.countsFileName = '_charCounts'
         self.chainFileName = '_charsChain'
         
-        self.markovChain.collector = CharacterCollector
+        self._text_parser = None
 
     def __str__(self):
         return f"CharacterCollector order={self.order} verbose={self.verbose} name={self.name} format={self.format}, source={self.source}, text={self.text}, ignoreCase={self._ignore_case}"
     
-    def process(self, line):
-        line = line.replace('\n', self.terminal_object)
-        #
-        #
-        if self.ignore_case:
-            line = line.lower()
-        line_len = len(line)
-        ind = 0         # index of current character
-        more = line_len > self.order    # more to go?
-        while more:
-            index_str = line[ind:ind+self.order]
-            col_str = line[ind+self.order]
-            if self.verbose >= 2:
-                print(f"token {index_str}  char '{col_str}'")
-            #
-            # add the token index_str and the character that follows, col_str,
-            # to the index and column list respectively
-            # These will be the index= and columns= of the MarkovChain DataFrame
-            #
-            if len(self.counts_df) == 0:
-                # initialize the counts DataFrame
-                self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[col_str])
-
-            else:
-                if index_str not in self.counts_df.index:   # add a new row
-                    self.counts_df.loc[index_str, col_str] = 1
-                
-                else:  # update existing index
-                    if col_str in self.counts_df.columns:
-                        self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]
-                    else:
-                        self.counts_df.loc[index_str, col_str] = 1
-                        
-            self.counts_df = self.counts_df.fillna(0)
-            ind = ind + 1
-            more = line_len > (ind + self.order)
+    def process(self, keys, word):
+        keys += [ (''.join(word[i:i+self.order]), word[i+self.order])  for i in range(0, len(word)-self.order)]
         
-    
+    def _set_keys(self):
+        #
+        # create the keys 
+        #
+        prefix = self.initial_object
+        self._initial_keys_df = self.counts_df[ [x.startswith(prefix) for x in self.counts_df['key']] ]
+        self._initial_keys = set(self._initial_keys_df['key'].values.tolist())
+        self._keys = set(self.counts_df['key'].values.tolist())
+        if self.verbose > 0:
+            print(f'total number of keys: {len(self._keys)}')
+            print(f'number of initial keys: {len(self._initial_keys)}')
+
     def collect(self):
         """
         Run collection using the set parameters
         Returns MarkovChain result
         """
+        word_keys = []
         if self.source is not None:
-            with open(self.source, "r") as f:
-                lnum = 1
-                for line in f:
-                    if self.verbose > 1:
-                        print(f"line {lnum}\t{line}", end='')
-                    line = self.initial_object + line.strip() + self.terminal_object     # add intial and terminal characters (typically a space)
-                    self.process(line)
-                    lnum = lnum + 1
+            self._text_parser = TextParser(source=self.source, ignore_case=self.ignore_case, maxlines=None, remove_stop_words=False)
+            #
+            # word counts are informational only
+            #
+            self.word_counts = self._text_parser.get_word_counts(sort_counts=True, reverse=True)
+            self.words_df = self._text_parser.counts_df
+            for w in self._text_parser.get_line_words():
+                word = self.initial_object + w.strip() + self.terminal_object
+                if len(word) >= self.order:
+                    self.process(word_keys, word)
+    
         elif self.text is not None:
             # add initial and terminal characters if needed
-            txt = self.initial_object + self.text.strip() + self.terminal_object
-            self.process(txt)
+            s_rempunc = TextParser.remove_punctuation(self.text)
+            words = s_rempunc.split(' ')
+            for w in words:
+                word = self.initial_object + w.strip() + self.terminal_object
+                if len(word) >= self.order:
+                    self.process(word_keys, word)
+        
         #
-        # create the MarkovChain from the counts
-        #
-        super()._create_chain()
+        # create the counts_df DataFrame
+        #          
+        word_keys_df =  pd.DataFrame(data=word_keys, columns=['key','word'])
+        words_ser = word_keys_df.value_counts(ascending=False)
+        df = pd.DataFrame(words_ser, columns=['count'])
+        self.counts_df = df.reset_index()
+        if self.sort_chain:
+            self.counts_df.sort_values(by=['key','word'], ignore_index=True, inplace=True)
+        
+        # create the MarkovChain from the counts by summing probabilities
+        if self.counts_df.size > 0:
+            self._set_keys()
+            self._create_chain(initial=False)
         
         return self.markovChain
         

@@ -11,46 +11,55 @@
 # ------------------------------------------------------------------------------
 
 import random
+from .markovChain import MarkovChain
+from .collectorProducer import CollectorProducer
 import pandas as pd
-from .environment import Environment
 
-class Producer(object):
+class Producer(CollectorProducer):
     
-    def __init__(self, state_size, markovChain, source_file=None, min_size=0, max_size=0, num=20, verbose=0, domain='text', rand_seed=None):
+    def __init__(self, state_size, markovChain:MarkovChain, source=None, min_size=0, max_size=0, num=20, verbose=0, domain='text', rand_seed=None):
+        
+        super().__init__(state_size, verbose=verbose, source=source, domain=domain)
+        
         self.markovChain = markovChain        # a MarkovChain instance, provided by a ProducerRunner
-        self.order = state_size
-        self.domain = domain
         self.min_size = min_size
         self.max_size = max_size
         self.num = num      # units defined in Producer subclass
-        self.name = None
-        self.source_file = source_file  # file input source
-        self.verbose=verbose
         
-        self.output_format = None
         self.outfile=None
         self.seed=None
         self.sort=None
-        self.chain_file = None          # serialized MarkovChain.chain_df json file
         self.initial=True
         self.chain_df = self.markovChain.chain_df
-        self.keys = pd.Series(self.chain_df.index)
+        self.counts_df = self.markovChain.counts_df
+        self.chain_updated = False
+        
+        #
+        # initial keys and all keys
+        #
+        self._initial_keys = None
+        self._keys = None
+        self._initial_keys_df = None
+        
         #
         # count of how many times the current seed has been used
         # when >= self.recycle_seed_count, a new seed is picked
         self.seed_count = 0
         self.recycle_seed_count = 1     # pick a new seed every n things produced
-        #
-        # update to reflect your environment
-        #
-        env = Environment.get_environment()
-        self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"
 
         random.seed(a=rand_seed)
         
         
     def __repr__(self):
         return f"Producer {self.order}"
+    
+    def _add_key(self, key):
+        key_df = self.counts_df[self.counts_df['key']==key]
+        s = (key_df['count']/key_df['count'].sum()).cumsum()
+        key_df = key_df.assign(prob=s )
+        self.chain_df = pd.concat([self.chain_df, key_df], ignore_index= True)
+        self.chain_updated = True   # this will trigger a save
+        return key_df
     
     def get_seed(self):  # override in derived class
         return None
@@ -76,4 +85,7 @@ class Producer(object):
         """
         return None
 
-
+    def save(self):
+        save_result = super().save()
+        return save_result
+    

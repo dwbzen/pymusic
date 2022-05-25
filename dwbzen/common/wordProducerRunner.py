@@ -14,9 +14,8 @@ from common.characterCollector import CharacterCollector
 from common.utils import Utils
 from common.markovChain import MarkovChain
 from common.wordProducer import WordProducer
-import argparse
-import sys
 import pandas as pd
+import argparse
 
 class WordProducerRunner(object):
     
@@ -29,12 +28,13 @@ class WordProducerRunner(object):
         parser.add_argument("-t", "--text", help="in-line text input. One of --text or --source must be specified")
         parser.add_argument("-s", "--source", help="input file name")
         parser.add_argument("-i","--ignoreCase", help="ignore input case", action="store_true", default=False)
+        parser.add_argument("--name", help="Name of resulting MarkovChain, used to save to file", type=str, default="mychain")
 
         #
         # WordProducer arguments
         #
-        parser.add_argument("-c", "--chainFile", help="Existing serialized MarkovChain file (json), or POS file name .",  type=str, default=None)
-        parser.add_argument('outfile', nargs='?', help="Optional output file name", type=argparse.FileType('w'), default=sys.stdout)
+        parser.add_argument("-c", "--chainfile", help="Existing serialized MarkovChain file, or POS file name.",  type=str, default=None)
+        parser.add_argument("-f","--format", help="File input/output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='csv' )
 
         parser.add_argument("-n", "--num", help="Number of words to produce",  type=int, default=10)
         parser.add_argument("--min", help="Minimum length of words", type=int, choices=range(2,6), default=4)
@@ -52,40 +52,64 @@ class WordProducerRunner(object):
         markovChain = None
         order = args.order
         source_file = None
+        chain_filename = None
+        counts_filename = None
         if args.verbose > 0:
             print('run WordProducer')
             print(args)
-        if args.chainFile is None and not (args.source is None and args.text is None):   # run the collector first
+        if args.chainfile is None and not (args.source is None and args.text is None):   # run the collector first
             source_file = args.source
             collector = CharacterCollector(state_size = args.order, verbose=args.verbose, source=source_file, text=args.text, ignore_case=args.ignoreCase)
             collector.sort_chain = True
-            markovChain = collector.collect()
+            run_results = collector.run()
+            if run_results['save_result']:
+                print(f"MarkovChain written to file: {collector.filename}")
+            
+            markovChain = collector.markovChain
+            
         else:
-            # use serialized MarkovChain file in JSON format (--chain )as input
-            file_info = Utils.get_file_info(args.chainFile)
-            thepath = file_info["path_text"]
-            ext = file_info['extension'].lower()
+            # use serialized MarkovChain file  and counts file in specified format
+            # for example  --chainfile "/Compile/dwbzen/resources/text/drugBrands"
+            #
+            chain_filename = f'{args.chainfile}_charsChain.{args.format}'
+            counts_filename = f'{args.chainfile}_charCounts.{args.format}'
+            
+            chain_file_info = Utils.get_file_info(chain_filename)
+            chain_path = chain_file_info["path_text"]
+            
+            counts_file_info = Utils.get_file_info(counts_filename)
+            counts_path = counts_file_info["path_text"]
+
+            ext = args.format
             if args.verbose > 0:
-                print(file_info)
-            if not file_info['exists']:
-                print(f"{thepath} does not exist")
+                print(chain_file_info)
+            if not chain_file_info['exists']:
+                print(f"{chain_path} does not exist")
                 exit()
             else:
                 if ext=='json':
-                    mc_df = pd.read_json(thepath, orient="index")
-                    markovChain = MarkovChain(order, chain_df=mc_df)
-                elif ext=='pos':     # parts-of-speech file  TODO
-                    pass
+                    chain_df = pd.read_json(chain_path, orient="index")
+                    counts_df = pd.read_json(counts_path, orient="index")
+                    markovChain = MarkovChain(order, counts_df, chain_df=chain_df)
+                elif ext=='csv':     # parts-of-speech file  TODO
+                    chain_df = pd.read_csv(chain_path, header=0, names=['key','word','count','prob'])
+                    counts_df = pd.read_csv(counts_path, header=0, names=['key','word','count'])
+                    markovChain = MarkovChain(order, counts_df, chain_df=chain_df)
+                elif ext=='xlsx':
+                    pass        # TODO
 
         #
         # markovChain will never, ever be None
         #
         wordProducer = WordProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose )
-        if args.chainFile is not None:
-            wordProducer.chain_file = args.chainFile
+        if chain_filename is not None:
+            wordProducer.chain_filename = chain_filename
+            wordProducer.counts_filename = counts_filename
+
         wordProducer.initial = args.initial
         wordProducer.seed = args.seed
         wordProducer.recycle_seed_count = args.recycle
-        words = wordProducer.produce()
-        # print(words)
+        words = wordProducer.produce()  # also prints the words
+        if args.verbose > 1:
+            print(words)
             

@@ -9,7 +9,8 @@
 # ------------------------------------------------------------------------------
 
 from .producer import Producer
-import random, sys
+from .textParser import TextParser
+import random
 
 class SentenceProducer(Producer):
     
@@ -19,26 +20,36 @@ class SentenceProducer(Producer):
         self.postprocessing = None
         self.initial=False
         self.pos=False
-        #
-        # initial words start with a space character  keys = self.chain_df.index
-        #
-        self.initial_keys = self.keys[self.keys.apply(lambda s:s.startswith(' '))]
 
         self.terminal_characters = '.?!'   # needs to match the WordCollector terminal_characters
         self.output_format = 'TC'          # title case, can also do UC = upper case, LC = lower case
+        self.display_as_produced = False    # display each sentence as it's produced
+        self._set_keys()
     
     def __str__(self):
         return f"SentenceProducer order={self.order} verbose={self.verbose}, source={self.source}, min/max={self.min_size},{self.max_size} seed={self.seed}, num={self.num}"
+
+    def _set_keys(self):
+        prefix = TextParser._prefix
+        self._initial_keys_df = self.counts_df[ [x.startswith(prefix) for x in self.counts_df['key']] ]
+        #
+        # initiial_keys and keys are both sets and so the values are unique
+        #
+        self._initial_keys = list(set(self._initial_keys_df['key'].values.tolist()))
+        self._keys = list(set(self.counts_df['key'].values.tolist()))
+        if self.verbose > 0:
+            print(f'total number of keys: {len(self._keys)}')
+            print(f'number of initial keys: {len(self._initial_keys)}')
 
     def get_seed(self, aseed=None):
         if self.seed is None or aseed is None:
             # need to pick one at random
             if self.initial:
                 # pick a seed that starts a sentence (i.e. first character is a space)
-                theseed = self.initial_keys.iloc[random.randint(0, len(self.initial_keys)-1)]
+                theseed = self._initial_keys[random.randint(0, len(self._initial_keys)-1)]
             else:
                 # pick any old seed from the chain's index
-                theseed = self.keys.iloc[random.randint(0, len(self.keys)-1)]
+                theseed = self._keys[random.randint(0, len(self._keys)-1)]
         else:
             theseed = aseed
         if self.verbose > 1:
@@ -47,8 +58,7 @@ class SentenceProducer(Producer):
     
     def get_next_word(self, seed):
         """Gets the next word based on the seed argument
-        
-        The algorithm is identical to WordProducer.get_next_character
+
         Returns:
             both the next word and a new seed as a dict with keys 'new_seed' and 'next_token'
         """
@@ -57,16 +67,20 @@ class SentenceProducer(Producer):
         next_token = None
         if self.verbose > 2:
             print(f"get_next_word(seed): '{seed}'")
-        key_values = self.keys.values
-        if seed in key_values:
-            row = self.chain_df.loc[seed]
-            row_probs = row[row > 0].cumsum()
+
+        if seed in self._keys:
+            df = self.chain_df[self.chain_df['key']==seed]
+            if len(df) == 0:  #  add to chain_df from counts_df
+                df = self._add_key(seed)
+    
             # given a probability, pick the first word in the row_probs (cumulative probabilities)
             # having a probability > the random probability
             # for example:
             prob = random.random()
-            p = row_probs[row_probs> prob].iat[0]
-            next_token = row_probs[row_probs> prob].index[0]
+            row = df[df['prob']>prob].iloc[0]
+            next_token = row['word']
+            p = row['prob']
+            
             new_seed = ' '.join(((seed + ' ' + next_token).split())[1:self.order+1])
             if self.verbose > 1:
                 print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
@@ -89,6 +103,8 @@ class SentenceProducer(Producer):
         
         if self.verbose > 1:
             print(f'added: {asentence}')
+        if self.display_as_produced:
+            print(asentence)
         return asentence
             
     def produce(self):
@@ -124,7 +140,7 @@ class SentenceProducer(Producer):
                         seed = self.get_next_seed()
                         nwords = self.order
                     else:
-                        sentence = f'{sentence} {ntoken}'
+                        sentence = f'{sentence} {ntoken.lstrip()}'
                         nwords+=1
                         if nwords >= self.max_size:
                             sentence = self.add_sentence_to_set(sentences, sentence + '.')

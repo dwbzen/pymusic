@@ -15,7 +15,6 @@ from common.utils import Utils
 from common.markovChain import MarkovChain
 from common.sentenceProducer import SentenceProducer
 import argparse
-import sys
 import pandas as pd
 
 class SentenceProducerRunner(object):
@@ -30,16 +29,14 @@ class SentenceProducerRunner(object):
         parser.add_argument("-s", "--source", help="input file name")
         parser.add_argument("-i","--ignoreCase", help="ignore input case", action="store_true", default=False)
         parser.add_argument("--name", help="Name of resulting MarkovChain, used to save to file", type=str, default="mychain")
-        parser.add_argument("-f","--format", help="Save output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='csv' )
-        parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format",type=str, choices=['csv','json','chain'] ) 
         parser.add_argument("-r", "--remove_stop_words", help="remove common stop words", action="store_true", default=False)
-        parser.add_argument("-p", "--processing_mode", help="specify words of sentences", choices=['words','sentences'], default='words')
+        parser.add_argument("-p", "--processing_mode", help="specify words of sentences", choices=['words','sentences', 'lines'], default='sentences')
 
         #
         # SentenceProducer arguments
         #
-        parser.add_argument("-c", "--chainFile", help="Existing serialized MarkovChain file (json), or POS file name .",  type=str, default=None)
-        parser.add_argument('outfile', nargs='?', help="Optional output file name", type=argparse.FileType('w'), default=sys.stdout)
+        parser.add_argument("-c", "--chainfile", help="Existing serialized MarkovChain file.",  type=str, default=None)
+        parser.add_argument("-f","--format", help="File input/output format. Default is csv", type=str, choices=['csv','json','xlsx'], default='csv' )
 
         parser.add_argument("-n", "--num", help="Number of sentences to produce",  type=int, default=10)
         parser.add_argument("--min", help="Minimum length of sentences", type=int, choices=range(2,6), default=5)
@@ -52,16 +49,18 @@ class SentenceProducerRunner(object):
         parser.add_argument("--initial", help="choose initial seed only (start of word)", action="store_true", default=True)
         parser.add_argument("--recycle", help="How often to pick a new seed, default is pick a new seed after each sentence", type=int, default=1)
         args = parser.parse_args()
+        
         markovChain = None
         order = args.order
         source_file = None
+        chain_filename = None
+        counts_filename = None        
         
-        
-        if args.chainFile is None:
+        if args.chainfile is None and not (args.source is None and args.text is None):   # run the collector first
             if args.verbose > 0:
                 print('run WordCollector')
                 print(args)
-            collector = WordCollector(state_size = args.order, verbose=args.verbose, source=args.source, text=args.text, ignore_case=args.ignoreCase)
+            collector = WordCollector(state_size=args.order, verbose=args.verbose, source=args.source, text=args.text, ignore_case=args.ignoreCase)
             collector.name = args.name
             collector.format = args.format
             collector.processing_mode = args.processing_mode
@@ -73,53 +72,52 @@ class SentenceProducerRunner(object):
                 print(f"MarkovChain written to file: {collector.filename}")
             
             markovChain = collector.markovChain
-            if args.display is not None:
-                # display in specified format
-                if args.display=='json':
-                    print(collector.get_json_output())
-                elif args.display=='csv':
-                    print(markovChain.chain_df.to_csv(line_terminator='\n'))
-                else:   # assume 'chain' and display the data frame
-                    print(markovChain.chain_df)
 
         else:
-            # use serialized MarkovChain file in JSON format (--chain )as input
-            file_info = Utils.get_file_info(args.chainFile)
-            thepath = file_info["path_text"]
-            ext = file_info['extension'].lower()
+            # use serialized MarkovChain file  and counts file in specified format
+            # for example  --chainfile "/Compile/dwbzen/resources/text/madnessText"
+            #
+            chain_filename = f'{args.chainfile}_wordsChain.{args.format}'
+            counts_filename = f'{args.chainfile}_wordCounts.{args.format}'
+            
+            chain_file_info = Utils.get_file_info(chain_filename)
+            chain_path = chain_file_info["path_text"]
+            
+            counts_file_info = Utils.get_file_info(counts_filename)
+            counts_path = counts_file_info["path_text"]
+
+            ext = args.format
             if args.verbose > 0:
-                print(file_info)
-            if not file_info['exists']:
-                print(f"{thepath} does not exist", file=sys.stderr)
+                print(chain_file_info)
+            if not chain_file_info['exists']:
+                print(f"{chain_path} does not exist")
                 exit()
             else:
                 if ext=='json':
-                    mc_df = pd.read_json(thepath, orient="index")
-                    markovChain = MarkovChain(order, chain_df=mc_df)
-                elif ext=='csv':
-                    mc_df = pd.read_csv(thepath)
-                    # need to reindex and then drop the KEY column
-                    new_index = mc_df['KEY']
-                    mc_df.index = new_index.values
-                    mc_df.drop(['KEY'], axis=1, inplace=True)
-                    markovChain = MarkovChain(order, chain_df=mc_df)
-                else:
-                    print(f'{ext} is an invalid file type', file=sys.stderr)
-                    exit()
+                    chain_df = pd.read_json(chain_path, orient="index")
+                    counts_df = pd.read_json(counts_path, orient="index")
+                    markovChain = MarkovChain(order, counts_df, chain_df=chain_df)
+                elif ext=='csv':     # parts-of-speech file  TODO
+                    chain_df = pd.read_csv(chain_path, header=0, names=['key','word','count','prob'])
+                    counts_df = pd.read_csv(counts_path, header=0, names=['key','word','count'])
+                    markovChain = MarkovChain(order, counts_df, chain_df=chain_df)
+                elif ext=='xlsx':
+                    pass        # TODO
         
         if args.verbose > 0:
             print('run SentenceProducer')
 
         sentenceProducer = SentenceProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose )
-        if args.chainFile is not None:
-            sentenceProducer.chain_file = args.chainFile
+        if chain_filename is not None:
+            sentenceProducer.chain_filename = chain_filename
+            sentenceProducer.counts_filename = counts_filename
+    
         sentenceProducer.initial = args.initial
         sentenceProducer.seed = args.seed   # the initial starting seed, could be None
         sentenceProducer.postprocessing = args.postprocessing
         sentenceProducer.recycle_seed_count = args.recycle
         sentences = sentenceProducer.produce()
         
-        print('\n')
         for s in sentences: print(f'{s}')
                
         

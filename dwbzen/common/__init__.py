@@ -9,6 +9,7 @@ __all__ = [
     'characterCollector',
     'characterCollectorRunner',
     'collector',
+    'collectorProducer',
     'environment',
     'geometry',
     'markovChain',
@@ -28,6 +29,7 @@ __all__ = [
 from .characterCollector import CharacterCollector
 from .characterCollectorRunner import CharacterCollectorRunner
 from .collector import Collector
+from .collectorProducer import CollectorProducer
 from .environment import Environment
 from .geometry import Geometry
 from .markovChain import MarkovChain

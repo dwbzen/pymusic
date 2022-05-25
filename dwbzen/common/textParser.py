@@ -24,11 +24,14 @@ class TextParser(object):
     _utf_punct = '\N{LEFT SINGLE QUOTATION MARK}\N{RIGHT SINGLE QUOTATION MARK}\N{LEFT DOUBLE QUOTATION MARK}\N{RIGHT DOUBLE QUOTATION MARK}'
     _utf_quotes = '\N{LEFT DOUBLE QUOTATION MARK}\N{RIGHT DOUBLE QUOTATION MARK}'
     _quotes = '"' + _utf_quotes
+    
+    _prefix = ' '  # prefix for the initial word of a sentence or line
 
     def __init__(self, txt = None, source = None, maxlines=None, ignore_case=True, remove_stop_words=False):
         self._words = []        # words in order of appearance. Does not include stop words if remove_stop_words is True
         self._all_words = []    # words in order of appearance including stop words
         self._sentence_words = []    # words in sentence order with initial word of each sentence prefixed with a space
+        self._line_words = None        # words in a line of text (which may be multiple sentences) with initial word of each prefixed with a space
         self._lines = []
         self._sentences = []
         self._word_set = None
@@ -43,13 +46,14 @@ class TextParser(object):
         self._remove_stop_words = remove_stop_words
         self.replace_utf_punctuation = True      # replace UTF-8 single, double quotation marks with ' and " respectively
         self.treat_dblquotes_as_words = True    # if true treat " as a word (instead of a quote)
+        self.initial_word_prefix = TextParser._prefix
+
         if source is not None:
             fp = open(source, "r")
             self.text = fp.read()
             self.text = self.text.replace('\t',' ')
         if self.text is not None and len(self.text) > 0:
             self.parse_text(self.text, maxlines=maxlines)
-        
     
     @staticmethod
     def remove_punctuation(txt):
@@ -99,6 +103,30 @@ class TextParser(object):
     
     def get_sentence_words(self):
         return self._sentence_words
+    
+    def get_line_words(self):
+        """ Get words in a line of text with initial word of each prefixed with a space.
+        
+        A line will consist of one or more sentences.
+        NOTE that stop words are not removed from line words.
+        
+        """
+        if self._line_words is None:
+            self._line_words = []
+            for line in self._lines:
+                s_rempunc = TextParser.remove_punctuation(line)
+                words = s_rempunc.split(' ')
+                line_words = []
+                if self._ignore_case:
+                    line_words = [str.lower(w) for w in words if len(w) > 0]
+                else:
+                    line_words = [w for w in words if len(w) > 0]
+                    
+                if len(line_words) > 0:
+                    line_words[0] = self.initial_word_prefix + line_words[0]
+                    self._line_words += line_words          
+                        
+        return self._line_words
     
     def get_lines(self):
         return self._lines
@@ -159,7 +187,7 @@ class TextParser(object):
                 self._words += sentence_words
                 
                 if len(sentence_words) > 0:
-                    sentence_words[0] = ' ' + sentence_words[0]
+                    sentence_words[0] = self.initial_word_prefix + sentence_words[0]
                     self._sentence_words += sentence_words
                     
                 self._sentences.append(s)
