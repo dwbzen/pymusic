@@ -8,8 +8,6 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import pandas as pd
-from .markovChain import MarkovChain
 from .utils import Utils
 from .environment import Environment
 
@@ -30,7 +28,7 @@ class CollectorProducer(object):
         self.chain_df = None        # pd.DataFrame()
         self.counts_df = None       # pd.DataFrame()
         #
-        # update to reflect your environment
+        # update Environment to reflect your environment
         #
         env = Environment.get_environment()
         self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"

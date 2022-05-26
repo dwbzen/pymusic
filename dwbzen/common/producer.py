@@ -40,7 +40,7 @@ class Producer(CollectorProducer):
         self._initial_keys = None
         self._keys = None
         self._initial_keys_df = None
-        
+        self.display_as_produced = False   # display each object (word, sentence etc.)  as it's produced
         #
         # count of how many times the current seed has been used
         # when >= self.recycle_seed_count, a new seed is picked

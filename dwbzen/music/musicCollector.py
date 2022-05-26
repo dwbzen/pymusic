@@ -6,23 +6,22 @@
 # Authors:      Donald Bacon
 #
 # Copyright:    Copyright (c) 2021 Donald Bacon
-
+#
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
 from common.collector import Collector
+from .instruments import Instruments
 import music
-from music.instruments import Instruments
 import pandas as pd
 
 class MusicCollector(Collector):
     
-    save_folder="/Compile/dwbzen/resources/music"
-    
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
-        super().__init__(state_size, verbose, source)
+        super().__init__(state_size, verbose, source, domain='music')
+        
         self.instruments = Instruments(self.verbose)
-        self.save_folder=MusicCollector.save_folder
+
         self.corpus_folder="/Compile/music21/music21/corpus"    # the default corpus folder
         self.terminal_object = None     # set in derived classes
         self.initial_object = None      # set in derived classes
@@ -39,6 +38,8 @@ class MusicCollector(Collector):
         if parts is not None:
             self.add_parts(parts)
         self.enforceRange = True
+        self.counts_df = None
+        self.chain_df = None
     
     def add_parts(self, parts) -> str:
         if parts is not None:

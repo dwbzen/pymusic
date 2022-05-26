@@ -53,7 +53,6 @@ class Collector(CollectorProducer):
         self._initial_keys = None        # set of key values of initial_keys_df
         self._keys = None                # set of key values of counts_df
         
-        
     def __repr__(self, *args, **kwargs):
         return "Collector"
     

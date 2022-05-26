@@ -48,6 +48,7 @@ class SentenceProducerRunner(object):
         parser.add_argument("--postprocessing", help="post-processing: TC = title case, UC = upper case, LC = lower case. Default is None", default="TC")
         parser.add_argument("--initial", help="choose initial seed only (start of word)", action="store_true", default=True)
         parser.add_argument("--recycle", help="How often to pick a new seed, default is pick a new seed after each sentence", type=int, default=1)
+        parser.add_argument("--display", "-d", help="Display each word as it is produced", action="store_true", default=True)
         args = parser.parse_args()
         
         markovChain = None
@@ -55,7 +56,7 @@ class SentenceProducerRunner(object):
         source_file = None
         chain_filename = None
         counts_filename = None        
-        
+        display_as_produced = args.display
         if args.chainfile is None and not (args.source is None and args.text is None):   # run the collector first
             if args.verbose > 0:
                 print('run WordCollector')
@@ -116,9 +117,10 @@ class SentenceProducerRunner(object):
         sentenceProducer.seed = args.seed   # the initial starting seed, could be None
         sentenceProducer.postprocessing = args.postprocessing
         sentenceProducer.recycle_seed_count = args.recycle
+        sentenceProducer.display_as_produced = display_as_produced
         sentences = sentenceProducer.produce()
         
-        for s in sentences: print(f'{s}')
-               
-        
+        if not display_as_produced:
+            for s in sentences: print(f'{s}')
+
     

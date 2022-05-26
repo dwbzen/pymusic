@@ -47,6 +47,7 @@ class WordProducerRunner(object):
         parser.add_argument("--initial", help="choose initial seed only (start of word)", action="store_true", default=False)
         parser.add_argument("--pos", help="Source is a part-of-speech file", action="store_true",default=False)
         parser.add_argument("--recycle", help="How often to pick a new seed, default is pick a new seed after each word produced", type=int, default=1)
+        parser.add_argument("--display", "-d", help="Display each word as it is produced", action="store_true", default=True)
         args = parser.parse_args()
         
         markovChain = None
@@ -54,6 +55,7 @@ class WordProducerRunner(object):
         source_file = None
         chain_filename = None
         counts_filename = None
+        display_as_produced = args.display
         if args.verbose > 0:
             print('run WordProducer')
             print(args)
@@ -109,7 +111,8 @@ class WordProducerRunner(object):
         wordProducer.initial = args.initial
         wordProducer.seed = args.seed
         wordProducer.recycle_seed_count = args.recycle
+        wordProducer.display_as_produced = display_as_produced
         words = wordProducer.produce()  # also prints the words
-        if args.verbose > 1:
+        if not display_as_produced:
             print(words)
             

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
-# Name:          intervalCollector.py
-# Purpose:       Note collector class.
+# Name:          durationCollector.py
+# Purpose:       DurationDollectorr class.
 #
-#                IntervalCollector creates a pair of MarkovChains
-#                from a Note stream for the Intervals and Durations. 
-#                The corresponding Producer class is PartProducer which reverses the process.
+#                DurationDollectorr creates a MarkovChain of durations from a Note stream.
 #
 # Authors:      Donald Bacon
 #
@@ -15,6 +13,7 @@
 
 from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
+from common.markovChain import MarkovChain
 import pandas as pd
 import sys
 from music21 import duration
@@ -24,6 +23,7 @@ class DurationCollector(MusicCollector):
 
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):          # this also executes self.set_source()
         super().__init__(state_size, verbose, source)
+        
         self.terminal_object = duration.Duration(24.0)      # equivalent to 6 x 4 quarter notes
         self.initial_object = duration.Duration(0.0)        # 0 duration have ordinal None
         self.score = None       # if source is a single Score
@@ -54,7 +54,7 @@ class DurationCollector(MusicCollector):
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
         
-        if len(self.counts_df) == 0:
+        if self.counts_df is None:
             # initialize the counts DataFrame
             # self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[str(next_duration.quarterLength)] )
             self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_duration.duration.quarterLengthNoTuplets] )
@@ -122,7 +122,8 @@ class DurationCollector(MusicCollector):
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
         self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 3))
-        self.markovChain.chain_df = self.chain_df
+        
+        self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         
         if self.verbose > 1:
             print(f" Counts:\n {self.counts_df}")
@@ -144,6 +145,6 @@ class DurationCollector(MusicCollector):
             df.to_csv(filename)
         return save_result
     
-    if __name__ == '__main__':
-        print(DurationCollector.__doc__)
+if __name__ == '__main__':
+    print(DurationCollector.__doc__)
     

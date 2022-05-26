@@ -10,7 +10,7 @@
 # Authors:      Donald Bacon
 #
 # Copyright:    Copyright (c) 2021 Donald Bacon
-
+#
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
@@ -47,11 +47,13 @@ class NoteCollector(MusicCollector):
         
     def __init__(self, state_size=2, verbose=0, source=None, parts=None, collection_mode='ap', enforce_range=True):
         super().__init__(state_size, verbose, source, parts)
+        
         self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
-        self.markovChain.collector = NoteCollector
+        
         self.countsFileName = '_noteCounts_' + collection_mode + '_0{}'.format(state_size)
         self.chainFileName = '_notesChain_' + collection_mode + '_0{}'.format(state_size)
         self.notes_df_fileName = '_notes_df'        # self.notes_df saved
+        
         self.notes_df = pd.DataFrame()
         self.collection_mode = collection_mode      # default is absolute pitch
         self.enforce_range = enforce_range          # applies only to dp and dpc collection modes
@@ -226,7 +228,7 @@ class NoteCollector(MusicCollector):
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
         
-        if len(self.counts_df) == 0:
+        if self.counts_df is None:
             # initialize the counts DataFrame
             if self.pitch_mode:
                 self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.nameWithOctave])
@@ -291,7 +293,8 @@ class NoteCollector(MusicCollector):
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
         self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 6))
-        self.markovChain.chain_df = self.chain_df
+        
+        self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         
         if self.verbose > 1:
             print(f" Counts:\n {self.counts_df}")

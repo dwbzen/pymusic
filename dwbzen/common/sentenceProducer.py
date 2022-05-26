@@ -23,7 +23,7 @@ class SentenceProducer(Producer):
 
         self.terminal_characters = '.?!'   # needs to match the WordCollector terminal_characters
         self.output_format = 'TC'          # title case, can also do UC = upper case, LC = lower case
-        self.display_as_produced = False    # display each sentence as it's produced
+
         self._set_keys()
     
     def __str__(self):
@@ -78,7 +78,7 @@ class SentenceProducer(Producer):
             # for example:
             prob = random.random()
             row = df[df['prob']>prob].iloc[0]
-            next_token = row['word']
+            next_token = row['word'].lstrip()
             p = row['prob']
             
             new_seed = ' '.join(((seed + ' ' + next_token).split())[1:self.order+1])

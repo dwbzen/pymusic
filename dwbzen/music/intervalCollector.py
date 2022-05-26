@@ -12,7 +12,7 @@
 
 from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
-import common
+from common.markovChain import MarkovChain
 import pandas as pd
 from music21 import  interval, converter, corpus
 
@@ -26,8 +26,9 @@ class IntervalCollector(MusicCollector):
 
     def __init__(self, state_size=2, verbose=0, source=None, parts=None):
         super().__init__(state_size, verbose, source, parts)
+        
         self.initial_object, self.terminal_object = IntervalCollector.initialize_initial_terminal_objects()
-        self.markovChain.collector = IntervalCollector        self.countsFileName = '_intervalCounts' + '_0{}'.format(state_size)
+        self.countsFileName = '_intervalCounts' + '_0{}'.format(state_size)
         self.chainFileName = '_intervalsChain' + '_0{}'.format(state_size)
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
@@ -60,7 +61,7 @@ class IntervalCollector(MusicCollector):
         if self.verbose > 1:
             print(f"key_interval: {index_str}, next_interval: {next_interval.semitones}, {col_name}")
     
-        if len(self.counts_df) == 0:
+        if self.counts_df is None:
             # initialize the counts DataFrame
             self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_interval.semitones])
         else:
@@ -123,7 +124,7 @@ class IntervalCollector(MusicCollector):
                 result = False
         return result
 
-    def collect(self) -> common.MarkovChain:
+    def collect(self) -> MarkovChain:
         """
         Run collection using the set parameters
         Returns MarkovChain result
@@ -165,7 +166,8 @@ class IntervalCollector(MusicCollector):
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
         self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 6))
-        self.markovChain.chain_df = self.chain_df
+        
+        self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         
         if self.verbose > 1:
             print(f" Counts:\n {self.counts_df}")
@@ -175,7 +177,7 @@ class IntervalCollector(MusicCollector):
         #
         # collect durations from the Score and notes_df DataFrame
         #
-        run_results = self.collect_durations(self.intervals_df)
+        self.collect_durations(self.intervals_df)
         return self.markovChain
     
     def save(self):

@@ -6,6 +6,12 @@ class Environment(object):
     _lock = Lock()
     
     def __init__(self, package_name):
+        """Initialize the running Environment by setting global environment variables
+        
+        TODO: implement using a properties config file
+        
+        """
+        self.name = package_name
         self.resource_base = '/Compile/dwbzen/resources'
         self.package_name = package_name
         self.resources = {}

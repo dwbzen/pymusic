@@ -16,6 +16,7 @@ class WordProducer(Producer):
     
     def __init__(self, state_size, markovChain, source_file, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
         super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose, rand_seed)
+        self.display_as_produced = True
         self.list=False
         self.postprocessing = None
         self.initial=False
@@ -106,6 +107,8 @@ class WordProducer(Producer):
         else:
             pass
         word_list.append(aword)
+        if self.display_as_produced:
+            print(f"{aword}")
         return aword
 
     def produce(self):
@@ -151,8 +154,6 @@ class WordProducer(Producer):
                     word = self.add_word_to_list(words, word)
                     more_to_go = False
                     seed = initial_seed             # start next word with the initial_seed selected earlier
-                    
-            print(f"{word}")
             
         if self.sort:
             words = words.sort(key=str.lower, reverse=False)
