@@ -49,11 +49,11 @@ class Utils(object):
             return x
     
     @staticmethod
-    def get_json_output(df):
+    def get_json_output(df, orient='index'):
         """Dumps the dataframe argument to a nicely formated text string.
         
         """
-        result = df.to_json(orient='index')
+        result = df.to_json(orient=orient)
         parsed = json.loads(result)
         return json.dumps(parsed, indent=4)
     

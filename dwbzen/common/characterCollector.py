@@ -26,8 +26,8 @@ class CharacterCollector(Collector):
         self.terminal_object = '~'
         self.initial_object = ' '
 
-        self.countsFileName = '_charCounts'
-        self.chainFileName = '_charsChain'
+        self.countsFileName = '_charCounts' + '_0{}'.format(state_size)
+        self.chainFileName = '_charsChain' + '_0{}'.format(state_size)
         
         self._text_parser = None
 

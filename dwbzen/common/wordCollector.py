@@ -56,8 +56,8 @@ class WordCollector(Collector):
         self._source = source
         self._words = None                  # words in order of appearance
         
-        self.countsFileName = '_wordCounts'
-        self.chainFileName = '_wordsChain'
+        self.countsFileName = '_wordCounts' + '_0{}'.format(state_size)
+        self.chainFileName = '_wordsChain' + '_0{}'.format(state_size)
         
         self.words_re = re.compile(r'[,;: ]')    # regular expression to split a line into words
 
@@ -168,4 +168,6 @@ class WordCollector(Collector):
         save_result = super().save()
         return save_result
 
+if __name__ == '__main__':
+    print(WordCollector.__doc__())
         

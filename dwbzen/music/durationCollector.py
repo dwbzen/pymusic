@@ -32,8 +32,8 @@ class DurationCollector(MusicCollector):
         self.parts = None
         self.durations_df = None
         self.source_df = None
-        self.countsFileName = '_durationCounts'
-        self.chainFileName = '_durationsChain'
+        self.countsFileName = '_durationsCounts' + '_0{}'.format(state_size)
+        self.chainFileName = '_durationsChain' + '_0{}'.format(state_size)
         if parts is not None:
             self.add_parts(parts)
         if source is not None:
@@ -49,10 +49,10 @@ class DurationCollector(MusicCollector):
         return duration.Duration
     
     def process(self, key_durations, next_duration):
-        index_str = MusicUtils.show_durations(key_durations)
-        col_str = next_duration.duration.quarterLengthNoTuplets   # str(next_duration.quarterLength)
+        index_str = MusicUtils.show_durations(key_durations)      # str value
+        col_val = next_duration.duration.quarterLengthNoTuplets   # float value
         if self.verbose > 1:
-            print(f"key_note: {index_str}, next_note: {col_str}")
+            print(f"key: {index_str}, next: {col_val}")
         
         if self.counts_df is None:
             # initialize the counts DataFrame
@@ -61,12 +61,12 @@ class DurationCollector(MusicCollector):
         
         else:
             if index_str not in self.counts_df.index:   # add a new row
-                self.counts_df.loc[index_str, col_str] = 1
+                self.counts_df.loc[index_str, col_val] = 1
             else: # update existing index
-                if col_str in self.counts_df.columns:
-                    self.counts_df.loc[index_str, col_str] = 1 + self.counts_df.loc[index_str, col_str]
+                if col_val in self.counts_df.columns:
+                    self.counts_df.loc[index_str, col_val] = 1 + self.counts_df.loc[index_str, col_val]
                 else:
-                    self.counts_df.loc[index_str, col_str] = 1
+                    self.counts_df.loc[index_str, col_val] = 1
 
         self.counts_df = self.counts_df.fillna(0)
         
@@ -135,12 +135,17 @@ class DurationCollector(MusicCollector):
 
     
     def save(self):
+        """Saves the chain_df and counts_df DataFrames to a file in specified format.
+        
+        TODO - fix if order==1, the chain and counts index is saved as a float instead of a str.
+        
+        """
         save_result = super().save()
         if self.durations_df is not None and self.name is not None:
             #
             # optionally save durations_df as .csv
             #
-            filename = "{}/{}_durations.{}".format(self.save_folder, self.name, "csv")
+            filename = "{}/{}_durations.{}".format(self.save_folder, self.name, self.format)
             df = self.durations_df[['type','ordinal','dots','fullName','quarterLength','tuplets']]
             df.to_csv(filename)
         return save_result

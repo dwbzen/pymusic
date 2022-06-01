@@ -71,10 +71,11 @@ class WordProducerRunner(object):
             
         else:
             # use serialized MarkovChain file  and counts file in specified format
-            # for example  --chainfile "/Compile/dwbzen/resources/text/drugBrands"
+            # for example  --chainfile "/Compile/dwbzen/resources/text/drugBrands" 
             #
-            chain_filename = f'{args.chainfile}_charsChain.{args.format}'
-            counts_filename = f'{args.chainfile}_charCounts.{args.format}'
+            order_string = '_0{}'.format(order)
+            chain_filename = f'{args.chainfile}_charsChain{order_string}.{args.format}'
+            counts_filename = f'{args.chainfile}_charCounts{order_string}.{args.format}'
             
             chain_file_info = Utils.get_file_info(chain_filename)
             chain_path = chain_file_info["path_text"]

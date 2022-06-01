@@ -8,25 +8,29 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-import music, common
+import music
+from common.producer import Producer
 from music.musicUtils import MusicUtils
 import pandas as pd
 import random, math, sys
 from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 
-class MusicProducer(common.Producer):
+class MusicProducer(Producer):
     """Produce music from interval or notes MarkovChains
 
-    TODO: fix reading durations_chain in json format. Currently the columns are interpreted as datetime values, should be int.
+    Known Issues: 
+      Reading durations_chain in json format is incorrect. Currently the columns are interpreted as datetime values, should be int.
+      MusicProducer intervals on existing chain file gets into an infinite loop. With the same parameters creating the chain files works fine.
 
     """
 
     def __init__(self, state_size, markovChain, durationsChain, source_file, parts, produceParts, num=10, verbose=0, rand_seed=42, producerType=None):
         super().__init__(state_size, markovChain, source_file, num=num, verbose=verbose,  rand_seed=rand_seed)
+        
         self.instruments = music.Instruments(self.verbose)
         self.show = None
         self.producerType = producerType
-        self.save_folder="/Compile/dwbzen/resources/music"
+
         self.score = stream.Score()
         self.score.insert(0, metadata.Metadata())
         self.parts = parts                  # comma-delimited filter part names from the command line
@@ -35,14 +39,12 @@ class MusicProducer(common.Producer):
         self.producePart_names = produceParts
         
         self.durationsChain = durationsChain
-        self.durationKeys = pd.Series(self.durationsChain.chain_df.index)
-        self.durations_key_values = self.durationKeys.values
+
         
         # if not None, this is the duration to use for all Notes instead of using durationsChain
         self.fixed_duration = None   # duration.Duration(quarterLength=0.5)
         
-        self.initial_keys = self.get_initial_keys()
-        self.key_values = self.keys.values      # self.keys = pd.Series(self.chain_df.index)
+        self._set_keys()
         self.raw_seed = None
         self.score_key = key.Key('C')
 
@@ -95,17 +97,20 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         for i in range(len(self.producePart_names)):
             self.start_notes[self.producePart_names[i]] = note.Note(notes_list[i])
     
-    def get_initial_keys(self):
+    def _set_keys(self):
         initstr = None
         if self.producerType == 'intervals':
             initobj = music.IntervalCollector.initial_object
             initstr = '{}'.format(initobj.semitones)
         elif self.producerType == 'notes':
             initstr="'C0'"
-            
-        self.initial_keys = self.keys[self.keys.apply(lambda x: x.startswith(initstr))]
         
-        return self.initial_keys
+        self._keys = pd.Series(self.chain_df.index)
+        self._key_values = self._keys.values
+        self._initial_keys = self._keys[self._keys.apply(lambda x: x.startswith(initstr))]
+        
+        self._durationKeys = pd.Series(self.durationsChain.chain_df.index)
+        self._durations_key_values = self._durationKeys.values
 
     def get_seed(self, aseed=None):
         theseed = self.seed
@@ -125,7 +130,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
     
     def get_durations_seed(self):
             # pick any old seed from the durations chain's index
-            return self.durationKeys[random.randint(0, len(self.durationKeys)-1)]
+            return self._durationKeys[random.randint(0, len(self._durationKeys)-1)]
         
     def set_seed(self, raw_seed, collector_type):
         """Creates a seed for Notes or Intervals from a list
@@ -175,7 +180,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         next_token = None
         if self.trace_mode:
             print(f"get_next_object(seed): \"{seed}\"")
-        if seed in self.key_values:
+        if seed in self._key_values:
             row = self.chain_df.loc[seed]
             row_probs = row[row > 0].cumsum()
             # given a probability, pick the first entry in the row_probs (cumulative probabilities)
@@ -211,6 +216,11 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             
             self.fixed_duration is not None, that is returned as 'next_token'
             and the seed argument is returned as 'new_seed'
+            
+        TODO - this doesn't work for order=1 chains, and it looks like it only works for order=2
+        get_next_object probably has same problem.
+        The problem is the durations chain keys for order 1 is a float instead of a string.
+        
         """
         new_seed = None
         next_token = None
@@ -220,7 +230,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             next_token = self.fixed_duration
             new_seed = seed
         else:
-            if seed in self.durations_key_values:
+            if seed in self._durations_key_values:
                 row = self.durationsChain.chain_df.loc[seed]
                 row_probs = row[row > 0].cumsum()
                 # given a probability, pick the first entry in the row_probs (cumulative probabilities)
@@ -228,11 +238,20 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
                 # 
                 prob = random.random()
                 p = row_probs[row_probs> prob].iat[0]
-                next_token = row_probs[row_probs> prob].index[0]
-                ns = [float(x) for x in seed.split(',')]
-                ns.append(next_token)
-                new_seed = str(ns[1:]).replace(' ', '')
-                new_seed = new_seed[1:len(new_seed)-1]   # drop the []
+                next_token = float(row_probs[row_probs> prob].index[0])
+                #
+                # this next bit is needed because order=1 duration chain index (seed variable) is float instead of str
+                # so it's a hack until that can be fixed
+                #
+                if isinstance(seed, float):
+                    ns = seed   # a single float value
+                    new_seed = next_token
+                else:
+                    ns = [float(x) for x in seed.split(',')]
+                    ns.append(next_token)
+                    new_seed = str(ns[1:]).replace(' ', '')
+                    new_seed = new_seed[1:len(new_seed)-1]   # drop the []
+                    
                 if self.verbose > 1:
                     print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
                     
@@ -259,6 +278,8 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         total_duration = self.num_measures * self.timeSignature.numerator * self.timeSignature.beatDuration.quarterLength
         
         for pname in self.producePart_names:    # the part name must also be a valid Instrument
+            if self.verbose > 0:
+                print(f"---- Starting {pname} part")            
             part = stream.Part()
             clef = self.instruments.get_instrument_clef(pname)
             part_instrument = self.instruments.get_instrument(pname)
@@ -424,7 +445,7 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
         return part_notes
     
     
-    if __name__ == '__main__':
-        print(MusicProducer.__doc__)
+if __name__ == '__main__':
+    print(MusicProducer.__doc__)
         
         

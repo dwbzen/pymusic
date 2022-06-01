@@ -78,8 +78,9 @@ class SentenceProducerRunner(object):
             # use serialized MarkovChain file  and counts file in specified format
             # for example  --chainfile "/Compile/dwbzen/resources/text/madnessText"
             #
-            chain_filename = f'{args.chainfile}_wordsChain.{args.format}'
-            counts_filename = f'{args.chainfile}_wordCounts.{args.format}'
+            order_string = '_0{}'.format(order)
+            chain_filename = f'{args.chainfile}_wordsChain{order_string}.{args.format}'
+            counts_filename = f'{args.chainfile}_wordCounts{order_string}.{args.format}'
             
             chain_file_info = Utils.get_file_info(chain_filename)
             chain_path = chain_file_info["path_text"]

@@ -13,6 +13,7 @@
 from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
 from common.markovChain import MarkovChain
+from common.collectorProducer import CollectorProducer
 import pandas as pd
 from music21 import  interval, converter, corpus
 
@@ -28,7 +29,7 @@ class IntervalCollector(MusicCollector):
         super().__init__(state_size, verbose, source, parts)
         
         self.initial_object, self.terminal_object = IntervalCollector.initialize_initial_terminal_objects()
-        self.countsFileName = '_intervalCounts' + '_0{}'.format(state_size)
+        self.countsFileName = '_intervalsCounts' + '_0{}'.format(state_size)
         self.chainFileName = '_intervalsChain' + '_0{}'.format(state_size)
         if source is not None:
             self.source = self.set_source(source)   # otherwise it's None
@@ -181,14 +182,18 @@ class IntervalCollector(MusicCollector):
         return self.markovChain
     
     def save(self):
+        """Saves the chain_df, counts_df and intervals_df DataFrames to a file in specified format.
+        
+        """
+
         save_result = super().save()
         if self.intervals_df is not None:
             #
             # optionally save intervals_df as .csv
             #
-            filename = "{}/{}_intervals.{}".format(self.save_folder, self.name, "csv")
+            filename = "{}/{}_intervals.{}".format(self.save_folder, self.name, self.format)
             df = self.intervals_df[['name','niceName','semitones','part_name','part_number']]
-            df.to_csv(filename)
+            save_result = CollectorProducer.save_df(df, filename, self.format, orient='records')
         return save_result
         
 if __name__ == '__main__':

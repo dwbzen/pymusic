@@ -10,7 +10,6 @@
 
 from .producer import Producer
 import random
-import pandas as pd
 
 class WordProducer(Producer):
     

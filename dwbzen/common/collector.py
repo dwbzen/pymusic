@@ -50,8 +50,8 @@ class Collector(CollectorProducer):
         self.initial_object = None          # must be set in derived classes
         
         self._initial_keys_df = None     # DataFrame created by collect() from counts_df
-        self._initial_keys = None        # set of key values of initial_keys_df
-        self._keys = None                # set of key values of counts_df
+        self._initial_keys = None        # unique list of key values of initial_keys_df
+        self._keys = None                # unique key values of counts_df
         
     def __repr__(self, *args, **kwargs):
         return "Collector"
@@ -71,29 +71,22 @@ class Collector(CollectorProducer):
 
             
     def _create_chain(self, initial=True) -> MarkovChain:
-        """Creates a MarkovChain instance from a set of keys
+        """Creates a MarkovChain instance from a counts_df DataFrame
         
-        
-        The MarkovChain model is a dictionary of DataFrames
-        where the key is a string of n-words (n=order of the chain) that appear in the source text,
-        and the value is a DataFrame with the columns: key, word, count (from count_df) and prob (the probability)
+        The MarkovChain model is chain_df DataFrame with the columns: key, word, count (from count_df) and prob (the probability)
+        'key' is a string of n-words/characters (n=order of the chain) that appear in the source,
+        'word' is the next token, and 'prob' is the probability that combination appears in the source.
         The probabilities are computed from the counts.
         
         Parameters:
             initial - if True (the default) create the MarkovChain from initial_keys only
         """
-        markov_chain_dict = dict()
-        #
-        # create the MarkovChain dict() model from keys or initial keys
-        # 
-        keyz = self._initial_keys
+
+        thekeys = self._initial_keys
         if not initial:
-            keyz = self._keys
-            
-        for akey in keyz:
-            self._add_counts_to_model(markov_chain_dict, self.counts_df, akey)
+            thekeys = self._keys
         
-        self.markovChain = MarkovChain(self.order, self.counts_df, chain_df=None, chain_dict=markov_chain_dict, myname=self.name)
+        self.markovChain = MarkovChain(self.order, self.counts_df, keys=thekeys, chain_df=None,  myname=self.name)
         if self.sort_chain:
             self.chain_df = self.markovChain.chain_df.sort_values(by=['key','word'], ignore_index=True, inplace=False)
             self.markovChain.chain_df = self.chain_df

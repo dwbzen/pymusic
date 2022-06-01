@@ -25,23 +25,27 @@ import pandas as pd
 
 class MarkovChain(object):
 
-    def __init__(self, state_size, counts_df:pd.DataFrame, chain_df:pd.DataFrame=None, chain_dict:dict = None, myname:str=None):
+    def __init__(self, state_size, counts_df:pd.DataFrame, keys=None, chain_df:pd.DataFrame=None, myname:str=None):
         """Create and initialize a MarkovChain from a DataFrame or dict
         
         Either chain_df or chain_dict must be not None.
         Parameters:
             state_size - the MarkovChain order, also the logical size of the keys
-            counts_df - a counts DataFrame
+            counts_df - a counts DataFrame, None is okay
             chain_df - if not None, an existing chain DataFrame
-            chain_dict - if not None, a dict of DataFrames used to create the chain DataFrame
+            keys - keys to use. If None, keys are derived from counts_df 'key' column.
+            myname - optional name to use when saving
         """
         self.order = state_size
         self.counts_df = counts_df
         self.name = myname          # used when persisting to CSV, Excel, or JSON
+        self._keys = keys
         self.chain_df = chain_df
-        self.chain_dict = chain_dict
-        if chain_dict is not None:
-            self._create_chain_from_dict()
+        if chain_df is None:
+            self._create_chain()        # create the chain_df DataFrame from the counts_df DataFrame
+        else:
+            self.chain_df = chain_df    # an existing chain_df is provided
+
     
     def __repr__(self, *args, **kwargs):
         return self.chain_df.to_json(path_or_buf = None,orient='index')
@@ -49,21 +53,27 @@ class MarkovChain(object):
     def __str__(self):
         return self.chain_df.to_csv(path_or_buf = None, line_terminator='\n')
     
-    def _create_chain_from_dict(self):
-            for key in self.chain_dict.keys():
-                keycount_df = self.chain_dict[key]
-                if self.chain_df is None:
-                    self.chain_df = pd.DataFrame(keycount_df)
-                else:
-                    self.chain_df = pd.concat([self.chain_df, keycount_df], ignore_index= True)
-    
+    def _create_chain(self):
+        if self._keys is None:
+            self._keys = set(self.counts_df['key'].values.tolist())
+        
+        for akey in self._keys:
+            key_df = self.counts_df[self.counts_df['key'] ==  akey]
+            s = (key_df['count']/key_df['count'].sum()).cumsum()
+            model = key_df.assign(prob=s )
+            if self.chain_df is None:
+                self.chain_df = pd.DataFrame(model)
+            else:
+                self.chain_df = pd.concat([self.chain_df, model], ignore_index= True)
+        
+
     def get_rows(self, key) -> pd.DataFrame:
         """Returns the rows of the chain DataFrame for a given key
         If key not present, return DataFrame will have len==0 
         """
         return self.chain_df[self.chain_df['key'] ==key]
         
-    if __name__ == '__main__':
-        print('MarkovChain')
+if __name__ == '__main__':
+        print(MarkovChain.__doc__())
 
 

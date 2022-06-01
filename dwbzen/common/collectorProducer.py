@@ -10,6 +10,8 @@
 
 from .utils import Utils
 from .environment import Environment
+import sys
+import pandas as pd
 
 class CollectorProducer(object):
     
@@ -40,6 +42,21 @@ class CollectorProducer(object):
     def __repr__(self):
         return f"CollectorProducer {self.order}"
 
+    @staticmethod
+    def save_df(df:pd.DataFrame, filename, file_format, orient='index', sheet_name='Sheet 1'):
+        result = True
+        if file_format=='csv':
+            df.to_csv(filename)
+        elif file_format=='json':
+            dumped = Utils.get_json_output(df, orient)
+            with open(filename, 'w') as f:
+                f.write(str(dumped))
+        elif file_format=='xlsx' or file_format=='excel':
+            df.to_excel(filename, sheet_name=sheet_name, index=False)
+        else:
+            result = False
+            print("Empty DataFrame(s)", sys.stderr)
+        return result
     
     def save(self):
         """Saves the MarkovChain and counts DataFrame files
@@ -62,24 +79,9 @@ class CollectorProducer(object):
             self.filename = "{}/{}{}.{}".format(self.save_folder, self.name, self.chainFileName, self.format)
             self.counts_file = "{}/{}{}.{}".format(self.save_folder, self.name, self.countsFileName, self.format)
             if self.verbose > 1:
-                print(f"output filename '{self.filename}' counts: {self.counts_file}")
-            if len(self.chain_df) > 0:
-                if self.format == 'csv':
-                    self.chain_df.to_csv(self.filename)
-                    self.counts_df.to_csv(self.counts_file)
-                elif self.format == 'json':
-                    dumped = Utils.get_json_output(self.chain_df)
-                    with open(self.filename, 'w') as f:
-                        f.write(str(dumped))
-                    with open(self.counts_file, 'w') as f:
-                        f.write(str(Utils.get_json_output(self.counts_df)))
-                else: # must be excel
-                    self.chain_df.to_excel(self.filename, sheet_name='Sheet 1',index=False)
-                    self.counts_df.to_excel(self.counts_file, sheet_name='Sheet 1',index=False)
-                save_result = True
-            else:
-                save_result = False
-                if self.verbose > 0:
-                    print("Empty MarkovChain")
+                print(f"output filenames '{self.filename}' counts: {self.counts_file}")
+            save_result = CollectorProducer.save_df(self.chain_df, self.filename, self.format)
+            save_result = save_result and CollectorProducer.save_df(self.counts_df, self.counts_file, self.format)
+            
         return save_result
     

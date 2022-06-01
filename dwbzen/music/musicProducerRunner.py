@@ -10,13 +10,13 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from music.musicCollector import MusicCollector
 from music.musicProducer import MusicProducer
 from music.noteCollector import NoteCollector
 from music.intervalCollector import IntervalCollector
 from music.instruments import Instruments
 from common.utils import Utils
 from common.markovChain import MarkovChain
+from common.environment import Environment
 
 import argparse
 import pandas as pd
@@ -116,13 +116,24 @@ class MusicProducerRunner(object):
             markovChain = collector.markovChain
             durationsChain = collector.durationCollector.markovChain
         else:
+            env = Environment.get_environment()
+            save_folder = env.get_resource_folder('music')
+            
             # use serialized MarkovChain in specified format, and Durations files in csv format as input
             file_list = []
             order = f'0{args.order}'
-            file_list.append('{}/{}_{}Chain_{}_{}.{}'.format(MusicCollector.save_folder, args.chainFiles, args.type, args.mode, order, args.format))
-            file_list.append('{}/{}_{}Chain.{}'.format(MusicCollector.save_folder, args.chainFiles, 'durations', 'csv'))
-
+            file_list.append('{}/{}_{}Counts_{}.{}'.format(save_folder, args.chainFiles, 'durations', order, args.format))
+            file_list.append('{}/{}_{}Chain_{}.{}'.format(save_folder, args.chainFiles, 'durations', order, args.format))
+            if args.type == 'notes':
+                file_list.append('{}/{}_{}Counts_{}_{}.{}'.format(save_folder, args.chainFiles, args.type, args.mode, order, args.format))
+                file_list.append('{}/{}_{}Chain_{}_{}.{}'.format(save_folder, args.chainFiles, args.type, args.mode, order, args.format))
+            else:   # there is no mode for intervals, as in 'bwv37x_intervalsChain_02.csv'
+                file_list.append('{}/{}_{}Counts_{}.{}'.format(save_folder, args.chainFiles, args.type, order, args.format))
+                file_list.append('{}/{}_{}Chain_{}.{}'.format(save_folder, args.chainFiles, args.type, order, args.format))                
+            
             i = 0
+            counts_df = None
+            durations_counts_df = None
             for chainFile in file_list:
                 file_info = Utils.get_file_info(chainFile)
                 thepath = file_info["path_text"]
@@ -141,11 +152,21 @@ class MusicProducerRunner(object):
                         new_index = mc_df['KEY']
                         mc_df.index = new_index.values
                         mc_df.drop(['KEY'],axis=1,inplace=True)
-                    if i==0:
-                        markovChain = MarkovChain(args.order, chain_df=mc_df)
-                        i=i+1
-                    else:
-                        durationsChain = MarkovChain(args.order, chain_df=mc_df)
+                    if i==0:    # notes/intervals counts file
+                        counts_df = mc_df
+                        i=1
+                        continue
+                    elif i==1:  # durations counts file
+                        durations_counts_df = mc_df
+                        i=2
+                        continue
+                    elif i==2:
+                        markovChain = MarkovChain(args.order, counts_df, chain_df=mc_df)
+                        i=3
+                    elif i==3:
+                        durationsChain = MarkovChain(args.order, durations_counts_df, chain_df=mc_df)
+                        i=0
+
         
         musicProducer = MusicProducer(
             args.order, markovChain, durationsChain, \
@@ -182,4 +203,4 @@ class MusicProducerRunner(object):
         if theScore is not None:
             theScore.metadata.title = args.title
             theScore.show(args.show)
-            
+        print("Done")

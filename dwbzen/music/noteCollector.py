@@ -17,6 +17,7 @@
 from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
 from common.markovChain import MarkovChain
+from common.collectorProducer import CollectorProducer
 import pandas as pd
 from music21 import  converter, corpus, note
 
@@ -50,7 +51,7 @@ class NoteCollector(MusicCollector):
         
         self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
         
-        self.countsFileName = '_noteCounts_' + collection_mode + '_0{}'.format(state_size)
+        self.countsFileName = '_notesCounts_' + collection_mode + '_0{}'.format(state_size)
         self.chainFileName = '_notesChain_' + collection_mode + '_0{}'.format(state_size)
         self.notes_df_fileName = '_notes_df'        # self.notes_df saved
         
@@ -309,14 +310,18 @@ class NoteCollector(MusicCollector):
 
     
     def save(self):
+        """Saves the chain_df, counts_df, and notes_df DataFrames to a file in specified format.
+        
+        """
         save_result = super().save()
         if self.notes_df is not None and self.name is not None:
             #
             # optionally save notes_df as .csv
             #
-            filename = "{}/{}_notes.{}".format(self.save_folder, self.name, "csv")
+            filename = "{}/{}_notes.{}".format(self.save_folder, self.name, self.format)
             df = self.notes_df[['name','nameWithOctave','pitchClass','part_name','part_number','quarterLength']]
-            df.to_csv(filename)
+            save_result = CollectorProducer.save_df(df, filename, self.format)
+            #df.to_csv(filename)
         return save_result
     
 if __name__ == '__main__':
