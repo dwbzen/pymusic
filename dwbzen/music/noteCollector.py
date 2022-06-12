@@ -24,29 +24,32 @@ from music21 import  converter, corpus, note
 class NoteCollector(MusicCollector):
     """Collect Notes from one or more scores into a MarkovChain
     
-    There are four collection modes: absolute, diatonic, absolute pitch class, diatonic pitch class.
+    There are 6 collection modes: absolute, diatonic, absolute pitch class, diatonic pitch class,
+    scale degree number (sdn), and scale degree roman (sdr).
     In absolute mode the note pitches used are exactly those that appear in the score(s) without alteration.
     In diatonic mode, the pitch used is the diatonic equivalent for the Key of C-major.
     For example consider the note "F#5". Relative to the key of D-major this is the 3rd step in the scale.
     Transposing to C-major this becomes "E5".
     The same note relative to the score key of Bb-major is #5, so G# in C-Major.
     
-    For minor keys, the natural minor scale is used (which is the same as melodic minor descending)
+    When transposing minor keys, the natural minor scale is used (which is the same as melodic minor descending)
     
     Absolute pitch class collects only the pitch class of each note. 
     Pitch class is a music21 pitch attribute that is an integer number from 0 to 11 where 0=C, 1=C# etc.
     Diatonic pitch class collects the pitch class of each note transposed to C-Major.
     The octave portion of the note is lost when collecting pitch class. 
-    However the MusicProducer provides ways to reinsert an octave (for each part)
-    when generating scores.
+    However the MusicProducer provides ways to reinsert an octave (for each part) when generating scores.
     
+    Scale degree collects the scale degree of each pitch relative to the Key of the Part.
+    Scale degree records the appropriate scale degree as an integer.
+    Both are relative to the underlying Key or Scale. And both prepend an accidental if there is one.
     
     """
     
     initial_object = note.Note('C0')
     terminal_object = note.Note('C#8')
         
-    def __init__(self, state_size=2, verbose=0, source=None, parts=None, collection_mode='ap', enforce_range=True):
+    def __init__(self, state_size=2, verbose=0, source=None, parts=None, collection_mode='dpc', enforce_range=True):
         super().__init__(state_size, verbose, source, parts)
         
         self.initial_object, self.terminal_object = NoteCollector.initialize_initial_terminal_objects()
@@ -66,8 +69,9 @@ class NoteCollector(MusicCollector):
         
         self.pitch_class_mode = (collection_mode == 'dpc' or collection_mode == 'apc')
         self.pitch_mode =  (collection_mode == 'dp' or collection_mode == 'ap')
+        self.scale_degree_mode = collection_mode.startswith('sd')
         self.diatonic = collection_mode.startswith('d')
-        self.absolute = collection_mode.startswith('a')
+        self.absolute = (collection_mode.startswith('a') or collection_mode.startswith('s'))
 
         #
         # collection_scores will reference self.scores if collection mode is absolute pitch or pitch class
@@ -83,11 +87,13 @@ class NoteCollector(MusicCollector):
         initial_dict = {'note':NoteCollector.initial_object, 'part_number':1, 'part_name':'note', \
                'nameWithOctave':NoteCollector.initial_object.nameWithOctave, 'pitch':str(NoteCollector.initial_object.pitch), \
                'duration':NoteCollector.initial_object.duration, \
+               'scaleDegree':'1', 'ps':12.0, \
                'pitchClass':NoteCollector.initial_object.pitch.pitchClass, 'name':NoteCollector.initial_object.name}
         
         terminal_dict = {'note':NoteCollector.terminal_object, 'part_number':1, 'part_name':'note', \
                'nameWithOctave':NoteCollector.terminal_object.nameWithOctave, 'pitch':str(NoteCollector.terminal_object.pitch), \
                'duration':NoteCollector.terminal_object.duration, \
+               'scaleDegree':'#1', 'ps':109.0, \
                'pitchClass':NoteCollector.terminal_object.pitch.pitchClass, 'name':NoteCollector.terminal_object.name}
         
         initial_object = pd.DataFrame(data=initial_dict, index=[0]) 
@@ -153,14 +159,14 @@ class NoteCollector(MusicCollector):
                     #
                     # transpose the score if collection mode is diatonic
                     # default target key of C-Major  or A-minor is used
-                    # based on the mode (major or minor) of the original Key
+                    # based on the mode (major or minor) of the original Keys of each part
                     #                    
                     transposed_score = MusicUtils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(transposed_score)
                     notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
                 else:
                     #
-                    # absolute pitch/pitch class  no transposition, but still need to adjust_accidentals
+                    # absolute pitch/pitch class or scale degree.  no transposition, but still need to adjust_accidentals
                     #
                     transposed_score = MusicUtils.adjust_score_accidentals(ascore, partnames=self.part_names, inPlace=False)
                     self.transposed_scores.append(transposed_score)
@@ -201,7 +207,7 @@ class NoteCollector(MusicCollector):
                     self.transposed_scores.append(self.transposed_score)
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
                         MusicUtils.get_music21_objects_for_score(note.Note, self.transposed_score, self.part_names, self.part_numbers)
-                else:   # absolute pitch/pitch class - no transposition required
+                else:   # absolute pitch/pitch class or scale degree - no transposition required
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
                         MusicUtils.get_music21_objects_for_score(note.Note, self.score, self.part_names, self.part_numbers)
             else:
@@ -222,9 +228,12 @@ class NoteCollector(MusicCollector):
         if self.pitch_mode:
             index_str = MusicUtils.show_notes(key_notes,'nameWithOctave')
             col_str = str(next_note.loc['nameWithOctave'])
-        else:
+        elif self.pitch_class_mode:
             index_str = MusicUtils.show_notes(key_notes,'name')
             col_str = str(next_note.loc['name'])
+        else:  # self.scale_degree_mode:
+            index_str = MusicUtils.show_notes(key_notes,'scaleDegree')
+            col_str = str(next_note.loc['scaleDegree'])
 
         if self.verbose > 1:
             print(f"key_note: {index_str}, next_note: {col_str}")
@@ -233,8 +242,10 @@ class NoteCollector(MusicCollector):
             # initialize the counts DataFrame
             if self.pitch_mode:
                 self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.nameWithOctave])
-            else:
+            elif self.pitch_class_mode:
                 self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.loc['name']])
+            else:  # self.scale_degree_mode:
+                self.counts_df = pd.DataFrame(data=[1],index=[index_str], columns=[next_note.loc['scaleDegree']])
         
         else:
             if index_str not in self.counts_df.index:   # add a new row
@@ -319,7 +330,7 @@ class NoteCollector(MusicCollector):
             # optionally save notes_df as .csv
             #
             filename = "{}/{}_notes.{}".format(self.save_folder, self.name, self.format)
-            df = self.notes_df[['name','nameWithOctave','pitchClass','part_name','part_number','quarterLength']]
+            df = self.notes_df[['name','nameWithOctave','pitchClass','ps','part_name','part_number','quarterLength', 'scaleDegree']]
             save_result = CollectorProducer.save_df(df, filename, self.format)
             #df.to_csv(filename)
         return save_result

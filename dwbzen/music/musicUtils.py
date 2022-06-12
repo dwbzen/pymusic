@@ -1,6 +1,6 @@
 
 from music21 import interval, instrument, corpus, converter
-from music21 import note, clef, duration, metadata, key
+from music21 import note, clef, duration, metadata, key, pitch, scale
 from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
@@ -24,7 +24,7 @@ class MusicUtils(object):
     default_pitch_map = {'Db':'C#', "D-":'C#', 'D#':'Eb', 'Gb':'F#', 'G-':'F#', 'Ab':'G#', 'A-':'G#', 'A#':'Bb' }
      
     @staticmethod
-    def get_score(self, file_path:str) -> Score:
+    def get_score(file_path:str) -> Score:
         score = None
         file_info = MusicUtils.get_file_info(file_path)
         if file_info['exists']:
@@ -51,6 +51,73 @@ class MusicUtils(object):
         part_notes = apart.flat.getElementsByClass('Note')
         return part_notes
     
+    @staticmethod
+    def get_scale_degree(akey:key.Key, anoteorpitch:object) -> dict:
+        modifier = ''
+        apitch = anoteorpitch
+        if isinstance(anoteorpitch, note.Note):
+            apitch = anoteorpitch.pitch
+        sd,accidental = akey.getScaleDegreeAndAccidentalFromPitch(apitch)
+        if accidental is not None:
+            modifier = accidental.modifier
+        sdstr = f'{modifier}{sd}'
+        roman = f'{modifier}{akey.romanNumeral(sd).figure}'
+        
+        return {'pitch':apitch, 'pitch_name':apitch.name, 'number':sdstr, 'roman':roman}
+
+    @staticmethod
+    def get_pitch_from_scaleDegree(akey:scale.ConcreteScale, sd:str, octave=None) -> pitch.Pitch:
+        """Given a scale degree and a Key, return a deepcopy of the appropriate pitch
+        
+        The music21 pitchFromDegree api only handles integer scale degrees
+        This accepts a string with the scale degree prepended with an accidental #, - or b
+        so for example, in Key('C'), "-3" is actually an e- (e-flat)
+        "#4" and "-5" are both a F4.
+        NOTE that the range of pitches returned is C4 to B4. The octave can be set
+        using the optional octave argument.
+        """
+
+        p = None
+        if sd.isdigit():
+            p = akey.pitchFromDegree(int(sd))
+        elif len(sd) >= 2:
+            accidental = sd[0]
+            semitones = 1
+            if accidental == '-' or accidental == 'b':
+                semitones = -1
+            degree = int(sd[1:])
+            p = akey.pitchFromDegree(degree)
+            p = p.transpose(interval.Interval(semitones))
+        if octave is not None:
+            p.octave = octave
+        return p
+    
+    @staticmethod
+    def get_scale_degrees(apart:Part) -> [dict]:
+        """Gets the scale degree of every note's pitch in a given Part
+        
+        Arguments:
+            apart - a music21.stream.Part instance
+        Returns:
+            a list of dictionary entries for each Part note.
+            The keys are 'pitch', 'pitch_name', 'number' and 'roman' (for a Roman figure).
+            where 'pitch' is a Pitch object, 'number' and 'roman' are scale degrees as a string.
+            Any alterations are indicated by prepending a # or - for sharp, flat.
+        Note - an empty list is returned if there is no Key or KeySignature associated with the Part
+        """
+        key_sigs,measure_numbers = MusicUtils.get_keySignatures(apart)
+        measure_numbers.append(len(apart))
+        scale_degrees = []
+        for i in range(len(key_sigs)):
+            k = key_sigs[i]
+            if not isinstance(k, key.Key):
+                k = k.asKey()
+            partMeasures = apart.measures(measure_numbers[i], measure_numbers[i+1]-1)   # measure range is inclusive
+            partPitches = partMeasures.pitches
+            for p in partPitches:
+                scale_degrees.append(MusicUtils.get_scale_degree(k, p))
+        return scale_degrees
+
     @staticmethod
     def get_score_intervals(ascore:Score, partname:str=None) -> dict:
         """ Get the intervals for all Parts of a Score as a dict
@@ -131,7 +198,7 @@ class MusicUtils(object):
                     df['note2'] = [x['note2'] for x in part_intervals]
                     score_partnames.add(k)
                     score_partnumbers.add(part_number)
-                    intrvals_df = intrvals_df.append(df)
+                    intrvals_df = pd.concat([intrvals_df, df])
                     part_number = part_number + 1
         if df is not None:
             # else this score has none of the parts specified 
@@ -152,20 +219,28 @@ class MusicUtils(object):
                         If ['*'] (the default), then notes from all parts are extracted.
                                 
         DataFrame columns returned:
-            part_name
+            note (music21.note.Note)
             part_number
-            Note (music21.note.Note)
-            name
-            nameWithOctave
+            part_name
+            name  (just the pitch name as in "D")
+            nameWithOctave   (pitch name with the octave as in "D5")
             pitch (music21.pitch.Pitch)
+            pitchClass (integer)
+            ps (pitch space - float)
             duration (music21.duration.Duration)
-            pitchClass (int)
-        
+            type (the duration type string, for example "quarter")
+            ordinal
+            quarterLength (duration.quarterLength, float)
+            quarterLengthNoTuplets
+            scaleDegree (the ordinal of the pitch relative to the part's Key/KeySignature)
+            
         Returns a 3-tuple consisting of the notes_df DataFrame,
-        an integer list of part numbers, and a str list of part names.
+        an integer set of part numbers, and a set(str) of part names.
         """
-        pdict = MusicUtils.get_score_notes(ascore)
+        pdict = MusicUtils.get_score_notes(ascore)    # {partname1 : [note.Note], partname2 : [note.Note], ... }
+        score_parts = MusicUtils.get_score_parts(ascore)
         notes_df = pd.DataFrame()
+        scale_degrees = []
         df = None
         part_number = 1
         score_partnames = set()
@@ -179,21 +254,27 @@ class MusicUtils(object):
                 df = pd.DataFrame(data=pdict[k], columns=['note'])
                 df['part_number'] = part_number
                 df['part_name'] = k
+                sdlist = MusicUtils.get_scale_degrees(score_parts[k])  # scale degrees for notes in this Part
+                scale_degrees.extend([x['number'] for x in  sdlist])
                 score_partnames.add(k)
                 score_partnumbers.add(part_number)
-                notes_df = notes_df.append(df)
+                notes_df = pd.concat([notes_df, df])
                 part_number = part_number + 1
+                
         if df is not None:
             # else this score has none of the parts specified 
-            notes_df['name'] = [x.name for x in notes_df['note']]
-            notes_df['nameWithOctave'] = [x.nameWithOctave for x in notes_df['note']]
-            notes_df['pitch'] = [x.pitch for x in notes_df['note']]
-            notes_df['pitchClass'] = [x.pitch.pitchClass for x in notes_df['note']]
-            notes_df['duration'] = [x.duration for x in notes_df['note']]
-            notes_df['type'] = [x.duration.type for x in notes_df['note']]
-            notes_df['ordinal'] = [x.duration.ordinal for x in notes_df['note']]
-            notes_df['quarterLength'] = [x.duration.quarterLength for x in notes_df['note']]
-            notes_df['quarterLengthNoTuplets'] = [x.duration.quarterLengthNoTuplets for x in notes_df['note']]
+            dfnotes = notes_df['note']
+            notes_df['name'] = [x.name for x in dfnotes]
+            notes_df['nameWithOctave'] = [x.nameWithOctave for x in dfnotes]
+            notes_df['pitch'] = [x.pitch for x in dfnotes]
+            notes_df['pitchClass'] = [x.pitch.pitchClass for x in dfnotes]
+            notes_df['ps'] = [x.pitch.ps for x in dfnotes]
+            notes_df['duration'] = [x.duration for x in dfnotes]
+            notes_df['type'] = [x.duration.type for x in dfnotes]
+            notes_df['ordinal'] = [x.duration.ordinal for x in dfnotes]
+            notes_df['quarterLength'] = [x.duration.quarterLength for x in dfnotes]
+            notes_df['quarterLengthNoTuplets'] = [x.duration.quarterLengthNoTuplets for x in dfnotes]
+            notes_df['scaleDegree'] = scale_degrees
             
             notes_df.reset_index(drop=True, inplace=True)       # make sure index is unique
         return notes_df, score_partnames, score_partnumbers
@@ -278,7 +359,7 @@ class MusicUtils(object):
             score = scores[i]
             df,pnames,pnums = MusicUtils.get_notes_for_score(score, partnames, partnumbers)
             df['title'] = titles[i]
-            notes_df = notes_df.append(df)
+            notes_df = pd.concat([notes_df, df], ignore_index=True)
             all_score_partnames = all_score_partnames.union(pnames)
             all_score_partnumbers = all_score_partnumbers.union(pnums)
         return notes_df, all_score_partnames, all_score_partnumbers
@@ -297,7 +378,7 @@ class MusicUtils(object):
             df,pnames,pnums = MusicUtils.get_intervals_for_score(score, partnames, partnumbers)
             if len(df) > 0:
                 df['title'] = md.title
-                intrvals_df = intrvals_df.append(df)
+                intrvals_df = pd.concat([intrvals_df, df], ignore_index=True)
                 all_score_partnames = all_score_partnames.union(pnames)
                 all_score_partnumbers = all_score_partnumbers.union(pnums)
         return intrvals_df, all_score_partnames, all_score_partnumbers
@@ -342,7 +423,7 @@ class MusicUtils(object):
         """Creates a stringified list of notes from a DataFrame
             Args:
                 df - the source DataFrame
-                what - the DataFrame column to select
+                what - the DataFrame column to select ('name', 'nameWithOctave' or 'scaleDegree')
             For example, show_notes(notes_df, 'nameWithOctave'), len(notes_df)==2, would return
             a string like 'F#4,C#5'
         
@@ -538,7 +619,7 @@ class MusicUtils(object):
             Returns:
                 a tupple consisting of 2 lists:
                 [KeySignature] in the order of appearance
-                [int] of measure numbers where the KeySignature occurs
+                [int] of measure numbers where the KeySignature starts
         """
         measures = apart.getElementsByClass(Measure)
         key_sigs = []
@@ -550,6 +631,20 @@ class MusicUtils(object):
                     key_sigs.append(k)
                     measure_numbers.append(m.measureNumber)
         return key_sigs,measure_numbers
+    
+    @staticmethod
+    def get_score_keySignatures(ascore:Score) -> {str:tuple}:
+        """Gets the KeySignatures of all parts of a Score
+            Args:
+                ascore - a Score instance
+            Returns:
+                a dictionary of tupple, where the key is the part name and the tuple is ([KeySignature], [measures])
+        """
+        parts = ascore.getElementsByClass(Part)
+        pdict = dict()
+        for apart in parts:
+            pdict[apart.partName] = MusicUtils.get_keySignatures(apart)
+        return pdict
 
     @staticmethod
     def adjust_accidental(aNote:note.Note, preference:object=default_pitch_map, inPlace=True) -> note.Note:

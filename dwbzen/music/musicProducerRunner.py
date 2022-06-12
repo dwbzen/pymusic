@@ -61,8 +61,8 @@ class MusicProducerRunner(object):
         # mode only applies to 'notes' type
         #
         parser.add_argument("--mode", \
-                            help="Notes collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class)", \
-                            type=str, choices=['ap','dp', 'apc','dpc'], default='dp')
+            help="Notes collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class) sd (scale degree)", \
+                            type=str, choices=['ap','dp', 'apc','dpc', 'sd'], default='dpc')
         parser.add_argument("--format", "-f",help="Save output format. Default is json", type=str, choices=['csv','json','xlsx'], default='json' )
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         #
@@ -78,13 +78,15 @@ class MusicProducerRunner(object):
         
         parser.add_argument("--produce", help="Comma-delimited list of Part name(s) to produce. A part name must also be a valid instrument name", \
                             type=str, action="extend", nargs="+", choices=Instruments.instrument_names,  default=None)
-        parser.add_argument("--notes", help="For Interval chains, the starting note for each Part", type=str, default=None)   
+        parser.add_argument("--notes", help="For Interval and ScaleDegree chains, the starting note for each Part", type=str, default=None)
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments", action="store_true", default=False)
         parser.add_argument("--key", "-k", \
-                            help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
+            help="Key to use for all parts. Specify a single pitch. Lower case is minor, upper case is major. Key is adjusted for transposing instruments.", default=None)
         
-        parser.add_argument("--seedNotes", help="Initial seed, number of args must be equal to the order of source chain", type=str, nargs='*', default=None)
-        parser.add_argument("--seedIntervals", help="Initial seed, number of args must be equal to the order of source chain", type=int, nargs='*', default=None)
+        parser.add_argument("--seedNotes", help="Initial Notes seed. Number of args must be equal to the order of source chain", type=str, nargs='*', default=None)
+        parser.add_argument("--seedIntervals", help="Initial Intervals seed. Number of args must be equal to the order of source chain", type=int, nargs='*', default=None)
+        parser.add_argument("--seedScaleDegrees", help="Initial scaleDegrees seed. Number of args must be equal to the order of source chain", type=str, nargs='*', default=None)
+        
         parser.add_argument("--initial", help="choose initial seed only", action="store_true", default=False)
         parser.add_argument("--recycle", help="How often to pick a new seed in terms of number of notes/intervals.", type=int, default=5)
         parser.add_argument("--trace", help="Show notes/intervals as they are produced", action="store_true", default=False)
@@ -152,25 +154,25 @@ class MusicProducerRunner(object):
                         new_index = mc_df['KEY']
                         mc_df.index = new_index.values
                         mc_df.drop(['KEY'],axis=1,inplace=True)
-                    if i==0:    # notes/intervals counts file
-                        counts_df = mc_df
+                        
+                    if i==0:  # durations counts file
+                        durations_counts_df = mc_df
                         i=1
                         continue
-                    elif i==1:  # durations counts file
-                        durations_counts_df = mc_df
-                        i=2
-                        continue
-                    elif i==2:
-                        markovChain = MarkovChain(args.order, counts_df, chain_df=mc_df)
-                        i=3
-                    elif i==3:
+                    if i==1:
                         durationsChain = MarkovChain(args.order, durations_counts_df, chain_df=mc_df)
-                        i=0
+                        i=2
+                    if i==2:    # notes/intervals counts file
+                        counts_df = mc_df
+                        i=3
+                        continue
+                    if i==3:
+                        markovChain = MarkovChain(args.order, counts_df, chain_df=mc_df)
 
         
         musicProducer = MusicProducer(
             args.order, markovChain, durationsChain, \
-            args.source, args.parts, args.produce, \
+            args.source, args.parts, args.produce, args.mode, \
             num=args.measures, verbose=args.verbose, \
             rand_seed=randomseed, producerType=args.type )
         
@@ -181,22 +183,24 @@ class MusicProducerRunner(object):
         musicProducer.enforceRange = args.enforceRange
         musicProducer.trace_mode = args.trace
         musicProducer.fixed_duration = args.duration
-        musicProducer.collection_mode = args.mode
         if args.key is not None:
             musicProducer.score_key = key.Key(args.key)
         #
         # order 2 examples:
         #  --seedIntervals -1 -2   for intervals
-        #  --seedNotes C4 D4   for notes (dp, ap) --seed C D   for notes (dpc, apc)
+        #  --seedNotes C4 D4   for notes (dp, ap) --seedNotes C D   for notes (dpc, apc)
+        #  --seedScaleDegrees 6 #5   for notes, collectionMode of 'sd'
         if args.seedIntervals is not None:
             musicProducer.set_seed(args.seedIntervals, args.type)
         if args.seedNotes is not None:
             musicProducer.set_seed(args.seedNotes, args.type)
+        if args.seedScaleDegrees is not None:
+            musicProducer.set_seed(args.seedScaleDegrees, args.type)
         
         #
-        # intervals producerType needs starting note(s) for each Part
+        # intervals and notes (sd collectionMode) producerTypes need starting note(s) for each Part
         #
-        if args.type == 'intervals':
+        if args.type == 'intervals' or args.mode == 'sd':
             musicProducer.add_part_notes(args.notes)
                 
         theScore = musicProducer.produce()

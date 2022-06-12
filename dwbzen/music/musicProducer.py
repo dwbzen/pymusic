@@ -24,7 +24,7 @@ class MusicProducer(Producer):
 
     """
 
-    def __init__(self, state_size, markovChain, durationsChain, source_file, parts, produceParts, num=10, verbose=0, rand_seed=42, producerType=None):
+    def __init__(self, state_size, markovChain, durationsChain, source_file, parts, produceParts, collection_mode, num=10, verbose=0, rand_seed=42, producerType=None):
         super().__init__(state_size, markovChain, source_file, num=num, verbose=verbose,  rand_seed=rand_seed)
         
         self.instruments = music.Instruments(self.verbose)
@@ -39,7 +39,10 @@ class MusicProducer(Producer):
         self.producePart_names = produceParts
         
         self.durationsChain = durationsChain
-
+        self.collection_mode = collection_mode
+        self.pitch_class_mode = (collection_mode == 'dpc' or collection_mode == 'apc')
+        self.pitch_mode =  (collection_mode == 'dp' or collection_mode == 'ap')
+        self.scale_degree_mode = collection_mode.startswith('sd')
         
         # if not None, this is the duration to use for all Notes instead of using durationsChain
         self.fixed_duration = None   # duration.Duration(quarterLength=0.5)
@@ -54,14 +57,15 @@ class MusicProducer(Producer):
         self.start_notes = dict()    # key is producePart name, value is a note.Note
 
         #
-        # for producerType of 'notes' need to have the collection mode (dp, dpc, ap, apc)
+        # for producerType of 'notes' need to have the collection_mode (dp, dpc, ap, apc, sd)
         #
-        self.collection_mode = None
+        self.collection_mode = collection_mode
         self.tempo = tempo.MetronomeMark(number=80, referent=note.Note(type='quarter'))
         self.timeSignature = meter.TimeSignature('4/4')
         self.num_measures = self.num        # number of measures to produce
         self.enforceRange = False           # force instruments to their range
         self.trace_mode = False             # displays the notes/intervals as they are produced
+
     
     @staticmethod
     def get_parts(parts:str) -> ([str],[int]):
@@ -103,7 +107,16 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             initobj = music.IntervalCollector.initial_object
             initstr = '{}'.format(initobj.semitones)
         elif self.producerType == 'notes':
-            initstr="'C0'"
+            if self.collection_mode == 'dp':
+                initstr="C0"
+            #
+            # there actually isn't an initial key for dpc or sd collection mode
+            # as there's no way in the current design to denote that
+            #
+            elif self.collection_mode == 'dpc':
+                initstr = "C"
+            elif self.collection_mode == 'sd':
+                initstr = '1'
         
         self._keys = pd.Series(self.chain_df.index)
         self._key_values = self._keys.values
@@ -323,7 +336,16 @@ parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
             next_object_dict = self.get_next_object(seed)
             next_duration_dict = self.get_next_durations_object(durations_seed)
             newnote_str = next_object_dict['next_token']
-            newnote = note.Note(newnote_str)
+            #
+            # for scale degrees, newnote_str is a scale degree
+            # so need to convert to a note using the current Key
+            #
+            if self.collection_mode != 'sd':
+                newnote = note.Note(newnote_str)
+            else:
+                newpitch = MusicUtils.get_pitch_from_scaleDegree(self.score_key, newnote_str)
+                newnote = note.Note(newpitch)
+                
             if self.trace_mode:
                 print('newnote: {}\t new_seed: {}'.format(newnote.nameWithOctave, next_object_dict['new_seed']))
             if newnote == terminal_note:

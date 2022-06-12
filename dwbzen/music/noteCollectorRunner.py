@@ -32,8 +32,8 @@ class NoteCollectorRunner(Collector):
         parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format",type=str, choices=['csv','json','chain'] )
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str)
         parser.add_argument("-m", "--mode", \
-                            help="Collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class)", \
-                            type=str, choices=['ap','dp', 'apc','dpc'], default='ap')
+            help="Notes collection mode: ap (absolute pitch), dp (diatonic pitch), apc (absolute pitch class), dpc (diatonic pitch class) sd (scale degree)", \
+                            type=str, choices=['ap','dp', 'apc','dpc', 'sd' ], default='dpc')
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments, applies to diatonic collection modes.", action="store_true", default=False)
         parser.add_argument("--show", help="Show the original or transposed score when collection is complete. Does not apply when source is multiple scores.", \
                             type=str, choices=['original', 'transposed', 'none'], default='none')
