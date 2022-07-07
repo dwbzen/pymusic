@@ -41,8 +41,21 @@ class NoteCollector(MusicCollector):
     However the MusicProducer provides ways to reinsert an octave (for each part) when generating scores.
     
     Scale degree collects the scale degree of each pitch relative to the Key of the Part.
-    Scale degree records the appropriate scale degree as an integer.
+    Scale degree records the appropriate scale degree as an integer, 1 to 7.
     Both are relative to the underlying Key or Scale. And both prepend an accidental if there is one.
+    
+    Note that the Mode of the Scale makes a difference when collecting scale degrees.
+    For example, E-minor and G-major have the same key signature, but the scale degrees are different -
+    an 'e' is 1 in E-minor, but 6 in G-major. This can be problematic in some of the musicxml scores
+    that have parts in minor mode.
+    For example the music21 Bach corpus scores consistently have the "real" key in the Soprano part,
+    the other parts the relative major.
+    To account for this the collector includes two additional features: filter and keypart.
+    If set, the filter will return only scores that meet the filter criteria. 
+    At present the only filter supported is 'mode' which can have a values 'major' or 'minor'.
+    Keypart is the part name that determines the actual (real) key. 
+    If set, then the key to all parts is set to the keypart key.
+    So the appropriate command-line arguements would be: --mode sd --filter "mode=minor" --keypart Soprano
     
     """
     
@@ -78,8 +91,7 @@ class NoteCollector(MusicCollector):
         # or self.transposed_scores if collection mode is diatonic
         #
         self.collection_scores = []
-        if source is not None:
-            self.source = self.set_source(source)   # otherwise it's None
+        self.source_path = source
             
     @staticmethod
     def initialize_initial_terminal_objects() -> (pd.DataFrame, pd.DataFrame):
@@ -110,7 +122,7 @@ class NoteCollector(MusicCollector):
         return note.Note
     
     def set_source(self, source):
-        """This method is called in the __init__ of the parent class, MusicCollector
+        """This method is called first in collect()
         
         Determine if source is a file or folder and if it exists (or not)
         Source can be a single file, or a composer name (such as 'bach')
@@ -149,7 +161,7 @@ class NoteCollector(MusicCollector):
                 elif st[0] == 'title':
                     title = st[1]
 
-            self.scores, self.titles = MusicUtils.get_scores_from_corpus(composer=composer, title=title)
+            self.scores, self.titles = MusicUtils.get_scores_from_corpus(composer=composer, title=title, keypart=self.key_partName, filters=self.score_filters)
             self.number_of_scores = len(self.scores)
                 
             for ascore in self.scores:
@@ -163,14 +175,14 @@ class NoteCollector(MusicCollector):
                     #                    
                     transposed_score = MusicUtils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(transposed_score)
-                    notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
+                    notesdf, pnames, pnums = MusicUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
                 else:
                     #
                     # absolute pitch/pitch class or scale degree.  no transposition, but still need to adjust_accidentals
                     #
                     transposed_score = MusicUtils.adjust_score_accidentals(ascore, partnames=self.part_names, inPlace=False)
                     self.transposed_scores.append(transposed_score)
-                    notesdf, pnames, pnums = MusicUtils.get_music21_objects_for_score(note.Note, transposed_score, self.part_names, self.part_numbers)
+                    notesdf, pnames, pnums = MusicUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
                 
                 if self.verbose > 2 and len(notesdf)>0 and 3 in notesdf['pitchClass']:  # temporary debugging code
                     print(notesdf[notesdf['pitchClass']==3][['part_name','pitch']])
@@ -206,10 +218,10 @@ class NoteCollector(MusicCollector):
                     self.transposed_score = MusicUtils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(self.transposed_score)
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
-                        MusicUtils.get_music21_objects_for_score(note.Note, self.transposed_score, self.part_names, self.part_numbers)
+                        MusicUtils.get_notes_for_score(self.transposed_score, self.part_names, self.part_numbers)
                 else:   # absolute pitch/pitch class or scale degree - no transposition required
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
-                        MusicUtils.get_music21_objects_for_score(note.Note, self.score, self.part_names, self.part_numbers)
+                        MusicUtils.get_notes_for_score(self.score, self.part_names, self.part_numbers)
             else:
                 result = False
 
@@ -266,7 +278,9 @@ class NoteCollector(MusicCollector):
         The last entry will have the terminal_object as the last note.
         Returns MarkovChain result
         """
-        
+        if self.source_path is not None:
+            self.source = self.set_source(self.source_path)
+            
         filename = "{}/{}{}.csv".format(self.save_folder, self.name, self.notes_df_fileName)
         self.notes_df.to_csv(path_or_buf=filename)
         print(f"notes: {filename}")

@@ -37,6 +37,8 @@ class NoteCollectorRunner(Collector):
         parser.add_argument("--enforceRange", "-e", help="Enforce ranges of selected instruments, applies to diatonic collection modes.", action="store_true", default=False)
         parser.add_argument("--show", help="Show the original or transposed score when collection is complete. Does not apply when source is multiple scores.", \
                             type=str, choices=['original', 'transposed', 'none'], default='none')
+        parser.add_argument("--filter", help="Apply filter to parts", type=str, default=None)
+        parser.add_argument("--keypart", help="Part that determines the overall score Key", type=str, default=None)
 
         args = parser.parse_args()
         if args.verbose > 0:
@@ -48,6 +50,13 @@ class NoteCollectorRunner(Collector):
         collector.name = args.name
         collector.format = args.format
         collector.sort_chain = args.sort
+        collector.set_score_filter(args.filter)    # could be None
+        collector.key_partName = args.keypart      # could be None
+        #
+        # only for Bach works in the music21 corpus
+        #
+        collector.key_partName = 'Soprano'
+        
         if args.verbose > 0:
             print(collector.__str__())
 

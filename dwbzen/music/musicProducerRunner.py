@@ -57,6 +57,7 @@ class MusicProducerRunner(object):
         parser.add_argument("--source", "-s", help="input file (.mxl or .musicxml), folder name, or composer name ('bach' for example)", default=None)
         parser.add_argument("--type", "-t", help="Source object type: notes or intervals", type=str, choices=['notes','intervals'], default='intervals')
         parser.add_argument("--parts", "-p", help="part name(s) or number(s) to include in building the MarkovChain", type=str, default=None)
+        parser.add_argument("--filter", help="Apply filter to parts", type=str, default=None)
         #
         # mode only applies to 'notes' type
         #
@@ -112,6 +113,12 @@ class MusicProducerRunner(object):
             collector.name = args.name
             collector.format = args.format
             collector.sort_chain = args.sort
+            collector.set_score_filter(args.filter)    # could be None
+            #
+            # only for Bach works in the music21 corpus
+            #
+            collector.key_partName = 'Soprano'
+            
             run_results = collector.run()
             if run_results['save_result']:
                 print(f"MarkovChain written to file: {collector.filename}")

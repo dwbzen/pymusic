@@ -14,8 +14,7 @@ from builtins import isinstance
 
 class MusicUtils(object):
     """Music utilities
-    TODO - the method names are confusing, like score_notes vs. notes_for_score etc. Need to refactor
-    
+        TODO - the method names are confusing, like score_notes vs. notes_for_score etc. Need to refactor
     """
     
     verbose = 0
@@ -31,11 +30,42 @@ class MusicUtils(object):
                 score = converter.parse(file_info['path_text'])
         return score
     
+    @staticmethod
+    def get_score_parts_info(ascore, partnames=None, display=False):
+        part_dict = {}
+        for apart in ascore.parts:
+            if partnames is None or (partnames is not None and apart.partName in partnames):
+                ksigs, mnumbers = MusicUtils.get_keySignatures(apart)
+                for ks in ksigs:
+                    if not isinstance(ks, key.Key):
+                        ks = ks.asKey()
+                    if display:
+                        print(f'  {apart.partName}  {ks} {ks.mode}')
+                    part_dict[apart.partName] = {'key':ks, 'keyName':ks.name, 'mode':ks.mode }
+        return part_dict
+    
+    @staticmethod
+    def get_parts_info(scores, partnames=None, display=False):
+        all_scores = {}
+        for ascore in scores:
+            title = ascore.metadata.title
+            if display: print(title)
+            all_scores[title] = MusicUtils.get_score_parts_info(ascore, partnames, display)
+        return all_scores
+    
     #
     # get intervals for a Part
     #
     @staticmethod
     def get_part_intervals(apart:Part) -> [dict]:
+        """Get all intervals for a Part.
+        
+        Arguments:
+            apart - a Part instance
+        Returns:
+            A list of intervals where each interval is a dict with the keys "note1", "note2"
+            the integer interval (number of semitones) needed to go from note1 to note2.
+        """
         intrvals = []
         part_notes = apart.flat.getElementsByClass('Note')
         for ind in range(len(part_notes)-1):
@@ -103,7 +133,9 @@ class MusicUtils(object):
             The keys are 'pitch', 'pitch_name', 'number' and 'roman' (for a Roman figure).
             where 'pitch' is a Pitch object, 'number' and 'roman' are scale degrees as a string.
             Any alterations are indicated by prepending a # or - for sharp, flat.
-        Note - an empty list is returned if there is no Key or KeySignature associated with the Part
+            An empty list is returned if there is no Key or KeySignature associated with the Part
+            
+        Note that Chords are not handled. In particular, notes that are part of a Chord are ignored.
         """
         key_sigs,measure_numbers = MusicUtils.get_keySignatures(apart)
         measure_numbers.append(len(apart))
@@ -113,15 +145,23 @@ class MusicUtils(object):
             if not isinstance(k, key.Key):
                 k = k.asKey()
             partMeasures = apart.measures(measure_numbers[i], measure_numbers[i+1]-1)   # measure range is inclusive
-            partPitches = partMeasures.pitches
+            pNotes = partMeasures.flat.getElementsByClass('Note')
+            partPitches = pNotes.pitches
             for p in partPitches:
                 scale_degrees.append(MusicUtils.get_scale_degree(k, p))
         return scale_degrees
 
     @staticmethod
     def get_score_intervals(ascore:Score, partname:str=None) -> dict:
-        """ Get the intervals for all Parts of a Score as a dict
+        """ Get the intervals for all Parts of a Score
         
+        Arguments:
+            ascore - a Score instance
+            partname - a part name in the Score or None to get intervals for all parts
+        Returns:
+            A dictionary of intervals where the key is the part name. The key values
+            is a list of intervals where each interval is a dict with the keys "note1", "note2"
+            the integer interval (number of semitones) needed to go from note1 to note2.
         """
         parts = ascore.getElementsByClass(Part)
         pdict = dict()
@@ -324,6 +364,7 @@ class MusicUtils(object):
             Arguments:
                 composer - composer name, can be None
                 title - a regular expression string used to do a title search.
+                
             If title is just a string (no re characters) it will do an exact match.
             For example, to search for all Bach's works (in the corpus) that starts with "bwv1"
             specify get_metadata_bundle(composer='bach', title='^bwv1+')
@@ -384,15 +425,52 @@ class MusicUtils(object):
         return intrvals_df, all_score_partnames, all_score_partnumbers
     
     @staticmethod
-    def get_scores_from_corpus(composer=None, title=None):
+    def get_scores_from_corpus(composer=None, title=None, keypart:str=None, filters:dict=None):
+        """Gets a list of Score objects from the corpus matching the composer and title provided.
+        
+        Args:
+            composer = the name of the composer (as it appears in the corpus), for example 'bach'
+            title = the title to search. This can be a regular expression, for example '^bwv31[0-3]', or a single work name as in 'bwv310'
+            keypart - the name of the Part (if any) that determines the overall score Key.
+            filters - a dictionary of filter values. Currently only filter is 'mode' which can be 'major' or 'minor'
+        Returns:
+            a 2-element tupple of the list of matching Score, and a list of corresponding str (titles)
+            
+        Note this uses MusicUtils.get_metadata_bundle which uses music21.corpus to do the search.
+        Because the filter is at the Score level, the 'mode' filter (if present) is applied only when the keypart argument is not None.
+        If mode filter and keypart are both provided, then the Key to all Parts is set to be the same as in keypart.
+        """
         scores = []
         titles = []
         meta = MusicUtils.get_metadata_bundle(composer, title)
         for i in range(len(meta)):
             md = meta[i].metadata
-            titles.append(md.title)
-            score = corpus.parse(meta[i])
-            scores.append(score)
+            ascore = corpus.parse(meta[i])
+            if filters is not None and 'mode' in filters and keypart is not None:     # check if the score matches the filter
+                mode = filters['mode']
+                spinfo = MusicUtils.get_score_parts_info(ascore, partnames=[keypart])
+                if spinfo[keypart]['mode']==mode:
+                    #
+                    # update the key to all parts
+                    #
+                    new_key = spinfo[keypart]['key']
+                    for apart in ascore.parts:
+                        if apart.partName != keypart:
+                            measures = apart.getElementsByClass(Measure)
+                            for m in measures:
+                                keys = m.getElementsByClass([key.Key, key.KeySignature])
+                                if len(keys) > 0:
+                                    for k in keys:
+                                        if MusicUtils.verbose > 0:
+                                            print(f'update {m} in {md.title}  {apart.partName} to key:{new_key}')
+                                        m.removeByClass([key.Key, key.KeySignature])
+                                        m.insert(spinfo[keypart]['key'])
+                    scores.append(ascore)
+                    titles.append(md.title)
+            else:   
+                scores.append(ascore)
+                titles.append(md.title)
+                
         return scores,titles
     
     @staticmethod
@@ -611,11 +689,12 @@ class MusicUtils(object):
         return parts_dict
     
     @staticmethod
-    def get_keySignatures(apart:Part):
+    def get_keySignatures(apart:Part, default_keySignature:key.KeySignature=None):
         """Gets the KeySignatures appearing in a given Part
         
             Args:
                 apart : a stream.Part instance
+                default_keySignature : use this if not None for all KeySignatures/Keys
             Returns:
                 a tupple consisting of 2 lists:
                 [KeySignature] in the order of appearance
@@ -628,7 +707,10 @@ class MusicUtils(object):
             keys = m.getElementsByClass([key.Key,key.KeySignature])
             for k in keys:
                 if k is not None:
-                    key_sigs.append(k)
+                    if default_keySignature is not None:
+                        key_sigs.append(default_keySignature)
+                    else:
+                        key_sigs.append(k)
                     measure_numbers.append(m.measureNumber)
         return key_sigs,measure_numbers
     

@@ -26,6 +26,8 @@ class IntervalCollectorRunner(Collector):
         parser.add_argument("--sort", help="Sort resulting MarkovChain ascending on both axes", action="store_true", default=False)
         parser.add_argument("-d","--display", help="display resulting MarkovChain in json or cvs format", type=str, choices=['csv','json','chain'] )
         parser.add_argument("-p","--parts", help="part name(s) or number(s) to include in building the MarkovChain", type=str)
+        parser.add_argument("--filter", help="Apply filter to parts", type=str, default=None)
+        
         args = parser.parse_args()
         if args.verbose > 0:
             print('run IntervalCollector')
@@ -35,6 +37,12 @@ class IntervalCollectorRunner(Collector):
         collector.name = args.name
         collector.format = args.format
         collector.sort_chain = args.sort
+        collector.set_score_filter(args.filter)    # could be None
+        #
+        # only for Bach works in the music21 corpus
+        #
+        collector.key_partName = 'Soprano'
+                
         if args.verbose > 0:
             print(collector.__str__())
 

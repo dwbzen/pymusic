@@ -40,7 +40,28 @@ class MusicCollector(Collector):
         self.enforceRange = True
         self.counts_df = None
         self.chain_df = None
+        #
+        # filter string to apply against Part(s)
+        # format is: property=value, for example "mode=minor"
+        # The filter is applied after the score_key is set (if it's not None)
+        #
+        self._filter = None
+        self.score_filters = {}     # mode filter can be 'major' or 'minor'
+        #
+        # if key_partName is not None, all the Key for score parts is
+        # set to the Key of the named part.
+        # Essentially this becomes the Key to use for an entire Score
+        #
+        self.key_partName = None
     
+        
+    def set_score_filter(self, filter_string):
+        if filter_string is not None and len(filter_string) >= 3 and '=' in filter_string:
+            self._filter = filter_string
+            temp = filter_string.split('=')
+            if temp[0] == 'mode':
+                self.score_filters['mode'] = temp[1]
+            
     def add_parts(self, parts) -> str:
         if parts is not None:
             self.parts = parts
