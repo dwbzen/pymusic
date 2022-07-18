@@ -83,7 +83,7 @@ class MusicProducer(Producer):
 
     def __str__(self):
         return f"MusicProducer order={self.order}, source={self.source_file}, num={self.num}, producerType={self.producerType}, \
-parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
+collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produceParts}, verbose={self.verbose}"
 
     def add_part_notes(self, notes:str):
         notes_list = []

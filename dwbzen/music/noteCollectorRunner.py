@@ -55,7 +55,7 @@ class NoteCollectorRunner(Collector):
         #
         # only for Bach works in the music21 corpus
         #
-        collector.key_partName = 'Soprano'
+        # collector.key_partName = 'Soprano'
         
         if args.verbose > 0:
             print(collector.__str__())

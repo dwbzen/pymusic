@@ -11,6 +11,9 @@ import pandas as pd
 import pathlib, random, copy, math
 from datetime import date
 from builtins import isinstance
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib import cm
 
 class MusicUtils(object):
     """Music utilities
@@ -439,6 +442,8 @@ class MusicUtils(object):
         Note this uses MusicUtils.get_metadata_bundle which uses music21.corpus to do the search.
         Because the filter is at the Score level, the 'mode' filter (if present) is applied only when the keypart argument is not None.
         If mode filter and keypart are both provided, then the Key to all Parts is set to be the same as in keypart.
+        
+        Note - if keypart is provided but that part is NOT in a score, that score is NOT added to the lists of scores & titles returned.
         """
         scores = []
         titles = []
@@ -446,14 +451,19 @@ class MusicUtils(object):
         for i in range(len(meta)):
             md = meta[i].metadata
             ascore = corpus.parse(meta[i])
+
             if filters is not None and 'mode' in filters and keypart is not None:     # check if the score matches the filter
                 mode = filters['mode']
                 spinfo = MusicUtils.get_score_parts_info(ascore, partnames=[keypart])
-                if spinfo[keypart]['mode']==mode:
+                if keypart in spinfo and spinfo[keypart]['mode']==mode:
+                    if MusicUtils.verbose > 0:
+                        print(f'title: {md.title}')
                     #
                     # update the key to all parts
                     #
-                    new_key = spinfo[keypart]['key']
+                    new_key = None
+                    if 'key' in spinfo[keypart]:
+                        new_key = spinfo[keypart]['key']
                     for apart in ascore.parts:
                         if apart.partName != keypart:
                             measures = apart.getElementsByClass(Measure)
@@ -461,10 +471,11 @@ class MusicUtils(object):
                                 keys = m.getElementsByClass([key.Key, key.KeySignature])
                                 if len(keys) > 0:
                                     for k in keys:
-                                        if MusicUtils.verbose > 0:
+                                        if MusicUtils.verbose > 1:
                                             print(f'update {m} in {md.title}  {apart.partName} to key:{new_key}')
-                                        m.removeByClass([key.Key, key.KeySignature])
-                                        m.insert(spinfo[keypart]['key'])
+                                        if new_key is not None:
+                                            m.removeByClass([key.Key, key.KeySignature])
+                                            m.insert(spinfo[keypart]['key'])
                     scores.append(ascore)
                     titles.append(md.title)
             else:   
@@ -902,6 +913,102 @@ class MusicUtils(object):
                 r.duration.quarterLength = padding
                 p.append(r)
 
+    @staticmethod
+    def rearrange(counts_df:pd.DataFrame, sortvalues=True) -> (pd.DataFrame, pd.DataFrame) :
+        '''Restructure a counts_df DataFrame for plotting
+        
+            Args:
+                counts_df - a counts DataFrame, as created by NoteCollector.
+            Returns:
+                2 new DataFrames structured as follows:
+                pitchCounts_df has columns 'pitch', 'next_pitch', 'count'
+                pitches_counts_df has columns 'pitch-next_pitch', 'count' (pitch, next_pitch concatenated & comma-separated into a single key
+            Both DataFrames are sorted by pitch,next_pitch.
+            
+        '''
+        pitchCounts_df = pd.DataFrame(columns = ['pitch', 'next_pitch', 'count'])
+        pitches_counts_df = pd.DataFrame(columns = ['pitch-next_pitch', 'count'])
+        pitchCounts_df
+        pitches = list(counts_df['KEY'])
+        for rownum in range(len(counts_df)):
+            row = counts_df.iloc[rownum]
+            from_pitch = row['KEY']
+            for to_pitch in pitches:
+                count = int(row[to_pitch])
+                nrow = {'pitch':from_pitch, 'next_pitch':to_pitch, 'count':count}
+                pcrow = {'pitch-next_pitch' : f"{from_pitch},{to_pitch}", 'count':count}
+                pitchCounts_df = pitchCounts_df.append(nrow, ignore_index=True)
+                pitches_counts_df = pitches_counts_df.append(pcrow, ignore_index=True)
+        if sortvalues:
+            pitchCounts_df.sort_values(by=['pitch', 'next_pitch'], ascending=[True, True], inplace=True)
+            pitches_counts_df.sort_values(by=['pitch-next_pitch', 'count'], ascending=[True, True], inplace=True)
+        return pitchCounts_df, pitches_counts_df
+
+    @staticmethod
+    def pivot_data(counts_df, from_column_name='note1', to_column_name='note2'):
+        ''' Rearrange the count data to use in a heat map
+        
+        '''
+        cols = counts_df.columns.sort_values()[:-1]
+        note1 = []
+        note2 = []
+        count = []
+        for rnum in range(len(counts_df['KEY'])):
+            for n2 in cols:
+                note1.append(counts_df.iloc[rnum]['KEY'])
+                note2.append(n2)
+                count.append(int(counts_df.iloc[rnum][n2]))
+    
+        data = {from_column_name:note1, to_column_name:note2, 'count':count}
+        notes_df_raw = pd.DataFrame(data=data)
+        notes_df = notes_df_raw.pivot(from_column_name,to_column_name,'count')
+
+        return notes_df,notes_df_raw
+    
+    @staticmethod
+    def plot_heat_map(counts_df:pd.DataFrame, fmt='d', linewidths=0.5, linecolor='LightGreen', cmap='viridis', annot=False):
+        '''Plot counts DataFrame as a HeatMap. Note1 is on the Y-axis, Note2 (the note following Note1) on the X-axis
+        
+            Args:
+                counts_df - a counts DataFrame, as created by NoteCollector
+                fmt - String formatting code to use when adding annotations, default is 'd'
+                linewidths:float  - line width to separate cells, default is 0.5
+                linecolor - default is 'LightGreen'
+                annot:bool or rectangular dataset, optional, default is False
+                cmap:matplotlib colormap name or object, or list of colors - color map, default is 'viridis'
+            
+            For color maps see https://matplotlib.org/stable/gallery/color/colormap_reference.html
+        '''
+        nc_df = MusicUtils.pivot_data(counts_df)
+        plt.figure(figsize=(12,8))
+        sns.heatmap(nc_df[0], annot=annot, fmt=fmt, linewidths=linewidths, linecolor=linecolor, cmap=cmap)
+        
+    @staticmethod
+    def plot_pitch_counts(counts_df:pd.DataFrame, sortvalues=True, style='whitegrid', kind='scatter', height=7, rot=-0.2, start=0.0):
+        '''Create a Seaborn relational plot of pitch vs. next_pitch from a counts_df DataFrame
+        
+        Args:
+            counts_df - a counts DataFrame, as created by NoteCollector
+            style - plot style, default style is 'whitegrid'
+            kind - kind of plot, can be 'line' or 'scatter' (the default) Would not recommend 'line'.
+            height:int - the plot height, default is 7
+            start:float, 0 <= start <= 3   The hue at the start of the helix. Default is 0.
+            rot:float - Rotations around the hue wheel over the range of the palette. Default is -0.2
+            
+        The counts_df DataFrame is created by the NoteCollector in any of the modes: ap, apc, dp, dpc, or sd
+        The default palette is cubehelix_palette. This produces a colormap with linearly-decreasing (or increasing) brightness.
+        The size and hue of each plot point is determined by the count of (pitch, next_pitch)
+        
+        See https://seaborn.pydata.org/generated/seaborn.cubehelix_palette.html#seaborn.cubehelix_palette
+        for color palette details.
+        '''
+        pitchCounts_df, pitches_counts_df = MusicUtils.rearrange(counts_df, sortvalues)
+        cmap = sns.cubehelix_palette( rot=rot, start=start, as_cmap=True)
+        sns.set_theme(style=style)
+        g = sns.relplot(data=pitchCounts_df, x='pitch',y='next_pitch', height=height, \
+                        size='count', hue='count', palette=cmap, kind=kind, sizes=(10,400))
+        g.ax.xaxis.grid(True, "minor", linewidth=.25)
+        g.ax.yaxis.grid(True, "minor", linewidth=.25)
 
 if __name__ == '__main__':
     print(MusicUtils.__doc__)
