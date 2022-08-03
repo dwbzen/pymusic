@@ -16,7 +16,7 @@ import random, math, sys
 from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 
 class MusicProducer(Producer):
-    """Produce music from interval or notes MarkovChains
+    """Produce music from interval, notes or scale degree MarkovChains.
 
     Known Issues: 
       Reading durations_chain in json format is incorrect. Currently the columns are interpreted as datetime values, should be int.

@@ -13,7 +13,6 @@ from datetime import date
 from builtins import isinstance
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import cm
 
 class MusicUtils(object):
     """Music utilities
@@ -945,9 +944,11 @@ class MusicUtils(object):
         return pitchCounts_df, pitches_counts_df
 
     @staticmethod
-    def pivot_data(counts_df, from_column_name='note1', to_column_name='note2'):
+    def pivot_data(counts_df:pd.DataFrame, from_column_name='note1', to_column_name='note2'):
         ''' Rearrange the count data to use in a heat map
         
+             Args:
+                counts_df - a counts DataFrame, as created by NoteCollector 
         '''
         cols = counts_df.columns.sort_values()[:-1]
         note1 = []
