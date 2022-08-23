@@ -5,7 +5,7 @@
 #
 # Authors:       Donald Bacon
 #
-# Copyright:    Copyright © 2021 Donald Bacon
+# Copyright:    Copyright © 2022 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 

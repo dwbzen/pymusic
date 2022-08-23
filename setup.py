@@ -10,7 +10,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 requirements = [
     'music21 >=7.1.0',
-    'pandas >=1.3.3'
+    'pandas >=1.4.3'
 ]
 
 setup(
@@ -23,15 +23,21 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dwbzen/dwbzen",
     packages=find_packages(exclude=["test",]),
+    data_files=[('resources', ['resources/music/allChordFormulas.json','resources/music/clefs.json', 'resources/music/common_scaleFormulas.json',
+                  'resources/music/commonScaleFormulas.json','resources/music/instruments.json','resources/music/keys.json','resources/music/substitution_rules.json',
+                  'resources/pos/2of12pos.txt', 'resources/pos/3eslpos.txt','resources/pos/5deskpos.txt',
+                  'resources/text/drugBrandNames.txt'
+                    ])],   
     install_requires=requirements,
     license="MIT",
     namespace_packages=[],
     include_package_data=False,
-    zip_safe=False,
     classifiers=[
+        "Development Status :: 3 - Alpha",
 		"Intended Audience :: Developers",
+        "Environment :: Console",
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT",
+        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
 	    "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

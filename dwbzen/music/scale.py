@@ -4,7 +4,7 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2021 Donald Bacon
+# Copyright:    Copyright (c) 2022 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 import json

@@ -1,5 +1,5 @@
 
-from .ruleSet import RuleSet
+from common.ruleSet import RuleSet
 
 class SubstitutionSystem(object):
     '''Base substitution system class

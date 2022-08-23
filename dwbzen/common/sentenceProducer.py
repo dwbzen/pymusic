@@ -8,8 +8,8 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .producer import Producer
-from .textParser import TextParser
+from common.producer import Producer
+from common.textParser import TextParser
 import random
 
 class SentenceProducer(Producer):

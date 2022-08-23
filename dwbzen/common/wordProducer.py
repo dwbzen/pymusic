@@ -4,11 +4,11 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright 2021 Donald Bacon
+# Copyright:    Copyright 2022 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .producer import Producer
+from common.producer import Producer
 import random
 
 class WordProducer(Producer):

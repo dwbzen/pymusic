@@ -13,7 +13,7 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .collector import Collector
+from common.collector import Collector
 from common.textParser import TextParser
 import pandas as pd
 

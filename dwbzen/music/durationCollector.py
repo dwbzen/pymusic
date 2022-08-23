@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
 # Name:          durationCollector.py
-# Purpose:       DurationDollectorr class.
+# Purpose:       DurationCollectorr class.
 #
-#                DurationDollectorr creates a MarkovChain of durations from a Note stream.
+#                DurationCollector creates a MarkovChain of durations from a Note stream.
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2021 Donald Bacon
+# Copyright:    Copyright (c) 2022 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 

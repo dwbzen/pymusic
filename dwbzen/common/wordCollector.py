@@ -15,7 +15,6 @@
 
 from common.collector import Collector
 from common.textParser import TextParser
-from common.markovChain import MarkovChain
 import pandas as pd
 
 import re

@@ -6,13 +6,13 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright 2021 Donald Bacon
+# Copyright:    Copyright 2022 Donald Bacon
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
 import random
-from .markovChain import MarkovChain
-from .collectorProducer import CollectorProducer
+from common.markovChain import MarkovChain
+from common.collectorProducer import CollectorProducer
 import pandas as pd
 
 class Producer(CollectorProducer):

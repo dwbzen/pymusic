@@ -8,8 +8,8 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from .utils import Utils
-from .environment import Environment
+from common.utils import Utils
+from common.environment import Environment
 import sys
 import pandas as pd
 
@@ -33,7 +33,7 @@ class CollectorProducer(object):
         # update Environment to reflect your environment
         #
         env = Environment.get_environment()
-        self.save_folder = env.get_resource_folder(domain)   # for example "/Compile/dwbzen/resources/text"
+        self.save_folder = env.get_data_folder(domain)   # for example "/Compile/dwbzen/data"
         
         self.chainFileName = '_chain'       # appended to self.name for the MarkovChain file
         self.countsFileName = '_counts'     # appended to self.name for the counts file

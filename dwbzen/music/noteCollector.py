@@ -9,7 +9,7 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2021 Donald Bacon
+# Copyright:    Copyright (c) 2022 Donald Bacon
 #
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ class NoteCollector(MusicCollector):
                 if self.verbose > 2 and len(notesdf)>0 and 3 in notesdf['pitchClass']:  # temporary debugging code
                     print(notesdf[notesdf['pitchClass']==3][['part_name','pitch']])
                     
-                self.notes_df = self.notes_df.append(notesdf)
+                self.notes_df = pd.concat([self.notes_df, notesdf])  # deprecated:   self.notes_df.append(notesdf)
                 if len(pnames) > 0:
                     self.score_partNames = self.score_partNames.union(pnames)
                 if len(pnums) > 0:
@@ -294,7 +294,7 @@ class NoteCollector(MusicCollector):
             iloc = 0
             while iloc + self.order < df_len:
                 if iloc == 0:
-                    key_notes = self.initial_object.append( partNotes_df[iloc:iloc+self.order-1])
+                    key_notes = pd.concat([self.initial_object, partNotes_df[iloc:iloc+self.order-1]] )   # deprecated: self.initial_object.append( partNotes_df[iloc:iloc+self.order-1])
                 else:
                     key_notes = partNotes_df.iloc[iloc:iloc+self.order]
                 

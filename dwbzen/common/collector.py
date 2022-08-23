@@ -10,9 +10,9 @@
 # ------------------------------------------------------------------------------
 
 import pandas as pd
-from .markovChain import MarkovChain
-from .utils import Utils
-from .collectorProducer import CollectorProducer
+from common.markovChain import MarkovChain
+from common.utils import Utils
+from common.collectorProducer import CollectorProducer
 
 class Collector(CollectorProducer):
     """Collects data from a defined source and builds a MarkovChain of a given order.

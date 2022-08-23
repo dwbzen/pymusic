@@ -5,13 +5,13 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2021 Donald Bacon
+# Copyright:    Copyright (c) 2022 Donald Bacon
 #
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
 from common.collector import Collector
-from .instruments import Instruments
+from music.instruments import Instruments
 import music
 import pandas as pd
 
