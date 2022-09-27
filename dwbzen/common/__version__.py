@@ -4,7 +4,7 @@ Created on Sep 8, 2021
 @author: don_bacon
 '''
 
-VERSION_TUPLE = (0, 1, 1)
+VERSION_TUPLE = (0, 1, 2)
 __version__ = ".".join(map(str, VERSION_TUPLE))
 __title__ = 'common'
 __description__ = 'Python Common library'

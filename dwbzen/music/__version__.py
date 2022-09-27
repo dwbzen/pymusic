@@ -4,7 +4,7 @@ Created on Feb 22, 2021
 @author: don_bacon
 '''
 
-VERSION_TUPLE = (0, 1, 1)
+VERSION_TUPLE = (0, 1, 2)
 __version__ = ".".join(map(str, VERSION_TUPLE))
 __title__ = 'music'
 __description__ = 'Python music library'

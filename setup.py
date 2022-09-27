@@ -15,7 +15,7 @@ requirements = [
 
 setup(
     name="dwbzen",
-    version="0.1.1",
+    version="0.1.2",
     author="Don Bacon",
     author_email="dwbzen@gmail.com",
     description="Music and Math package including MarkovChain generation from text and music source, and production",

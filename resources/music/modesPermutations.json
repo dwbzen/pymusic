@@ -1,0 +1,27 @@
+{"collection": "Mode Permutations",
+ "description": "Permutations of the intervals of the Major scale (modern modes)",
+ "scaleFormulas":[
+	{"Theoretical-1-1-2-2-2-2-2":{"groups":["Group-1", "theoretical" ],"formula":[ 1, 1, 2, 2, 2, 2, 2 ],"size":7} },
+	{"Neapolitan Major":{"alternateNames":["Group-1",  "Mela Kokilapriya (India)","Raga Kokilaravam (India)" ],"groups":[ "neapolitan" ],"formula":[ 1, 2, 2, 2, 2, 2, 1 ],"size":7} },
+	{"Leading Whole-Tone":{"groups":["Group-1", "leading" ],"formula":[ 2, 2, 2, 2, 2, 1, 1 ],"size":7} },
+	{"Theoretical-2-2-2-2-1-1-2":{"groups":["Group-1", "theoretical" ],"formula":[ 2, 2, 2, 2, 1, 1, 2 ],"size":7} },
+	{"Lydian Minor, Stravinski Raga Ratipriya (India)":{"groups":["Group-1", "lydian" ],"formula":[ 2, 2, 2, 1, 1, 2, 2 ],"size":7} },
+	{"Major Locrian":{"groups":["Group-1", "major" ],"formula":[ 2, 2, 1, 1, 2, 2, 2 ],"size":7} },
+	{"Theoretical-2-1-1-2-2-2-2":{"groups":["Group-1", "theoretical" ],"formula":[ 2, 1, 1, 2, 2, 2, 2 ],"size":7} },
+
+	{"Super Locrian all sharps":{"groups":["Group-2", "super" ],"formula":[ 1, 2, 1, 2, 2, 2, 2 ],"size":7} },
+	{"Melodic minor":{"alternateNames" : ["Group-2", "Melodic minor ascending", "Minor Melodic", "Jazz Minor"], "groups":[ "minor" ],"formula":[ 2, 1, 2, 2, 2, 2, 1 ],"size":7} },
+	{"Dorian b2":{"alternateNames":["Group-2", "Phrygian natural 6","Jazz Minor Inverse. Javanese","Dorian bII & Hindi"],"groups":[ "dorian" ],"formula":[ 1, 2, 2, 2, 2, 1, 2 ],"size":7} },
+	{"Lydian Augmented, Hindi #IV & #V":{"groups":["Group-2", "lydian" ],"formula":[ 2, 2, 2, 2, 1, 2, 1 ],"size":7} },
+	{"Lydian bVIIth, Overtone,  Hindi #IV & bVII":{"alternateNames":["Group-2", "Mela Vacaspati (India)", "Raga Bhusavati (India)", "Lydian Mixolydian", "Bartok Scale" ],"groups":[ "lydian" ],"formula":[ 2, 2, 2, 1, 2, 1, 2 ],"size":7} },
+	{"Major Minor, Hindu bVI & bVII":{"alternateNames":["Group-2", "Mela Carukesi (India) Raga Tarangini (India)" ],"groups":[ "major" ],"formula":[ 2, 2, 1, 2, 1, 2, 2 ],"size":7} },
+	{"Minor Locrian, Hindi 3 flats and bV":{"groups":["Group-2", "minor" ],"formula":[ 2, 1, 2, 1, 2, 2, 2 ],"size":7} },
+
+	{"Ionian":	{ "groups":["Group-3", "major", "modes" ],"formula":[ 2, 2, 1, 2, 2, 2, 1 ],"size":7, "description":"Mode I: major scale. C-B" } },
+	{"Dorian":	{ "groups":["Group-3", "dorian", "modes" ],"formula":[ 2, 1, 2, 2, 2, 1, 2 ],"size":7, "description":"Mode II: minor scale with a raised 6. D-C" } },
+	{"Phrygian": { "groups":["Group-3", "phrygian", "modes"],"formula":[ 1, 2, 2, 2, 1, 2, 2 ],"size":7, "description":"Mode III: minor scale with a lowered 2. E-D" } },
+	{"Lydian": { "groups":["Group-3", "lydian", "modes"], "formula":[ 2, 2, 2, 1, 2, 2, 1 ],"size":7, "description":"Mode IV: major scale with a raised 4. F-E" } },
+	{"Mixolydian": { "alternateNames": [ "Dominant"], "groups":["Group-3", "dominant", "mixolydian", "modes"], "formula":[ 2, 2, 1, 2, 2, 1, 2 ],"size":7, "description":"Mode V: major scale with a lowered 7. G-F" } },
+	{"Aeolian": { "groups":["Group-3", "aeolian", "modes"], "formula":[ 2, 1, 2, 2, 1, 2, 2 ],"size":7, "description":"Mode VI: natural minor scale. A-G" } },
+	{"Locrian": { "groups":["Group-3", "locrian", "modes" ], "formula":[ 1, 2, 2, 1, 2, 2, 2 ], "size":7, "description":"Mode VII: minor scale with a lowered 2 and 5. B-A" } }
+]}
