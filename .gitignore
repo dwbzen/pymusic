@@ -5,6 +5,7 @@ html/sentences
 __pycache__/
 *.py[cod]
 *$py.class
+.project
 
 # C extensions
 *.so
@@ -16,6 +17,7 @@ bin/
 build/
 develop-eggs/
 dist/
+dwbzen.egg-info/
 eggs/
 lib/
 lib64/
