@@ -7,7 +7,7 @@ Created on Mar 2, 2021
 import json
 from music.chord import Chord
 import music
-from pandas.core.frame import DataFrame
+import pandas as pd
 
 class Chords(object):
     '''
@@ -37,7 +37,7 @@ class Chords(object):
         for s in self.chords:
             self.chord_names.append(s['name'])
             self.chord[s['name']] = Chord(s)
-        return DataFrame(self.chords)
+        return pd.DataFrame(self.chords)
     
     def get_chords(self):
         return self.df_chords
