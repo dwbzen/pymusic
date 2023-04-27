@@ -30,27 +30,27 @@ __all__ = [
     'song'
 ]
 
-from dwbzen.music.chords import Chords
-from dwbzen.music.chord import Chord
-from dwbzen.music.durationCollector import DurationCollector
-from dwbzen.music.instruments import Instruments
-from dwbzen.music.intervalCollector import IntervalCollector
-from dwbzen.music.intervalCollectorRunner import IntervalCollectorRunner
-from dwbzen.music.keys import Keys
-from dwbzen.music.musicCollector import MusicCollector
-from dwbzen.music.musicProducer import MusicProducer
-from dwbzen.music.musicProducerRunner import MusicProducerRunner
-from dwbzen.music.musicScale import MusicScale
-from dwbzen.music.musicSubstitutionSystem import MusicSubstitutionSystem
-from dwbzen.music.musicSubstitutionRules import MusicSubstitutionRules
-from dwbzen.music.musicUtils import MusicUtils
-from dwbzen.music.noteCollector import NoteCollector
-from dwbzen.music.noteCollectorRunner import NoteCollectorRunner
-from dwbzen.music.sample_usage import keys_usage, scales_usage, song_usage
-from dwbzen.music.scale  import Scale
-from dwbzen.music.scales import Scales
-from dwbzen.music.scoreGen import ScoreGen
-from dwbzen.music.scoreGenRunner import ScoreGenRunner
-from dwbzen.music.song import Song
+from .chords import Chords
+from .chord import Chord
+from .durationCollector import DurationCollector
+from .instruments import Instruments
+from .intervalCollector import IntervalCollector
+from .intervalCollectorRunner import IntervalCollectorRunner
+from .keys import Keys
+from .musicCollector import MusicCollector
+from .musicProducer import MusicProducer
+from .musicProducerRunner import MusicProducerRunner
+from .musicScale import MusicScale
+from .musicSubstitutionSystem import MusicSubstitutionSystem
+from .musicSubstitutionRules import MusicSubstitutionRules
+from .musicUtils import MusicUtils
+from .noteCollector import NoteCollector
+from .noteCollectorRunner import NoteCollectorRunner
+from .sample_usage import keys_usage, scales_usage, song_usage
+from .scale  import Scale
+from .scales import Scales
+from .scoreGen import ScoreGen
+from .scoreGenRunner import ScoreGenRunner
+from .song import Song
 
 

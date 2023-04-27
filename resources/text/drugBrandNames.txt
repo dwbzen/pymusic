@@ -941,6 +941,7 @@ Somavert
 Sonata
 Soriatane
 Sotalol
+Sotyktu
 Sovaldi
 Spinraza
 Spiriva
