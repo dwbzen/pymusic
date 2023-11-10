@@ -5,7 +5,7 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2021 Donald Bacon
+# Copyright:    Copyright (c) 2023 Donald Bacon
 
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ class IntervalCollector(MusicCollector):
 
             while iloc + self.order < df_len:
                 if iloc == 0:
-                    key_intervals =  self.initial_object.append(partIntervals_df[iloc:iloc+self.order-1])
+                    key_intervals =  pd.concat([self.initial_object, partIntervals_df.iloc[iloc+self.order-1] ])
                 else:
                     key_intervals = partIntervals_df.iloc[iloc:iloc+self.order]    # list of length self.order
                     
@@ -166,7 +166,7 @@ class IntervalCollector(MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 6))
+        self.chain_df = self.chain_df.map(lambda x: MusicUtils.round_values(x, 6))
         
         self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         

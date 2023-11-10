@@ -9,7 +9,7 @@
 #
 # Authors:      Donald Bacon
 #
-# Copyright:    Copyright (c) 2022 Donald Bacon
+# Copyright:    Copyright (c) 2023 Donald Bacon
 #
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
@@ -25,7 +25,7 @@ class NoteCollector(MusicCollector):
     """Collect Notes from one or more scores into a MarkovChain
     
     There are 6 collection modes: absolute, diatonic, absolute pitch class, diatonic pitch class,
-    scale degree number (sdn), and scale degree roman (sdr).
+    scale degree number (sdn), and scale degree Roman (sdr).
     In absolute mode the note pitches used are exactly those that appear in the score(s) without alteration.
     In diatonic mode, the pitch used is the diatonic equivalent for the Key of C-major.
     For example consider the note "F#5". Relative to the key of D-major this is the 3rd step in the scale.
@@ -48,7 +48,7 @@ class NoteCollector(MusicCollector):
     For example, E-minor and G-major have the same key signature, but the scale degrees are different -
     an 'e' is 1 in E-minor, but 6 in G-major. This can be problematic in some of the musicxml scores
     that have parts in minor mode.
-    For example the music21 Bach corpus scores consistently have the "real" key in the Soprano part,
+    For example the music21 Bach corpus scores consistently have the "real" (i.e. minor) key in the Soprano part,
     the other parts the relative major.
     To account for this the collector includes two additional features: filter and keypart.
     If set, the filter will return only scores that meet the filter criteria. 
@@ -318,7 +318,7 @@ class NoteCollector(MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 6))
+        self.chain_df = self.chain_df.map(lambda x: MusicUtils.round_values(x, 6))
         
         self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         

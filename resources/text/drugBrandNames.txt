@@ -584,6 +584,7 @@ Lincocin
 Linzess
 Lioresal
 Lipitor
+Lisinopril
 Livalo
 Locoid
 Lokelma
@@ -1100,6 +1101,7 @@ Vemlidy
 Venclexta
 Ventavis
 Ventolin
+Veozah
 Verapamil
 Verzenio
 Vfend

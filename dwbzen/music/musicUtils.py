@@ -13,6 +13,7 @@ from datetime import date
 from builtins import isinstance
 import matplotlib.pyplot as plt
 import seaborn as sns
+from typing import List, Dict
 
 class MusicUtils(object):
     """Music utilities
@@ -69,7 +70,7 @@ class MusicUtils(object):
             the integer interval (number of semitones) needed to go from note1 to note2.
         """
         intrvals = []
-        part_notes = apart.flat.getElementsByClass('Note')
+        part_notes = apart.flatten().getElementsByClass('Note')
         for ind in range(len(part_notes)-1):
             n1 = part_notes[ind]
             n2 = part_notes[ind+1]
@@ -80,8 +81,9 @@ class MusicUtils(object):
     
     @staticmethod
     def get_part_notes(apart:Part) -> [note.Note]:
-        part_notes = apart.flat.getElementsByClass('Note')
-        return part_notes
+        part_notes = apart.flatten().getElementsByClass('Note')    # returns a StreamIterator
+        pn = [part_notes[i] for i in range(len(part_notes))]
+        return pn
     
     @staticmethod
     def get_scale_degree(akey:key.Key, anoteorpitch:object) -> dict:
@@ -125,7 +127,7 @@ class MusicUtils(object):
         return p
     
     @staticmethod
-    def get_scale_degrees(apart:Part) -> [dict]:
+    def get_scale_degrees(apart:Part) -> List[Dict]:
         """Gets the scale degree of every note's pitch in a given Part
         
         Arguments:
@@ -147,8 +149,8 @@ class MusicUtils(object):
             if not isinstance(k, key.Key):
                 k = k.asKey()
             partMeasures = apart.measures(measure_numbers[i], measure_numbers[i+1]-1)   # measure range is inclusive
-            pNotes = partMeasures.flat.getElementsByClass('Note')
-            partPitches = pNotes.pitches
+            pNotes = partMeasures.flatten().getElementsByClass('Note')
+            partPitches = pNotes.stream().pitches
             for p in partPitches:
                 scale_degrees.append(MusicUtils.get_scale_degree(k, p))
         return scale_degrees
@@ -174,7 +176,7 @@ class MusicUtils(object):
         return pdict
     
     @staticmethod
-    def get_score_notes(ascore:Score, partname:str=None) -> dict:
+    def get_score_notes(ascore:Score, partname:str=None) -> Dict[str, note.Note]:
         """Get the Notes for all Parts or the named part of a Score as a dict with the part name as the key, and a [note.Note] as the value.
         
         Note that this does not return Rest or Chord objects
@@ -279,7 +281,7 @@ class MusicUtils(object):
         Returns a 3-tuple consisting of the notes_df DataFrame,
         an integer set of part numbers, and a set(str) of part names.
         """
-        pdict = MusicUtils.get_score_notes(ascore)    # {partname1 : [note.Note], partname2 : [note.Note], ... }
+        pdict = MusicUtils.get_score_notes(ascore)    # {'Soprano' : <music21.stream.iterator.StreamIterator for Part:Soprano> , 'Alto' : etc. }
         score_parts = MusicUtils.get_score_parts(ascore)
         notes_df = pd.DataFrame()
         scale_degrees = []
@@ -858,7 +860,7 @@ class MusicUtils(object):
             #
             # check if notes are in range for Instrument and adjust if necessary
             #
-            for anote in transposed_part.flat.getElementsByClass('Note'):
+            for anote in transposed_part.flatten().getElementsByClass('Note'):
                 instruments.adjust_to_range(apart.partName, anote, inPlace=True)
         
         return transposed_part

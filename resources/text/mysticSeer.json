@@ -1,0 +1,87 @@
+{
+		"Help" : "Ask a question - get an answer from the Mystic Seer. Adopted from the Twilight Zone episode, Nick of Time",
+	"answers" : [
+		{
+			"answer" : "Please try again",
+			"choices" : []
+		},
+		{
+			"answer" : 	"There's no question about it",
+			"choices" : []
+		},
+		{
+			"answer" : 	"It <0> been decided in your favor",
+			"choices" : [
+				[ "has", "has not"]
+			]
+		},
+		{
+			"answer" : "If you <0> <1>",
+			"choices" : [
+				[ "act", "move" ],
+				[ "soon", "now", "tomorrow", "next week"]
+			]
+		},
+		{
+			"answer" : "You dare risk finding out?",
+			"choices" : []
+		},
+		{
+			"answer" : "That makes a good deal of sense",
+			"choices" : []
+		},
+		{
+			"answer" : "You may never know",
+			"choices" : []
+		},
+		{
+			"answer" : "What do you think?",
+			"choices" : []
+		},
+		{
+			"answer" : "Caution is advised",
+			"choices" : []
+		},
+		{
+			"answer" : "Your chances are <0>",
+			"choices" : [
+				["good", "bad", "small", "excellent", "nil", "not for me to say", "unknown"]
+			]
+		},
+		{
+			"answer" : "It <0> been taken care of",
+			"choices" : [
+				["has already been", "has'nt been", "never will be" ]
+			]
+		},
+		{
+			"answer" : "If that's what you really want",
+			"choices" : []
+		},
+		{
+			"answer" : "That's up to you to <0>",
+			"choices" : [
+				["find out", "consider", "discover" ]
+			]
+		},
+		{
+			"answer" : "It all depends on your point of view",
+			"choices" : []
+		},
+		{
+			"answer" : "It is quite possible",
+			"choices" : []
+		},
+		{
+			"answer" : "Caution is advised",
+			"choices" : []
+		},
+		{
+			"answer" : "The answer to that is <0>",
+			"choices" : [
+				["obvious", "clear", "likely unknowable" ]
+			]
+		}
+	]
+}
+

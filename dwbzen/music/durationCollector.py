@@ -121,7 +121,7 @@ class DurationCollector(MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.applymap(lambda x: MusicUtils.round_values(x, 3))
+        self.chain_df = self.chain_df.map(lambda x: MusicUtils.round_values(x, 3))
         
         self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         
