@@ -4,6 +4,13 @@ from .__version__ import __title__, __description__, __version__
 from .__version__ import __author__, __author_email__, __license__
 from .__version__ import __copyright__
 
+import sys
+minPythonVersion = (3, 10)
+minPythonVersionStr = '.'.join([str(x) for x in minPythonVersion])
+
+del sys
+del minPythonVersion
+del minPythonVersionStr
 
 __all__ = [
     'chord', 
