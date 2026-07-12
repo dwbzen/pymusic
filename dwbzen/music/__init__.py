@@ -20,6 +20,7 @@ __all__ = [
     'intervalCollector',
     'intervalCollectorRunner',
     'keys',
+    'key',
     'musicCollector',
     'musicProducer',
     'musicProducerRunner',
@@ -44,6 +45,7 @@ from .instruments import Instruments
 from .intervalCollector import IntervalCollector
 from .intervalCollectorRunner import IntervalCollectorRunner
 from .keys import Keys
+from .keys import Key
 from .musicCollector import MusicCollector
 from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner

@@ -5,7 +5,10 @@ Created on Jul 9, 2021
 '''
 import markovify
 
-if __name__ == '__main__':
+def main():
+    """Test of the markovify package using the text of poems by Ferlinghetti.
+        See https://pypi.org/project/markovify/
+    """
     with open("C:/data/text/ferlinghetti.txt") as f:
         text = f.read()
     
@@ -22,4 +25,7 @@ if __name__ == '__main__':
     
     json_text = text_model.to_json()
     print(f'json: {json_text}')
+
+if __name__ == '__main__':
+    main()
     

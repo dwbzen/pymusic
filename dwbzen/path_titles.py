@@ -3,7 +3,8 @@ Created on Apr 10, 2021
 
 @author: don_bacon
 '''
-import fileinput, taglib, argparse, re, os
+import fileinput, argparse, re, os
+import taglib    # pip install pytaglib
 from sys import __stderr__
 
 class Path_titles(object):

@@ -1,42 +1,53 @@
 
 from threading import Lock
+import os, sys
+from pathlib import PurePath
 
 class Environment(object):
     _environ = None
     _lock = Lock()
     
-    def __init__(self, package_name):
+    def __init__(self, project_name):
         """Initialize the running Environment by setting global environment variables
         
-        TODO: implement using a properties config file
-        
         """
-        self.name = package_name
-        self.resource_base = '/Compile/dwbzen/resources'    # for managed resources
-        self.data_base = '/Compile/dwbzen/data'             # for output files
-        self.package_name = package_name
-        self.resources = {}
-        self.data = {}
-        self.resources['music'] = self.resource_base + '/music'
-        self.resources['text'] = self.resource_base + '/text'
-        self.data['music'] = self.data_base + '/music'
-        self.data['text'] = self.data_base + '/text'
+        self.name = project_name
+        self.project_name = project_name
+        self.env_path = os.path.dirname(os.path.abspath(__file__))    # the path to this file
+        self.package_base = os.path.join(self.env_path, '..', '..')
+        
+        self.pure_path = PurePath(self.package_base)
+        #p = self.pure_path.parts
+        #print(f"parts: {p}")
+        
+        self.resource_base = os.path.join(self.env_path, '..', '..', 'resources')    # for managed resources
+        self.data_base = os.path.join(self.env_path, '..', '..', 'data')             # for output files
+        
+        self.resources =  {"music" : PurePath(self.resource_base, 'music'), "text" : PurePath(self.resource_base, 'text')}
+        self.data = {"music" : self.data_base + '/music', "text" : self.data_base + '/text'}
+    
         self._items = {}
         
     def __repr__(self):
         return '<Environment>'
         
-    def get_resource_folder(self, package):
+    def get_resource_folder(self, package=None):
+        if package is None:
+            return self.resource_base
         if package in self.resources:
             return self.resources[package]
         else:
-            return self.resource_base
+            print(f'Invalid package {package}', file=sys.stderr)
+            return None
     
-    def get_data_folder(self, package):
+    def get_data_folder(self, package=None):
+        if package is None:
+            return self.data_base
         if package in self.resources:
             return self.data[package]
         else:
-            return self.data_base
+            print(f'Invalid package {package}', file=sys.stderr)
+            return None
         
     def add_item(self, key, value):
         self.items[key] = value

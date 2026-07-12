@@ -43,7 +43,7 @@ from .utils import Utils
 from .wordCollector import WordCollector
 from .wordCollectorRunner import WordCollectorRunner
 from .wordProducer import WordProducer
-from .wordProducerRunner  import WordProducerRunner
+
 
 environmentGlobal = Environment('dwbzen')
 

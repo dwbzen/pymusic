@@ -8,11 +8,12 @@ from music.scale import Scale
 
 class Chord(object):
 
-    def __init__(self, raw_data={}):
-        '''
+    def __init__(self, raw_data:dict|str=None):
+        """
         Constructor
-        '''
+        """
         # print("raw data: {}".format(raw_data))
+        raw_data = {} if raw_data is None else raw_data
         if(type(raw_data) is dict):
             self.chord = raw_data
         else:

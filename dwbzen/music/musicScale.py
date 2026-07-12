@@ -1,13 +1,27 @@
 
-from music21 import stream, key, note
-import pandas as pd
+from music21 import stream
+from music21.note import Note
+from music21.key import Key
+from typing import List
+import json
+from common.environment import Environment
 
 class MusicScale(object):
-    def __init__(self,  resource_folder ="/Compile/dwbzen/resources/music", \
-                 scale_name='Major', root_note=note.Note('C4'), key=key.Key('C')):
+    def __init__(self, scale_name='Major', root_note=Note('C4'), key=Key('C'), resource_folder=None):
         
-        self.scales_df = pd.read_json(resource_folder + "/commonScaleFormulas.json", orient='records').transpose()
-        self.scale = self.scales_df.loc[scale_name]
+        
+        env = Environment.get_environment()
+        resource_folder = env.resource_base if resource_folder is None else resource_folder
+        filename = f"{resource_folder}/music/scaleFormulas.json"
+        with open(filename, "r") as fp:
+            scales = json.load(fp)
+        self.scales = scales["scales"]
+        #print(self.scales)
+
+        self.scale = self.scales.get(scale_name, None)
+        if self.scale is None:
+            raise(LookupError(f"No scale named: {scale_name}"))
+        
         self.root = root_note
         self.scale_name = scale_name
         self.formula = self.scale['formula']
@@ -18,10 +32,10 @@ class MusicScale(object):
         self.range_notes = self.get_range_notes(root_note)
         self.range_notes_names = [x.nameWithOctave for x in self.range_notes]
         
-    def get_scale_notes(self, start_note=None):
+    def get_scale_notes(self, start_note=None)->List[Note]:
         '''The notes of the configured scale spanning a single octave, for example 'C4' to 'C5'
             Note that the top note is the same as the bottom note but an octave higher.
-            Returns: a [Note]
+            Returns: a List[Note]
         '''
         ns = stream.Stream()
         ns.append(self.key)
@@ -36,9 +50,8 @@ class MusicScale(object):
         return [x for x in ns.notes]
     
     def get_range_notes(self, start_note=None, start_octave=0, end_octave=8):
-        '''For example, with default arguments notes (Major scale) are C0,D0,...B7,C8
-        
-        '''
+        """"For example, with default arguments notes (Major scale) are C0,D0,...B7,C8
+        """
         if start_note is None:
             n = self.root
             start_note = self.root
@@ -47,13 +60,13 @@ class MusicScale(object):
         notes_list = []
         for octave in range(start_octave, end_octave):
             for n in self.scale_notes[:-1]:
-                new_note = note.Note(n.name+str(octave))
+                new_note = Note(n.name+str(octave))
                 notes_list.append(new_note)
-        new_note = note.Note(start_note.name+str(end_octave))
+        new_note = Note(start_note.name+str(end_octave))
         notes_list.append(new_note)
         return notes_list
     
-    def get_note(self, scale_degrees:int=0, from_note=None) -> note.Note:
+    def get_note(self, scale_degrees:int=0, from_note=None) -> Note:
         '''Gets a new Note that is the given scale_degrees away from a given Note.
             Arguments:
                 scale_degrees - any integer, the sign dictates the direction - up or down
@@ -69,3 +82,9 @@ class MusicScale(object):
             return self.range_notes[ind]
         else:
             return from_note
+    
+    def __str__(self):
+        result = ""
+        for i,note in enumerate(self.scale_notes):
+            result = f"{result} {note.name}"
+        return result

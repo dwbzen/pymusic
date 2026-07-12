@@ -1,2 +1,6 @@
-from . import test_basic
-from . import test_combine
+from __future__ import absolute_import  # multi-line and relative/absolute imports
+
+__all__ = [
+    'environmentTest',
+    'musicScaleTest'
+]

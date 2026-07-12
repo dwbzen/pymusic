@@ -51,7 +51,7 @@ class MarkovChain(object):
         return self.chain_df.to_json(path_or_buf = None,orient='index')
     
     def __str__(self):
-        return self.chain_df.to_csv(path_or_buf = None, line_terminator='\n')
+        return self.chain_df.to_csv(path_or_buf = None, lineterminator='\n')
     
     def _create_chain(self):
         if self._keys is None:

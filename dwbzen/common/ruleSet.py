@@ -11,9 +11,9 @@ class RuleSet(object):
         substitution result into named components.
         
         Sample substitutions:
-           sub1 = {r'(?P<interval>[+-]?0)/(?P<duration>\d+\.\d+)':['0/0.5', '+1/1.0', '-2/1.0', '+1/2.0']}
-           sub2 = {r'(?P<interval>[+-]?1)/(?P<duration>\d+\.\d+)' : ['0/<duration>', '1/0.5']}
-           splitter = r'(?P<interval>[+-]?\d+)/(?P<duration>\d+\.\d+)'
+           sub1 = {r'(?P<interval>[+-]?0)/(?P<duration>\\d+\.\\d+)':['0/0.5', '+1/1.0', '-2/1.0', '+1/2.0']}
+           sub2 = {r'(?P<interval>[+-]?1)/(?P<duration>\\d+\.\\d+)' : ['0/<duration>', '1/0.5']}
+           splitter = r'(?P<interval>[+-]?\\d+)/(?P<duration>\\d+\.\\d+)'
         '''
         self.rules = rules
         self.substitutions = []
