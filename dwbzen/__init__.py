@@ -24,6 +24,8 @@ __all__ = [
     'common',
     'music',
     'baseball',
+    'text',
+    'util',
     # individual modules
     # KEEP ALPHABETICAL unless necessary for load reasons, if so
     # put a note.  Keep one letter per line.
@@ -39,6 +41,8 @@ __all__ = [
 import common
 import music
 import baseball
+import text
+import util
 
 
 

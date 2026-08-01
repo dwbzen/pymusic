@@ -1,0 +1,98 @@
+{
+  "info" : "This is the master music_rules file",
+  "categories" : [ "definitions", "rules", "procedures"],
+  "help" : "RCM Levels 5-7 music theory rhythm rules.",
+  "tags" : ["name", "rule", "examples", "counter_examples", "steps", "details", "formula", "notes", "definition", "pattern"],
+  "dedfinitions" : [
+	{"name" : "simple time", 
+		"definition" : "The top number is the number of beats in each measure. The bottom is the value of the note that receives one beat", 
+		"examples" : "2/4, 3/4, 4/2" },
+	{"name" : "duple meter", "definition" : "2 beats per measure", "pattern" : "S-w"},
+	{"name" : "triple meter", "definition" : "3 beats per measure", "pattern" : "S-w-w"},
+	{"name" : "quadruple meter", "definition" : "4 beats per measure", "pattern" : "S-w-M-w"},
+	{"name": "compound time",
+		"definition" : "The top number is the number of pulses in each measure. The bottom is the value of the note that receives one pulse",
+		"details" : "The pulses are grouped in threes. Each group of 3 pulses is felt as one beat",
+		"examples" : "6/8, 9/4, 12/16" },
+	{"name" : "compound duple meter", "definition" : "2 main beats, 6 pulses", 
+		"details" : "6/4: dotted half beat, quarter note pulse; 6/8: dotted quarter beat, 8th note pulse, 6/16: dotted 8th beat, 16th note pulse", 
+		"examples" : "6/4, 6/8, 6/16", "pattern" : "S-w-w  M-w-w" },
+	{"name" : "compound triple meter", "definition" : "3 main beats, 9 pulses", 
+		"details" : "9/4: dotted half beat, quarter note pulse", "examples" : "9/4, 9/8, 9/16", "pattern" : "S-w-w" },
+	{"name" : "compound quadruple meter", "definition" : "4 main beats, 12 pulses", 
+		"details" : "12/4: dotted half beat, quarter note pulse", "examples" : "12/4, 12/8, 12/16", "pattern" : "S-w-M-w" }
+  ],
+  "rules" : [
+	{"name" : "completing a measure with rests", "rule_list" : [
+		{"rule" : "A whole rest is used for a full measure of silence in both simple and compound time"},
+		{"rule" : "A breve rest is sometimes used for a full measure of silence in 4/2, 9/4, and 12/4"},
+		{"rule" : "In compound time, dotted rests are used to show a full beat", 
+			"details" : "the rest value is twice the pulse value",
+			"examples" : "6/4 - dotted half, 6/8 - dotted quarter, 6/16 - dotted eighth"},
+		{"rule" : "A strong beat can be combined with weaker beats that follow", 
+			"examples" : "9/8 (S-w-w): dotted half rest (S-w), dotted quarter note"},
+		{"rule" : "A weak beat cannot be combined with a weak beat that follows"},
+		{"rule" : "A weak beat cannot be combined with a medium beat that follows"},
+		{"rule" : "In duple and quadruple meters, you must combine two rests into one when both rests are in the first half or second half of the measure",
+			"details" : "applies to 2/4, 4/2 (whole rest), 4/4 (half rest), 12/4 (dotted whole rest), 12/8, 12/16"},
+		{"rule" : "In triple meter rests on beats 1 and 2 can either be shown separately or combined",
+			"details" : "Beats 2 and 3 are both weak, and so rests on beats 2 and 3 cannot be combined"},
+		]
+	},
+	{"name" : "adding rests to measures in compound time", "rule_list" : [
+		{"rule" : "In compound time dotted rests are used to show a full beat", "details" : "6/4: dotted half, 6/8: dotted quarter, 6/16: dotted 8th"},
+		{"rule" : "Each pulse must be completed before continuing to fill in any additional pulses with silence"},
+		{"rule" : "Treat the 3 pulses of each beat as you would treat a measure in simple triple time"},
+		{"rule" : "A weak pulse cannot be combined with another weak pulse"},
+		{"rule" : "A weak pulse cannot be combined with a strong or medium pulse that follows"},
+		{"rule" : "The 1st two pulses of each beat may be combined as one rest, but the second and 3rd may not"}
+		]
+	},
+	{"name" : "chromatic scale",  "rule_list" : [
+		{"rule" : "Build a series of half steps using accidentals to raise notes when ascending and to lower them when descending"},
+		{"rule" : "Use a bar line after the upper tonic to cancel all previously used accidentals"},
+		{"rule" : "Don't use more than 2 note with the same letter name consecutively within the ascending or descending segment"},
+		{"rule" : "Don't change the starting note enharmonically"}
+		]
+	},
+	{"name" : "whole-tone scale",  "rule_list" : [
+		{"rule" : "Generally a whole-tone scale is notated using either sharps or flats but not a mixure of both"},
+		{"rule" : "Build a series of whole steps using accidentals as required"},
+		{"rule" : "Don't change the starting note enharmonically"}
+		]
+	},
+	{"name" : "octatonic scale",  "rule_list" : [
+		{"rule" : "The octatonic scale consists of 8 different pitches that alternate half steps and whole steps",
+			"details" : "There are 3 possible forms or transpositions. Pattern is H-W-H-W-H-W-H-W or W-H-W-H-W-H-W-H", 
+			"formula" : [1,2,1,2,1,2,1,2] "examples" : "C,Db,Eb,F,F#,G,A,Bb,C; C,D,Eb,F,F#,G#,A,Bb,C" },
+		{"rule" : "One of the half steps will be written as a chromatic half step"},
+		{"rule" : "Don't change the starting note enharmonically"}
+		]
+	},
+	{"name" : "major pentatonic scale", "rule_list" : [
+		{"rule" : "Write a major scale, omiting 4 (subdominant) and 7 (leading tone)"},
+		{"rule" : "Resulting pattern is maj 2, maj 2, min 3, maj 2, min 3", "formula": [2,2,3,2,3], "examples" : "C,D,E,G,A; Gb,Ab,Bb,Db,Eb" }
+		]
+	},
+	{"name" : "minor pentatonic scale", "rule_list" : [
+		{"rule" : "Write a major scale, omiting 2 (supertonic) and 6 (submediant)"},
+		{"rule" : "Resulting pattern is min 3, maj 2, maj 2, min 3, maj 2", "formula": [3,2,2,3,2], "examples" : "A,C,D,E,G; Eb,Gb,Ab,Bb,Db" }
+		]
+	},
+	{"name" : "blues scale", "notes" : "technically a blues minor scale", "rule_list" : [
+		{"rule" : "Write a minor pentatonic scale, adding either a #4 or b5"},
+		{"rule" : "Resulting pattern is min 3, maj 2, min 2, min 2, min 3, maj 2", "formula": [3,2,1,1,3,2], "examples" : "C,D#,F,F#,G,A#,C" }
+		]
+	}
+  ],
+  "procedures" : [
+	{"name" : "adding rests to measures in compound time", "steps" : [
+		{"1" : "Draw a diagram (below the staff) showing the main beats and pulses"},
+		{"2" : "Mark the strong and weak beats"},
+		{"3" : "Finish any incomplete pulses"},
+		{"4" : "Finish any incomplete beats"},
+		{"5" : "Fill in any missing beats using dotted rests"}
+		]
+	}
+  ]
+}

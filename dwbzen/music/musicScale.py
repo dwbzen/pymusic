@@ -6,6 +6,10 @@ from typing import List
 import json
 from common.environment import Environment
 
+
+"""
+    Deprecated. Use Scales, Scale classes.
+"""
 class MusicScale(object):
     def __init__(self, scale_name='Major', root_note=Note('C4'), key=Key('C'), resource_folder=None):
         

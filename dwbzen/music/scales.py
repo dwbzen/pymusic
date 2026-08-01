@@ -24,15 +24,17 @@ class Scales(object):
     
     def __init__(self, scalesfilename:str=None):
         env = Environment.get_environment()
-        resource_folder = env.get_resource_folder()
-        self.scales = {}
+        resource_folder = env.get_resource_folder("music")
+        self.scales = None
         self.scale = {}
         self.data = {}
         self.scale_names = []
         self.resource_folder = resource_folder
         self.scales_file_name = Scales.SCALES_FILE if scalesfilename is None else scalesfilename
-        self.scales_file = f"{resource_folder}/music/{self.scales_file_name}"
+        self.scales_file = f"{resource_folder}/{self.scales_file_name}"
         self.scales_df = self.create_dataFrame()    # also sets scales attribute
+        self.group_names = self._get_all_group_names()
+        # print(sorted(self.group_names))
         
     def format_cols(self, formula:List[int], fnumber:int):
         return f"{formula}: {fnumber}"
@@ -118,6 +120,13 @@ class Scales(object):
                     s["alternateNames"] = [val]
                     # print(s)
         return scales_data
+    
+    def _get_all_group_names(self):
+        group_names = set()
+        for scale in self.scales:
+            for group in scale["groups"]:
+                group_names.add(group)
+        return group_names
 
     def __iter__(self):
         """ Iterate over the scales
@@ -129,9 +138,10 @@ if __name__ == '__main__':
     scales_df = scales.scales_df
     #print(scales_df)
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n","--name", help="Scale name", type=str, default=None)
-    parser.add_argument("-g", "--group", help="Group name", type=str, default=None)
-    parser.add_argument("-r", "--root", help="Root pitch, default is 'C'", type=str, default="C")
+    parser.add_argument("--name", "-N", help="Scale name", type=str, default=None)
+    parser.add_argument("--group","-G",  help="Group name", type=str, default=None)
+    parser.add_argument( "--root", "-R",help="Root pitch, default is 'C'", type=str, default="C")
+    parser.add_argument("--musescore", "-M", help="Display a scale in MuseScore",  action="store_true", default=False)
     args = parser.parse_args()
     
     if args.name is not None:
@@ -140,11 +150,14 @@ if __name__ == '__main__':
         ps = Scales.get_pitch_set(scale.formula, args.root)
         print(f"pitch set: {ps['pitch_set']}  pitches: {ps['pitches']}")
         formula_number = scales.formula_number(scale.formula)
-        bfnumber = f"{formula_number:12b}".strip()
-        print(f"formula number: {formula_number}, {bfnumber}")
+        bin_formula_number = f"{formula_number:12b}".strip()
+        print(f"formula number: {formula_number}, '{bin_formula_number}'")
         print(f"Scale: {scale.to_string(args.root)}")
+        if args.musescore:
+            # TODO create musicxml for the scale and execute MuseScore with that as an argument
+            pass
         
     if args.group is not None:
         group_scales = scales_df[scales_df['groups'].apply(lambda x:args.group in x)]
-        print(group_scales)
+        print(f"scales in {args.group}:\n{group_scales}")
     

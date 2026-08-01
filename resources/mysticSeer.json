@@ -1,0 +1,84 @@
+{
+	"Help" : "Ask a yes/no question - get an answer from the Mystic Seer. Inspired by the Twilight Zone episode, 'Nick of Time'",
+	"prompt" : "Ask or enter a question then hit return",
+	"answers" : [
+		{
+			"answer" : "Try again",
+			"choices" : []
+		},
+		{
+			"answer" : 	"There's no question about it",
+			"choices" : []
+		},
+		{
+			"answer" : 	"It $0 been decided in your favor",
+			"choices" : [
+				[ "has", "has not"]
+			]
+		},
+		{
+			"answer" : "If you $0 $1",
+			"choices" : [
+				[ "act", "move" ],
+				[ "soon", "now", "tomorrow", "next week"]
+			]
+		},
+		{
+			"answer" : "You dare risk finding out?",
+			"choices" : []
+		},
+		{
+			"answer" : "That makes a good deal of sense",
+			"choices" : []
+		},
+		{
+			"answer" : "You may never know",
+			"choices" : []
+		},
+		{
+			"answer" : "What do you think?",
+			"choices" : []
+		},
+		{
+			"answer" : "Caution is advised",
+			"choices" : []
+		},
+		{
+			"answer" : "Your chances are $0",
+			"choices" : [
+				["good", "bad", "not good", "excellent", "unclear. Try again"]
+			]
+		},
+		{
+			"answer" : "It $0 taken care of",
+			"choices" : [
+				["has already been", "has not yet been", "never will be" ]
+			]
+		},
+		{
+			"answer" : "If that's what you really want",
+			"choices" : []
+		},
+		{
+			"answer" : "That's up to you to $0",
+			"choices" : [
+				["find out", "discover" ]
+			]
+		},
+		{
+			"answer" : "It all depends on your point of view",
+			"choices" : []
+		},
+		{
+			"answer" : "It is quite possible",
+			"choices" : []
+		},
+		{
+			"answer" : "The answer to that is $0",
+			"choices" : [
+				["obvious", "clear", "likely unknowable" ]
+			]
+		}
+	]
+}
+

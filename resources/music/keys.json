@@ -1,12 +1,33 @@
 {
+	"info" : "Master file for music keys.",
+	"categories" : ["key_names", "scale_degree_names", "circle_of_fifths", "keys"],
 	"key_names" : [
 		"C-Major", "G-Major", "D-Major", "A-Major", "E-Major", "B-Major", "F#-Major", "C#-Major",
 		"F-Major", "Bb-Major", "Eb-Major", "Ab-Major", "Db-Major", "Gb-Major", "Cb-Major",
 		"A-Minor", "E-Minor", "B-Minor", "F#-Minor", "C#-Minor", "G#-Minor", "D#-Minor", "A#-Minor",
 		"D-Minor", "G-Minor", "C-Minor", "F-Minor", "Bb-Minor", "Eb-Minor", "Ab-Minor"
 		],
+	"scale_degree_names" : ["tonic", "supertonic", "mediant", "subdominant", "dominant", "submediant", "subtonic/leading tone"],
+	"circle_of_fifths" : [
+		{"major_key" : "C-Major", "minor_key" : "A-Minor", "signature" : ""},
+		{"major_key" : "G-Major", "minor_key" : "E-Minor", "signature" : "#"},
+		{"major_key" : "D-Major", "minor_key" : "B-Minor", "signature" : "##"},
+		{"major_key" : "A-Major", "minor_key" : "F#-Minor", "signature" : "###"},
+		{"major_key" : "E-Major", "minor_key" : "C#-Minor", "signature" : "####"},
+		{"major_key" : "B-Major", "minor_key" : "G#-Minor", "signature" : "#####"},
+		{"major_key" : "F#-Major", "minor_key" : "D#-Minor", "signature" : "######"},
+		{"major_key" : "C#-Major", "minor_key" : "A#-Minor", "signature" : "#######"},
+		
+		{"major_key" : "F-Major", "minor_key" : "D-Minor", "signature" : "b"},
+		{"major_key" : "Bb-Major", "minor_key" : "G-Minor", "signature" : "bb"},
+		{"major_key" : "Eb-Major", "minor_key" : "C-Minor", "signature" : "bbb"},
+		{"major_key" : "Ab-Major", "minor_key" : "F-Minor", "signature" : "bbbb"},
+		{"major_key" : "Db-Major", "minor_key" : "Bb-Minor", "signature" : "bbbbb"},
+		{"major_key" : "Gb-Major", "minor_key" : "Eb-Minor", "signature" : "bbbbbb"},
+		{"major_key" : "Cb-Major", "minor_key" : "Ab-Minor", "signature" : "bbbbbbb"}
+	],
 	"keys" : {
-		"C-Major" : { "name" : "C major", "mode" : "Major", "signature" : "", "scale" : "Major", "relativeKey" : "A-Minor" },
+		"C-Major": { "name" : "C major", "mode" : "Major", "signature" : "", "scale" : "Major", "relativeKey" : "A-Minor" },
 		"G-Major": { "name" : "G major",  "mode" : "Major", "signature" : "F#", "scale" : "Major", "relativeKey" : "E-Minor"},
 		"D-Major": { "name" : "D major",  "mode" : "Major", "signature" : "F#,C#", "scale" : "Major", "relativeKey" : "B-Minor"},
 		"A-Major": { "name" : "A major",  "mode" : "Major", "signature" : "F#,C#,G#", "scale" : "Major", "relativeKey" : "F#-Minor"},	

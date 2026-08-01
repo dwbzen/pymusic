@@ -1,50 +1,48 @@
 {
-	"Alto" : {
-		"module": "music21.clef",
-		"class" : "AltoClef",
-	},
-	"Bass" : {
-		"module": "music21.clef",
-		"class" : "BassClef",
-	},
-	"Bass8va" : {
-		"module": "music21.clef",
-		"class" : "Bass8vaClef",
-	},
-	"Bass8vb" : {
-		"module": "music21.clef",
-		"class" : "Bass8vbClef",
-	},
-	"C" : {
-		"module": "music21.clef",
-		"class" : "CClef",
-	},
-	"F" : {
-		"module": "music21.clef",
-		"class" : "FClef",
-	},
-	"G" : {
-		"module": "music21.clef",
-		"class" : "GClef",
-	},
-	"Soprano" : {
-		"module": "music21.clef",
-		"class" : "SopranoClef",
-	},
-	"Tenor" : {
-		"module": "music21.clef",
-		"class" : "TenorClef",
-	},
-	"Treble" : {
-		"module": "music21.clef",
-		"class" : "TrebleClef",
-	},
-	"Treble8va" : {
-		"module": "music21.clef",
-		"class" : "Treble8vaClef",
-	},
-	"Treble8vb" : {
-		"module": "music21.clef",
-		"class" : "Treble8vbClef",
-	}
+	"info" : "Encapsulates clef information for all instruments.",
+	"categories" : ["clefs"],
+	"help" : "See music21.Clef class",
+	"tags" : ["name", "module", "class"],
+	"clef_names" : ["Alto", "Bass", "Bass8va", "Bass8vb", "C", "F", "G", "Soprano", "Tenor", "Treble", "Treble8va", "Treble8vb"],
+	"clefs" : [
+		{"name":  "Alto", "module": "music21.clef", "class" : "AltoClef" },
+		{"name":  "Bass", "module": "music21.clef",	"class" : "BassClef" },
+		{"name":  "Bass8va", "module": "music21.clef", "class" : "Bass8vaClef" },
+		{"name":  "Bass8vb",
+			"module": "music21.clef",
+			"class" : "Bass8vbClef"
+		},
+		{"name":  "C",
+			"module": "music21.clef",
+			"class" : "CClef"
+		},
+		{"name":  "F",
+			"module": "music21.clef",
+			"class" : "FClef"
+		},
+		{"name":  "G",
+			"module": "music21.clef",
+			"class" : "GClef"
+		},
+		{"name":  "Soprano",
+			"module": "music21.clef",
+			"class" : "SopranoClef"
+		},
+		{"name":  "Tenor",
+			"module": "music21.clef",
+			"class" : "TenorClef"
+		},
+		{"name":  "Treble",
+			"module": "music21.clef",
+			"class" : "TrebleClef"
+		},
+		{"name":  "Treble8va",
+			"module": "music21.clef",
+			"class" : "Treble8vaClef"
+		},
+		{"name":  "Treble8vb",
+			"module": "music21.clef",
+			"class" : "Treble8vbClef"
+		}
+	]
 }

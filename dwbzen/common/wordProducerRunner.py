@@ -58,6 +58,7 @@ def main():
     chain_filename = None
     counts_filename = None
     display_as_produced = args.display
+    domain = "text"    # text or music
     if args.verbose > 0:
         print('run WordProducer')
         print(args)
@@ -106,7 +107,7 @@ def main():
     #
     # markovChain will never, ever be None
     #
-    wordProducer = WordProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose )
+    wordProducer = WordProducer(order, markovChain, source_file, args.min, args.max, args.num, args.verbose, domain=domain )
     if chain_filename is not None:
         wordProducer.chain_filename = chain_filename
         wordProducer.counts_filename = counts_filename

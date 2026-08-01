@@ -3,7 +3,7 @@ import re
 class RuleSet(object):
 
     def __init__(self, substitution_rules:dict, rules=None, splitter:str=None):
-        '''
+        """
         Each substitution is a dict. The key is a regular expression string used to match an input string,
         for example: (interval)/(quarterLength-multiplier)
         The value is the replacement. The re groups are named and can be referenced in the replacement.
@@ -14,7 +14,7 @@ class RuleSet(object):
            sub1 = {r'(?P<interval>[+-]?0)/(?P<duration>\\d+\.\\d+)':['0/0.5', '+1/1.0', '-2/1.0', '+1/2.0']}
            sub2 = {r'(?P<interval>[+-]?1)/(?P<duration>\\d+\.\\d+)' : ['0/<duration>', '1/0.5']}
            splitter = r'(?P<interval>[+-]?\\d+)/(?P<duration>\\d+\.\\d+)'
-        '''
+        """
         self.rules = rules
         self.substitutions = []
         self.substitution_rules = substitution_rules

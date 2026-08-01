@@ -11,44 +11,73 @@
 
 from music21 import instrument, Music21Object
 from music21 import note, clef, interval
-
+from common.environment import Environment
 import pandas as pd
 import importlib
+import json
+import argparse
+from typing import List
 
 class Instruments(object):
-    """Encapsulates instrument information for the instruments supported by this framework:
-       * music21 module
-       * associated music21 class and class instance
-       * range of the instrument - (low,high) as pitches
-       * pitchRange - (low,high) as pitch pitch space attribute
-       * Clef to use
-       * transposeDiatonic
-       * transposeChromatic
-       * transposeText
-
-    Instrument information maintained in resources/music/instruments.json
-    Clef information in resources/music/clefs.json
-
+    """Encapsulates instrument and clefs information for the supported instruments. Attributes are:
+       * module - the music21 module: music21.instrument
+       * class - associated music21 class name. The class instance is created when Instruments is instantiated.
+       * range - range of the instrument (low,high) in scientific pitch notation (note+octave), for example C2,Ab4
+       * pitchRange - (low,high) integers as pitch pitch space attribute. Where 0 is C-1, 1 is C0 etc. 
+           So pitchRange of a Bassoon of (C2,Ab4) is 34,76. It's a Music21 thing.
+       * Clef to use. Enumerated in "clef_names"
+       * transpose - True (1) if the instrument transposes, 0 otherwise
+       * transpose_key - the "sounds" key, for example a transpose_key of Bb sounds a maj 2nd lower than written.
+       * transpose_diatonic - given as a music21 DiatonicInterval: specifier ("M", "m", "P" for major, minor, perfect), 
+               and the generic interval. For example, ("M', 3) for a major 3rd.
+       * transpose_chromatic - #half steps
+       * transpose_text - description of the transposition
+    Instruments, Clefs maintained in resources/music/instruments.json, and resources/music/instruments.json respectively.
     """
     
-    instrument_names=[ 'Alto', 'Bass', 'Bassoon', 'Clarinet', 'Flute', 'Harpsichord', 'Koto', 'Oboe', 'Piano', 'PianoLH', 'PianoRH', 'Soprano', 'Tenor']
-    clef_names=['Soprano', 'Alto', 'Tenor', 'Bass', 'Treble', 'Treble8va', 'Treble8vb', 'Bass8va', 'Bass8vb', 'C', 'F', 'G']
-    
-    def __init__(self, verbose=0, resource_folder ="/Compile/dwbzen/resources/music"):
-        self.resource_folder = resource_folder
+    def __init__(self, verbose=0):
+        env = Environment.get_environment()
+        self.resource_folder = env.get_resource_folder("music")
         self.verbose = verbose
-        self.__create_instrument_classes()
-        self.__create_clef_classes()
+        instruments_filename = f"{self.resource_folder}/instruments.json"
+        clefs_filename =  f"{self.resource_folder}/clefs.json"
+        with open(instruments_filename, "r") as fp:
+            instruments_dict = json.load(fp)
+        with open(clefs_filename, "r") as fp:
+            clefs_dict = json.load(fp)
+        
+        self._instruments = instruments_dict["instruments"]
+        self._instrument_names = instruments_dict["instrument_names"]
+        self._clef_names = clefs_dict["clef_names"]
+        self._clefs = clefs_dict["clefs"]
+        self._tags = instruments_dict["tags"]
+        
+        self.instruments_pd = self.__create_instrument_classes(self._instruments)
+        self.clefs_pd = self.__create_clef_classes(self._clefs)
+    
+    @property
+    def instruments(self)->dict:
+        return self._instruments
+    
+    @property
+    def clefs(self)->dict:
+        return self._clefs
+    
+    @property
+    def instrument_names(self)->List[str]:
+        return self._instrument_names
+    
+    @property
+    def clef_names(self)->List[str]:
+        return self._clef_names
 
     @staticmethod
     def __create_instance(row:pd.Series) -> Music21Object:
         """Create an instance of a given class.
-        
             Args:
                 row - a pd.Series that has ''module' and 'class' members
             Returns:
                 a module.class instance
-        
         """
         module = row['module']
         class_name = row['class']
@@ -66,17 +95,23 @@ class Instruments(object):
         rhigh = int(nhigh.pitch.ps)
         return [rlow,rhigh]
     
-    def __create_instrument_classes(self):
-        self.instruments_pd = pd.read_json(self.resource_folder + "/instruments.json", orient="index")
-        self.instruments_pd['instance'] = [Instruments.__create_instance(row[1]) for row in self.instruments_pd.iterrows()]
-        self.instruments_pd['range_ps'] = [Instruments.__define_pitch_range(row[1]) for row in self.instruments_pd.iterrows()]
-        self.instruments_pd.fillna(value={'transposeDiatonic':0}, inplace=True)
-        self.instruments_pd.fillna(value={'transposeChromatic':0}, inplace=True)
-        self.instruments_pd.fillna(value={'transposeText':'Non-transposing'}, inplace=True)
+    def __create_instrument_classes(self, instruments:dict)->pd.DataFrame:
+        column_names = self._tags
+        index_names = self._instrument_names
+        instruments_pd = pd.DataFrame(instruments, columns=column_names, index=index_names)
+        instruments_pd['instance'] = [Instruments.__create_instance(row[1]) for row in instruments_pd.iterrows()]
+        instruments_pd['range_ps'] = [Instruments.__define_pitch_range(row[1]) for row in instruments_pd.iterrows()]
+        instruments_pd.fillna(value={'transpose':False}, inplace=True)
+        instruments_pd.fillna(value={'transpose_diatonic':0}, inplace=True)
+        instruments_pd.fillna(value={'transpose_chromatic':0}, inplace=True)
+        instruments_pd.fillna(value={'transpose_text':'Non-transposing'}, inplace=True)
+        instruments_pd.fillna(value={'transpose_key':'C-major'}, inplace=True)
+        return instruments_pd
     
-    def __create_clef_classes(self):
-        self.clefs_pd = pd.read_json(self.resource_folder + "/clefs.json", orient="index")
-        self.clefs_pd['instance'] = [Instruments.__create_instance(row[1]) for row in self.clefs_pd.iterrows()]
+    def __create_clef_classes(self, clefs:dict)->pd.DataFrame:
+        clefs_pd = pd.DataFrame(clefs, columns=["name", "module", "class"], index=self._clef_names)
+        clefs_pd['instance'] = [Instruments.__create_instance(row[1]) for row in clefs_pd.iterrows()]
+        return clefs_pd
 
     def get_clef(self, clef_name) -> clef.Clef:
         instance = None
@@ -108,7 +143,6 @@ class Instruments(object):
     
     def check_range(self, instrument_name:str, note:note.Note) -> int:
         """Returns the number of steps a Note is for a given Instrument, 0 otherwise.
-        
             Args:
                 instrument_name - the name of a supported Instrument
                 note - the Note to test
@@ -172,12 +206,22 @@ class Instruments(object):
         return newnote
     
 if __name__ == '__main__':
-    print(Instruments.__doc__)
-    instruments = Instruments()
-    if instruments.verbose > 0:
-        print(instruments.instruments_pd)
-        print(instruments.clefs_pd)
-    print(instruments.instruments_pd.loc['Flute'])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", "-v", help="increase output verbosity", action="count", default=0)
+    parser.add_argument("--instrument", "-I", help="instrument name", type=str, default=None)
+    parser.add_argument("--clef", "-C", help="clef name", type=str, default=None)
+    parser.add_argument("--info", help="display class help", action="store_true", default=False)
+    args = parser.parse_args()
+    if args.info:
+        print(Instruments.__doc__)
+    instruments = Instruments(args.verbose)
+    if instruments.verbose > 1:
+        print(f"instruments DataFrame: {instruments.instruments_pd}")
+        print(f"clefs DataFrame: {instruments.clefs_pd}")
+    if args.instrument is not None:
+        print(f"{args.instrument}:\n{instruments.instruments_pd.loc[args.instrument.title()]}")
     
+    if args.clef is not None:
+        print(f"\n{args.clef} clef:\n{instruments.clefs_pd.loc[args.clef.title()]}")
     
     

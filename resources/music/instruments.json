@@ -1,106 +1,130 @@
 {
-	"Alto" : {
-		"module": "music21.instrument",
-		"class" : "Alto",
-		"range" : "G3,F5",
-		"pitchRange" : "52,77",
-		"clef"  : "Treble"
-	},
-	"Bass" : {
-		"module": "music21.instrument",
-		"class" : "Bass",
-		"range" : "D2,D4",
-		"pitchRange" : "38,62",
-		"clef"  : "Bass"
-	},
-	"Bassoon" : {
-		"module": "music21.instrument",
-		"class" : "Bassoon",
-		"range" : "C2,Ab4",
-		"pitchRange" : "34,76",
-		"clef"  : "Bass"
-	},
-	"Clarinet" : {
-		"module": "music21.instrument",
-		"class" : "Clarinet",
-		"range" : "E3,C6",
-		"pitchRange" : "52,84",
-		"clef"  : "Treble",
-		"transposeDiatonic" : "-1",
-		"transposeChromatic" : "-2",
-		"transposeText" : "Sounds a major 2nd lower than written"
-	},
-	"English Horn" : {
-		"module": "music21.instrument",
-		"class" : "EnglishHorn",
-		"range" : "Bb3,D6",
-		"pitchRange" : "58,86",
-		"clef"  : "Treble",
-		"transposeDiatonic" : "-4",
-		"transposeChromatic" : "-7",
-		"transposeText" : "Sounds a perfect 5th lower than written"
-	},
-	"Flute" : {
-		"module": "music21.instrument",
-		"class" : "Flute",
-		"range" : "C4,C6",
-		"pitchRange" : "72,84",
-		"clef"  : "Treble"
-	},
-	"Harpsichord" : {
-		"module": "music21.instrument",
-		"class" : "Harpsichord",
-		"range" : "C2,C7",
-		"pitchRange" : "36,96",
-		"clef"  : "Treble"
-	},
-	"Koto" : {
-		"module": "music21.instrument",
-		"class" : "Koto",
-		"range" : "G3,G5",
-		"pitchRange" : "55,79",
-		"clef"  : "Treble"
-	},
-	"Oboe" : {
-		"module": "music21.instrument",
-		"class" : "Oboe",
-		"range" : "D4,A5",
-		"pitchRange" : "62,81",
-		"clef"  : "Treble"
-	},
-	"Piano" : {
-		"module": "music21.instrument",
-		"class" : "Piano",
-		"range" : "A0,C8",
-		"pitchRange" : "21,108",
-		"clef"  : "Treble"
-	},
-	"PianoLH" : {
-		"module": "music21.instrument",
-		"class" : "Piano",
-		"range" : "A0,C4",
-		"pitchRange" : "21,60",
-		"clef"  : "Bass"
-	},
-	"PianoRH" : {
-		"module": "music21.instrument",
-		"class" : "Piano",
-		"range" : "C4,C8",
-		"pitchRange" : "72,108",
-		"clef"  : "Treble"
-	},
-	"Soprano" : {
-		"module": "music21.instrument",
-		"class" : "Soprano",
-		"range" : "C4,C6",
-		"pitchRange" : "60,84",
-		"clef"  : "Treble"
-	},
-	"Tenor" : {
-		"module": "music21.instrument",
-		"class" : "Tenor",
-		"range" : "C3,F4",
-		"pitchRange" : "48,65",
-		"clef"  : "Bass"
-	}	
+	"info" : "Encapsulates instrument information for the supported instruments.",
+	"categories" : ["definitions", "instruments"],
+	"help" : "See dwbzen.music.Instruments class",
+	"tags" : ["name", "module", "class", "range", "pitch_range", "clef", "transpose", "transpose_key", "transpose_diatonic", "transpose_chromatic", "transpose_text"],
+	"instrument_names" : ["Soprano", "Alto", "Tenor", "Bass", "Bassoon", "Clarinet", "Oboe", "English Horn", "Flute", "Harpsichord", "Piano", "PianoLH", "PianoRH", "Koto"],
+	"definitions" : [
+		{"name" : "module", "definition" : "the music21 module: music21.instrument"},
+		{"name" : "class", "definition" : "associated music21 class name. The class instance is created when Instruments is instantiated"}
+	],
+	"clef_names" : ["G", "Treble", "F", "Bass", "C", "Soprano", "Alto", "Tenor", "Treble8va", "Treble8vb", "Bass8va", "Bass8vb"],
+	"instruments" : [
+		{"name" : "Soprano", 
+			"module": "music21.instrument", "class" : "Soprano", "range" : "C4,C6",
+			"pitch_range" : "60,84", "clef"  : "Treble", "transpose" : 0 
+		},
+		{"name" : "Alto",
+			"module": "music21.instrument",
+			"class" : "Alto",
+			"range" : "G3,F5",
+			"pitch_range" : "52,77",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "Tenor",
+			"module": "music21.instrument",
+			"class" : "Tenor",
+			"range" : "C3,F4",
+			"pitch_range" : "48,65",
+			"clef"  : "Bass",
+			"transpose" : 0
+		},
+		{"name" : "Bass",
+			"module": "music21.instrument",
+			"class" : "Bass",
+			"range" : "D2,D4",
+			"pitch_range" : "38,62",
+			"clef"  : "Bass",
+			"transpose" : 0
+		},
+		{"name" : "Bassoon",
+			"module": "music21.instrument",
+			"class" : "Bassoon",
+			"range" : "C2,Ab4",
+			"pitch_range" : "34,76",
+			"clef"  : "Bass",
+			"transpose" : 0
+		},
+		{"name" : "Clarinet",
+			"module": "music21.instrument",
+			"class" : "Clarinet",
+			"range" : "E3,C6",
+			"pitch_range" : "52,84",
+			"clef"  : "Treble",
+			"transpose" : 1,
+			"transpose_key" : "Bb",
+			"transpose_diatonic" : "(M, 2)",
+			"transpose_chromatic" : "-2",
+			"transpose_text" : "Sounds a major 2nd lower than written"
+		},
+		{"name" : "Oboe",
+			"module": "music21.instrument",
+			"class" : "Oboe",
+			"range" : "D4,A5",
+			"pitch_range" : "62,81",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "English Horn",
+			"module": "music21.instrument",
+			"class" : "EnglishHorn",
+			"range" : "Bb3,D6",
+			"pitch_range" : "58,86",
+			"clef"  : "Treble",
+			"transpose" : 1,
+			"transpose_key" : "F",
+			"transpose_diatonic" : "(P, 5)",
+			"transpose_chromatic" : "-7",
+			"transpose_text" : "Sounds a perfect 5th lower than written"
+		},
+		{"name" : "Flute",
+			"module": "music21.instrument",
+			"class" : "Flute",
+			"range" : "C4,C6",
+			"pitch_range" : "72,84",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "Harpsichord",
+			"module": "music21.instrument",
+			"class" : "Harpsichord",
+			"range" : "C2,C7",
+			"pitch_range" : "36,96",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "Koto",
+			"module": "music21.instrument",
+			"class" : "Koto",
+			"range" : "G3,G5",
+			"pitch_range" : "55,79",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "Piano",
+			"module": "music21.instrument",
+			"class" : "Piano",
+			"range" : "A0,C8",
+			"pitch_range" : "21,108",
+			"clef"  : "Treble",
+			"transpose" : 0
+		},
+		{"name" : "PianoLH",
+			"module": "music21.instrument",
+			"class" : "Piano",
+			"range" : "A0,C4",
+			"pitch_range" : "21,60",
+			"clef"  : "Bass",
+			"transpose" : 0
+		},
+		{"name" : "PianoRH",
+			"module": "music21.instrument",
+			"class" : "Piano",
+			"range" : "C4,C8",
+			"pitch_range" : "72,108",
+			"clef"  : "Treble",
+			"transpose" : 0
+		}
+	]
 }

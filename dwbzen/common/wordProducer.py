@@ -13,8 +13,8 @@ import random
 
 class WordProducer(Producer):
     
-    def __init__(self, state_size, markovChain, source_file, min_size=0, max_size=0, num=10, verbose=0, rand_seed=42):
-        super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose, rand_seed)
+    def __init__(self, state_size, markovChain, source_file, min_size=0, max_size=0, num=10, verbose=0, domain='text', rand_seed=42):
+        super().__init__(state_size, markovChain, source_file, min_size, max_size, num, verbose, domain, rand_seed)
         self.display_as_produced = True
         self.list=False
         self.postprocessing = None
