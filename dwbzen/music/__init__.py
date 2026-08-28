@@ -30,6 +30,7 @@ __all__ = [
     'musicUtils',
     'noteCollector',
     'noteCollectorRunner',
+    'notes',
     'sample_usage',
     'scale',
     'scales',
@@ -45,7 +46,7 @@ from .instruments import Instruments
 from .intervalCollector import IntervalCollector
 from .intervalCollectorRunner import IntervalCollectorRunner
 from .keys import Keys
-from .keys import Key
+from .key import Key
 from .musicCollector import MusicCollector
 from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner
@@ -56,7 +57,7 @@ from .musicUtils import MusicUtils
 from .noteCollector import NoteCollector
 from .noteCollectorRunner import NoteCollectorRunner
 from .sample_usage import keys_usage, scales_usage, song_usage
-from .scale  import Scale
+from .scale  import Scale, Notes
 from .scales import Scales
 from .scoreGen import ScoreGen
 from .scoreGenRunner import ScoreGenRunner

@@ -537,10 +537,8 @@ class MusicUtils(object):
             str([-2,3]) --> "['2', '3']"
             
         """
-        lstr = ''
-        for x in alist:
-            lstr = lstr + str(x) + ','
-        return lstr.rstrip(',')
+        lstr = str(alist)
+        return lstr[1:-1]
 
     @staticmethod
     def note_info(note):
@@ -680,7 +678,6 @@ class MusicUtils(object):
             Useful in setting a random seed.
         
         """
-        
         delta = end_date - start_date
         return abs(int(delta.total_seconds()))
     

@@ -475,6 +475,7 @@ Fuzeon
 Fyarro
 Fycompa
 Fylnetra
+Gabapentin
 Gabitril
 Galafold
 Galzin
@@ -603,6 +604,7 @@ Istodax
 Isturisa
 Ixempra
 Ixinity
+Izervay
 Jadenu
 Jakafi
 Jalyn

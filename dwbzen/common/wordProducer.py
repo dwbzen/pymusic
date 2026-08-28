@@ -56,6 +56,8 @@ class WordProducer(Producer):
                 theseed = self._keys[random.randint(0, len(self._keys)-1)]
         else:
             theseed = aseed
+        if self.verbose > 1:
+            print(f"next seed: {theseed}")
         return theseed
 
     

@@ -9,6 +9,9 @@
 # ------------------------------------------------------------------------------
 
 from common.environment import Environment
+from music.key import Key
+from music21 import key, note, pitch
+from typing import List
 import json
 
 class Keys(object):
@@ -21,13 +24,14 @@ class Keys(object):
     KEYS_FILE = "keys.json"
 
     def __init__(self, keysfilename:str=None, keys_data:dict={}):
-        """Create Keys from data provided or json file  """
+        """Create Keys from a JSON keys file or dictionary
+        """
         env = Environment.get_environment()
-        resource_folder = env.get_resource_folder()
+        resource_folder = env.get_resource_folder("music")
         
         self.resource_folder = resource_folder
         self.keys_file_name = Keys.KEYS_FILE if keysfilename is None else keysfilename
-        self.keys_file = f"{resource_folder}/music/{self.keys_file_name}"
+        self.keys_file = f"{resource_folder}/{self.keys_file_name}"
         
         if len(keys_data) > 0 and "key_names" in keys_data and "keys" in keys_data:
             self.keys_data = keys_data
@@ -36,7 +40,13 @@ class Keys(object):
             
         self.keys = self.keys_data["keys"]
         self.key_names = self.keys_data["key_names"]
-        
+        # add keys to alternate_name
+        alternate_name_keys = {}
+        for k in self.keys:   # iterate of the dict keys which is the name of the Key (confusing but 'key' has 2 meanings
+            thekey = self.keys[k]
+            alt_name = thekey.get("alternate_name", k)
+            alternate_name_keys[alt_name] = thekey
+        self.keys.update(alternate_name_keys)
     
     def _get_keys_data(self)->dict:
         with open(self.keys_file, "r") as read_file:
@@ -44,50 +54,37 @@ class Keys(object):
         return keys_data
 
     def get_key(self, keyname:str)->dict:
+        """ Get a Key by name or alternate_name
+            Arguments: name - the key name to get. The format is <root>-<mode> where mode is "Major" | "Minor"
+                and root is a valid pitch using # for sharp and b for flat if needed.
+                If there is no dash in keyname the mode is based on the case of the root pitch:
+                upper for Major, lower for Minor. 
+                alternate_names have the same format, but root accidental uses a '-' instead of a 'b'
+                and the mode is 'major' or 'minor'
+        """
         return self.keys.get(keyname)
     
-    def key(self, keyname:str):   # returns a Key object
+    def key(self, keyname:str)->Key:   # returns a Key object
         return Key(self.get_key(keyname))
     
     def get_keys(self)->dict:
         return self.keys
 
-class Key(object):
-    """Key represents a single Key as a dict with the Key name as the dictionary key.
-        For example: { "name" : "G major",  "mode" : "Major", "signature" : "F#", "scale" : "Major", "relativeKey" : "E-Minor"}
-    """
-    def __init__(self, key_data:dict):
-        self._key_data = key_data
-    
-    @property
-    def key_name(self)->str:
-        return self._key_data["name"]
-    
-    @property
-    def mode(self)->str:
-        return self._key_data["mode"]
-    
-    @property
-    def signature(self)->str:
-        return self._key_data["signature"]
-    
-    @property
-    def scale(self)->str:
-        return self._key_data["scale"]
-    
-    @property
-    def relative_key(self)->str:
-        return self._key_data["relativeKey"]
-    
-    @property
-    def parallel_key(self)->str:
-        return self._key_data.get("parallelKey", "")
-    
 
 if __name__ == '__main__':
-    print(Keys.__doc__)
+    #print(Keys.__doc__)
     keys = Keys()
     print(json.dumps(keys.get_keys(), indent=2))
-    k = keys.key("Eb-Major")    # returns a Key
-    print(f"{k.key_name}: {k.signature}")
+    k = keys.key("F#-Major")    # returns a Key
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature()}")
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(True)}")
     
+    k = keys.key("Bb-Minor")    # returns a Key
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature()}")
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(True)}")
+    
+    k = keys.key("B- minor")    # alternate name
+    print(f"names: '{k.key_name}', '{k.alternate_name}': mode: {k.mode}, accidental: {k.accidental}, signature: {k.get_key_signature()}")
+    
+
+

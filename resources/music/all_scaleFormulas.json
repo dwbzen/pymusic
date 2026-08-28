@@ -1,10 +1,12 @@
 {
 	"info" : "Master file for all scale formulas. See common_scaleFormulas.json' for a reasonable subset.",
 	"keys" : ["name", "groups", "formula", "alternateNames", "size"],
+	"group_names" : ["adonai", "aeolian", "algerian", "altered", "alternating", "augmented", "auxillary", "balinese", "bhairubahar", "bi", "blues", "c", "cdim", "center", "chaio", 		"chromatic", "common", "diatonic", "diminished", "do", "dominant", "dorian", "double", "egyptian", "enigmatic", "eskimo", "example", "fifth", "flat", "flattened", "fourth", "full", "genus", "gypsy", "half", "han", "harmonic", "hawaiian", "hindi", "hirajoshi", "honchoshi", "houseini", "houzam", "hungarian", "indian", "ionian", "iwato", "japanese", "javanese", "jazz", "jg", "kiourdi", "kokin", "kung", "leading", "locrian", "lydian", "magen", "major", "maqam", "marva", "minor", "mixolydian", "modes", "moorish", "neapolitan", "neveseri", "nohkan", "octatonic", "oriental", "pan", "pentatonic", "phrygian", "prokofiev", "prometheus", "pyramid", "ritsu", "ritusen", "rock", "romanian", "sabach", "sanagari", "scottish", "sharp", "shostakovich", "spanish", "super", "superlocrian", "symmetrical", "takemitsu", "todi", "ultra", "utility", "warao", "whole", "youlan", "zirafkend"],
 	"scales":[
 		{ "name" : "Major","groups" : ["major", "diatonic", "common"],"formula" : [2,2,1,2,2,2,1],"size" : 7},
 		{ "name" : "Minor","alternateNames" : ["Natural minor","Melodic minor descending"],"groups" : ["minor"],"formula" : [2,1,2,2,1,2,2],"size" : 7},
 		{ "name" : "Melodic minor ascending","groups" : ["minor", "common"],"formula" : [2,1,2,2,2,2,1],"size" : 7},
+		{ "name" : "Melodic minor","groups" : ["minor", "common"],"formula" : [2,1,2,2,2,2,1, -2,-2,-1,-2,-2,-1,-2],"size" : 14},
 		{ "name" : "Harmonic minor","groups" : ["minor", "common"],"formula" : [2,1,2,2,1,3,1],"size" : 7},
 		{ "name" : "Chromatic","groups" : ["chromatic"],"formula" : [1,1,1,1,1,1,1,1,1,1,1,1],"size" : 12},
 		{ "name" : "Whole tone","groups" : ["chromatic"],"formula" : [2,2,2,2,2,2],"size" : 6},
@@ -602,7 +604,8 @@
 		{ "name" : "Utility Minor (as 9/89/5 9n 12edo)","alternateNames" : ["Raga Suha (India) Gregorian Scale 4"],"groups" : ["utility", "octatonic"],"formula" : [2,1,2,2,1,2,1,1],"size" : 8},
 		{ "name" : "Utility minor 14/38911121314/5 in 12edo)","alternateNames" : ["Raga Suha (India) Gregorian Scale 4"],"groups" : ["utility", "octatonic"],"formula" : [2,1,2,2,1,2,1,1],"size" : 8},
 		{ "name" : "Warao Minor Trichord","groups" : ["warao"],"formula" : [2,1,7,2],"size" : 4},
-		{ "name" : "whole tone #'s in 12edo)","alternateNames" : ["Raga Gopriya (India) Anhemitonic Hexatonic"],"groups" : ["whole"],"formula" : [2,2,2,2,2,2],"size" : 6},
+		{ "name" : "Whole tone", "groups" : ["whole"],"formula" : [2,2,2,2,2,2],"size" : 6},
+		{ "name" : "Whole tone #'s in 12edo)","alternateNames" : ["Raga Gopriya (India) Anhemitonic Hexatonic"],"groups" : ["whole"],"formula" : [2,2,2,2,2,2],"size" : 6},
 		{ "name" : "Whole tone alternate","alternateNames" : ["Raga Gopriya (India) Anhemitonic Hexatonic"],"groups" : ["whole"],"formula" : [2,2,2,2,2,2],"size" : 6},
 		{ "name" : "whole tone b's in 12edo)","alternateNames" : ["Raga Gopriya (India) Anhemitonic Hexatonic"],"groups" : ["whole"],"formula" : [2,2,2,2,2,2],"size" : 6},
 		{ "name" : "Whole-Tone Tetramirror","groups" : ["whole"],"formula" : [2,2,2,6],"size" : 4},

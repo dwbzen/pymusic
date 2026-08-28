@@ -6,3 +6,4 @@ markovify
 music21
 notebook
 jupyterlab
+pytaglib

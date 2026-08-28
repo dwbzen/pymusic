@@ -8,11 +8,14 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 from music.scale import Scale
-from music.keys import Key
+from music.keys import Keys
+from music.key import  Key
+from music21 import stream, note
 from common.environment import Environment
 import argparse
 import json
 import pandas as pd
+import sys
 from typing import List
 from itertools import accumulate
 import operator
@@ -22,7 +25,8 @@ class Scales(object):
     """
     SCALES_FILE = "common_scaleFormulas.json"
     
-    def __init__(self, scalesfilename:str=None):
+    def __init__(self, key:Key, scales_filename:str=None):
+        
         env = Environment.get_environment()
         resource_folder = env.get_resource_folder("music")
         self.scales = None
@@ -30,46 +34,27 @@ class Scales(object):
         self.data = {}
         self.scale_names = []
         self.resource_folder = resource_folder
-        self.scales_file_name = Scales.SCALES_FILE if scalesfilename is None else scalesfilename
+        self.scales_file_name = Scales.SCALES_FILE if scales_filename is None else scales_filename
         self.scales_file = f"{resource_folder}/{self.scales_file_name}"
-        self.scales_df = self.create_dataFrame()    # also sets scales attribute
+        self.scales_df = self.create_dataFrame()    # also sets self.scales attribute
         self.group_names = self._get_all_group_names()
+        self.key_name = key.key_name
+
+        # create a dict with scale name and alternate name(s) adding lower case as keys
+        self.scales_dict = {}
+        for scale in self.scales:
+            name = scale["name"]
+            self.scales_dict[name] = scale
+            self.scales_dict[name.lower()] = scale
+            alt_names = scale.get("alternateNames", [])
+            for alt_name in alt_names:
+                self.scales_dict[alt_name] = scale
+                self.scales_dict[alt_name.lower()] = scale
+            
         # print(sorted(self.group_names))
         
     def format_cols(self, formula:List[int], fnumber:int):
         return f"{formula}: {fnumber}"
-    
-    @staticmethod
-    def get_pitch_set(formula:List[int], root_pitch:str="C", accidental:str=None, include_octave=False)->dict:
-        """
-        TODO - this should be in the Scale class.
-        
-        Creates a List of relative pitch indexes, and a list of pitches for a given formula
-        Each element is the number of steps from the root of 'C'.
-        For example given the scale formula  [1, 2, 1, 2, 1, 2, 2, 1] (name == 'Shostakovich respelled all sharp')
-        the resulting pitch set is [0, 1, 3, 4, 6, 7, 9, 11, 12] 
-        If the root Pitch is C, the corresponding pitches are ['C', 'C#', 'Eb', 'E', 'F#', 'G', 'A', 'B']
-        Arguments:
-            formula - the scale formula as a List[int].
-            root_pitch - the starting note to use
-            accidental is the accidental to use when creating pitches. If None (the default) the cromatic
-                pitch set to use is based on the root_pitch. Otherwise specify "#' or "b".
-            include_octave - if True, add the root_pitch at the end, representing a full octave.
-                default is False.
-        Returns a dict with keys "pitch_set" (the index of cromatic notes in the scale), and "pitches"
-        """
-        pitch_set = list(accumulate(formula, operator.add, initial=0)) if include_octave else list(accumulate(formula, operator.add, initial=0))[:-1]
-
-        if "b" in  root_pitch or accidental == "b":
-            ind = Scale.CHROMATIC_FLAT_PITCHES.index(root_pitch)
-            pitches = [Scale.CHROMATIC_FLAT_PITCHES[x+ind] for x in pitch_set]
-        elif "#" in root_pitch or accidental == "#" or root_pitch[0] in "GDAEB":    # there's # in the root_pitch or it's the root of a sharp key
-            ind = Scale.CHROMATIC_SHARP_PITCHES.index(root_pitch.upper())
-            pitches = [Scale.CHROMATIC_SHARP_PITCHES[x+ind] for x in pitch_set]
-        else:
-            ind = Scale.CHROMATIC_FLAT_PITCHES.index(root_pitch)
-            pitches = [Scale.CHROMATIC_FLAT_PITCHES[x+ind] for x in pitch_set]
-        return {"pitch_set" : pitch_set, "pitches" : pitches}
     
     @staticmethod
     def formula_number(formula):
@@ -78,7 +63,7 @@ class Scales(object):
         It is created from the pitch_set of the formula by successive left shifts
         """
         fnum = 0
-        ps = Scales.get_pitch_set(formula)
+        ps = Scale.get_pitch_set(formula)
         pitch_set = ps["pitch_set"]
         for i in pitch_set:
             shiftamt = i
@@ -87,21 +72,15 @@ class Scales(object):
             fnum = fnum + (1 << shiftamt)
         return fnum
     
-    def get_scale(self, name:str)->Scale:
-        """Get a Scale by name or alternameName   """
-        # TODO could speed this up by creating a new dict with scale name as the key
-        scale = None
-        _name = name.lower()
-        for s in self.scales:
-            if s["name"].lower() == _name:
-                scale = Scale(s)
-                break
-            else:
-                if "alternateNames" in s:
-                    for alt_name in s["alternateNames"]:
-                        if alt_name.lower() ==_name:
-                            scale = Scale(s)
-                            break
+    def get_scale(self, name:str, key:Key, octaves=1, descending=False)->Scale:
+        """ Get a Scale by name or alternameName.
+            Returns a Scale object
+        """
+        name = name
+        _scale = self.scales_dict.get(name, None)
+        if _scale is None:
+            _scale = self.scales_dict.get(name.lower(), None)
+        scale = None if _scale is None else Scale( _scale, key, octaves, descending)
         return scale
     
     def create_dataFrame(self)->pd.DataFrame:
@@ -134,28 +113,56 @@ class Scales(object):
         return self.scales.__iter__()
         
 if __name__ == '__main__':
-    scales = Scales()
-    scales_df = scales.scales_df
-    #print(scales_df)
+
+    keys = Keys()
+    key_names = keys.key_names
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", "-N", help="Scale name", type=str, default=None)
     parser.add_argument("--group","-G",  help="Group name", type=str, default=None)
-    parser.add_argument( "--root", "-R",help="Root pitch, default is 'C'", type=str, default="C")
-    parser.add_argument("--musescore", "-M", help="Display a scale in MuseScore",  action="store_true", default=False)
+    parser.add_argument( "--root", "-R",help="Root pitch, default is 'C'. May also include an octave as in 'D3'", type=str, default="C")
+    parser.add_argument("--key", "-K", 
+            help="Optional key name, for example 'Eb-Major', default key is 'C-Major'. Used to determine accidentals in the scale and also the root note.",
+            choices = key_names, type=str, default="C-Major")
+    parser.add_argument("--octaves", "-O", 
+            help="Octave range, default is 1 octave", type=int, choices=[1,2,3,4], default=1)
+    parser.add_argument("--descending", "-D", 
+            help="Show both ascending and descending versions of the scale over the specified octave range. Default is False",
+            action="store_true", default=False)
+    parser.add_argument("--dup", help="Duplicate the scale in a separate part, the number of octaves higher or lower as indicated",
+            type=int, choices=list(range(-2, 3)), default=0 )
+    parser.add_argument("--show", "-S", help="Display a scale in MuseScore, lilypond or as a list",  
+            type=str, choices=["musicxml", "musicxml.png", "text", "midi", "lily", "lily.pdf", "pitches", "notes"], default=False)
     args = parser.parse_args()
     
+    key:Key = keys.key(args.key)
+    scales = Scales(key)
+    scales_df = scales.scales_df
+    #print(scales_df)
+    
     if args.name is not None:
-        scale = scales.get_scale(args.name)
+        scale = scales.get_scale(args.name, key,  args.octaves, args.descending)
+        if scale is None:
+            print(f"The scale '{args.name}' not found", file=sys.stderr)
+            sys.exit()
+        
         print(f"{args.name} formula: {scale.formula}")
-        ps = Scales.get_pitch_set(scale.formula, args.root)
-        print(f"pitch set: {ps['pitch_set']}  pitches: {ps['pitches']}")
+        ps = Scale.get_pitch_set(scale.formula, args.root)
+        print(f"pitch set: {ps['pitch_set']}  notes: {ps['pitches']}")
+        
         formula_number = scales.formula_number(scale.formula)
         bin_formula_number = f"{formula_number:12b}".strip()
         print(f"formula number: {formula_number}, '{bin_formula_number}'")
         print(f"Scale: {scale.to_string(args.root)}")
-        if args.musescore:
-            # TODO create musicxml for the scale and execute MuseScore with that as an argument
-            pass
+        
+        pitches = scale.pitches(args.root)
+        notes = scale.notes(args.root)
+        if args.show == "pitches" or args.show == "musicxml":
+            print(f"pitches: {pitches}")
+        if args.show == "notes":
+            print(f"notes: {notes}")
+        else:
+            scale.show(args.show, notes=notes)
         
     if args.group is not None:
         group_scales = scales_df[scales_df['groups'].apply(lambda x:args.group in x)]

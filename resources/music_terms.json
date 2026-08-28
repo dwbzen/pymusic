@@ -26,7 +26,7 @@
 	{"name" : "vivace", "definition" : "lively, brisk", "level" : 5},
 	{"name" : "vivo", "definition" : "lively", "level" : 5}
   ],
-  "dynamics": [
+   "dynamics" : [
 	{"name" : "crescendo, cresc.", "definition" : "becoming louder", "level" : 5},
 	{"name" : "diminuendo, dim.", "definition" : "becoming softer", "level" : 5},
 	{"name" : "forte, f", "definition" : "loud", "level" : 5},
@@ -40,32 +40,37 @@
 	{"name" : "tranquillo", "definition" : "quiet, tranquil", "level" : 5}
   ],
   "structure_form" : [
+    {"name" : "cadence", "definition" : "end of a phrase in which the melody or harmony creates a sense of full or partial resolution", "level" : 6},
 	{"name" : "authentic cadence", "definition" : "V-I progression", "details" : "also called a perfect cadence", "level" : 6},
-	{"name" : "binary form", "definition" : "two defined parts or sections", 
-		"details" : "These sections are often repeated, Uppercase letters A and B used to labelthese larger sections. Often unfold within a 16-measure structure", "level" : 6},
-	{"name" : "contrasting period", "definition" : "new melodic material is introduced at the start of the second", 
-		"details" : "phrases denoted as a and b, 4 measures each, a ends with a half cadence, a1 ends with an authentic cadence", "level" : 6},
+	{"name" : "perfect authentic cadence", "definition" : "V-I progression where both cords are in root position", "level" : 6},
+	{"name" : "half cadence", "definition" : "cadence ending on the dominant triad",  "details" : "I,II,IV or VI-V progression", "level" : 6},
 	{"name" : "deceptive cadence", "definition" : "cadence from V to any chord other than the tonic, usually the submediant (VI)", 
 		"details" : "also known as an interrupted or false cadence", "level" : 6},
-	{"name" : "development", "definition" : "middle section of sonata form where themes are developed", "level" : 6},
-	{"name" : "exposition", "definition" : "first section of sonata form, main themes are stated; often two contrasting themes", "level" : 6},
+	{"name" : "plagal cadence", "definition" : "IV-I progression", "example" : "also called the Amen cadence", "level" : 6},
+	
 	{"name" : "form", "definition" : "overall structure of framework of a composition", "level" : 6},
-	{"name" : "half cadence", "definition" : "cadence ending on the dominant triad",  "details" : "I,II,IV or VI-V progression", "level" : 6},
+	{"name" : "sonata form", "definition" : "Classical era form consisting of 3 sections: exposition, development, recapitulation", "level" : 6},
+	{"name" : "exposition", "definition" : "first section of sonata form, main themes are stated; often two contrasting themes", "level" : 6},
+	{"name" : "development", "definition" : "middle section of sonata form where themes are developed", "level" : 6},
+	{"name" : "recapitulation", "definition" : "third and final section of sonata form, return of main themes stated in the exposition", "level" : 6},
+	{"name" : "Invention", "definition" : "Based on a motive, treated using imitation, inversion, transposition, and sequence", "level" : 6},
+
+	{"name" : "period", "definition" : "question-answer phrase pair; 2 phrases, 4 measures each", "level" : 6},
+	{"name" : "contrasting period", "definition" : "new melodic material is introduced at the start of the second", 
+		"details" : "phrases denoted as a and b, 4 measures each, a ends with a half cadence, a1 ends with an authentic cadence", "level" : 6},
 	{"name" : "parallel period", "definition" : "melodic material used in the first phrase is repeated at the start of the second", 
 		"details" : "phrases denoted as a and a1, 4 measures each, a ends with a half cadence, a1 ends with an authentic cadence", "level" : 6},
-	{"name" : "perfect authentic cadence", "definition" : "V-I progression where both cords are in root position", "level" : 6},
-	{"name" : "period", "definition" : "question-answer phrase pair; 2 phrases, 4 measures each", "level" : 6},
-	{"name" : "plagal cadence", "definition" : "IV-I progression", "example" : "also called the Amen cadence", "level" : 6},
+	{"name" : "binary form", "definition" : "two clearly defined parts or sections", 
+		"details" : "These sections are often repeated, Uppercase letters A and B used to labelthese larger sections. Often unfolds within a 16-measure structure", "level" : 6},
+
 	{"name" : "primo, prima", "definition" : "first; upper part of a duet", "level" : 6},
-	{"name" : "recapitulation", "definition" : "third and final section of sonata form, return of main themes stated in the exposition", "level" : 6},
-	{"name" : "scale degrees", "definition" : "tonic, supertonic, mediant, subdominant, dominant, submediant, leading tone or subtonic, tonic", "level" : 6},
 	{"name" : "secondo, seconda", "definition" : "second; second or lower part of a duet", "level" : 6},
-	{"name" : "sonata form", "definition" : "Classical era form consisting of 3 sections: exposition, development, recapitulation", "level" : 6},
-    {"name" : "cadence", "definition" : "end of a phrase in which the melody or harmony creates a sense of full or partial resolution", "level" : 6}
+	{"name" : "scale degrees", "definition" : "tonic, supertonic, mediant, subdominant, dominant, submediant, leading tone or subtonic, tonic", "level" : 6}
   ],
   "performing_instructions" : [
 	{"name" : "loco", "definition" : "return to normal register", "level" : 6},
   	{"name" : "ottava, 8va", "definition" : "the interval of an octave", "level" : 5},
+	{"name" : "poco rit.", "definition" : "gradually slowing down a little", "level" : 6},
 	{"name" : "quindicesima alta, 15ma", "definition" : "two octaves higher", "level" : 7},
 	{"name" : "simile", "definition" : "continue in the same manner as has just been indicated", "level" : 6},
 	{"name" : "sotto voce", "definition" : "soft, subdued, under the breath", "level" : 7},
@@ -108,7 +113,7 @@
 	{"name" : "poco a poco", "definition" : "little by little", "level" : 6},
 	{"name" : "risoluto", "definition" : "resolute", "level" : 7},
 	{"name" : "senza pedale", "definition" : "without using the pedal", "level" : 6},
-	{"name" : "scherzando", "definition" : "playful", "level" : 7},
+	{"name" : "scherzando", "definition" : "playful", "details" : "from the Italian word 'scherzo' meaning 'joke'", "level" : 7},
 	{"name" : "semplice", "definition" : "simple", "level" : 7},
 	{"name" : "smorzando, smorz.", "definition" : "extinguishing or dampening", "example" : "Chopin prelude 4 in Em, measures 21-22",
 		"details" : "usually interpreted as a drop in dynamics, and very often in tempo as well", "level" : 6},
@@ -145,13 +150,15 @@
 	{"name" : "M.M.", "definition" : "metronome marking", "level" : 6},
   	{"name" : "molto", "definition" : "much, very", "level" : 5},
 	{"name" : "mosso", "definition" : "movement", "level" : 6},
+	{"name" : "moto", "definition" : "motion", "level" : 6},
 	{"name" : "non", "definition" : "not", "level" : 6},
 	{"name" : "piu", "definition" : "more", "level" : 6},
 	{"name" : "quasi", "definition" : "almost, as if", "example" : "quasi una fantasia almost a fantasia", "level" : 6},
   	{"name" : "sempre", "definition" : "always, continuously", "level" : 5},
   	{"name" : "senza", "definition" : "without", "example" : "senza pedale: without using the pedal", "level" : 5},
 	{"name" : "sopra", "definition" : "above", "level" : 7},
-	{"name" : "subito, sub.", "definition" : "suddenly", "example" : "subito pp, which instructs the player to suddenly drop to pianissimo as an effect", "level" : 6},
+	{"name" : "subito, sub.", "definition" : "suddenly", 
+		"example" : "subito pp, which instructs the player to suddenly drop to pianissimo as an effect", "level" : 6},
 	{"name" : "troppo", "definition" : "too much", "example" : "non troppo: not too much", "level" : 6}
   ],
   "history" : [
@@ -163,18 +170,26 @@
     {"name" : "Song by Harold Arlen", "definition" : "Over the Rainbow" , "level" : 5},
 	{"name" : "Baroque Era", "definition" : "1600-1750" , "level" : 6},
 	{"name" : "Classical Era", "definition" : "1750-1825" , "level" : 6},
-	{"name" : "Composer of Eine kleine Nachtmusik", "definition" : "W.A. Mozart" , "level" : 6},
-	{"name" : "Composer of Brandenburg Concerto No. 5", "definition" : "Johann Sebastian Bach" , "level" : 6},
-	{"name" : "Composer of Invention in C Major", "definition" : "Johann Sebastian Bach" , "level" : 6},
+	
+	{"name" : "Eine Kleine Nachtmusik, 1st movement", "definition" : "Chamber music in 3 movements by Mozart", 
+		"details" : {"composer" : "W.A. Mozart", "genre" : "chamber Music", "form" : "sonata", "Era" : "Classical"}, "level" : 6},
+		
+	{"name" : "Brandenburg Concerto No. 5, 1st movement", "definition" : "Orchestral work by J.S. Bach", 
+		"details" : {"composer" : "Johann Sebastian Bach", "genre" : "Concerto grosso", "form" : "ritornello form", 
+			"performance" : "Concertino consisting of harpsichord, violin, flute; ripieno consisting of string orchestra", "Era" : "Baroque" }, "level" : 6},
+		
+	{"name" : "Invention in C Major", "definition" : "Solo keyboard work by J.S. Bach",
+		"details" : {"composer" : "Johann Sebastian Bach", "genre" : "solo keyboard", "form" : "2-part Invention", "Era" : "Baroque" }, "level" : 6},
+	
 	{"name" : "polyphonic texture", "definition" : "combination of 2 or more melody lines, also known as contrapuntal texture or counterpoint" , "level" : 6},
 	{"name" : "homophonic texture", "definition" : "a single line of melody supported by harmonic accompaniment" , "level" : 6},
 	{"name" : "motive", "definition" : "a short melodic or rhythmic fragment used to build a melody", "level" : 6},
 	{"name" : "invention", "definition" : "keyboard composition in polyphonic texture based on imitation" , "level" : 6},
 	{"name" : "imitation", "definition" : "repitition of the same motive, in another voice or part" , "level" : 6},
 	{"name" : "sequence", "definition" : "a motive or phrase that is repeated at a higher or lower pitch in the same voice" , "level" : 6},
-	{"name" : "concertino", "definition" : "a group of solo instruments" , "level" : 6},
+	{"name" : "concertino", "definition" : "a group of solo instruments. A concertino is contrasted with a ripieno." , "level" : 6},
 	{"name" : "ripieno", "definition" : "a full string orchestra" , "level" : 6},
-	{"name" : "concerto grosso ", "definition" : "a Baroque orchestral work in 3 movements (fast-slow-fast). A concertino is contrasted with a ripieno" , "level" : 6},
+	{"name" : "concerto grosso ", "definition" : "a Baroque orchestral work in 3 movements (fast-slow-fast)." , "level" : 6},
 	{"name" : "ritornello", "definition" : "refrain or recurring passage" , "level" : 6},
 	{"name" : "ritornello form", "definition" : "a form often used as the 1st and 3rd movements of a concerto grosso. The openning ritornello is repeated throughout the movement" , "level" : 6}
   ]

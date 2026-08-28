@@ -2,5 +2,6 @@ from __future__ import absolute_import  # multi-line and relative/absolute impor
 
 __all__ = [
     'environmentTest',
-    'musicScaleTest'
+    'musicScaleTest',
+    'scaleTest'
 ]

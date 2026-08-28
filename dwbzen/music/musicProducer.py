@@ -13,6 +13,7 @@ from common.producer import Producer
 from music.musicUtils import MusicUtils
 import pandas as pd
 import random, math, sys
+from typing import List 
 from music21 import note, clef, stream, interval, tempo, meter, key, metadata
 
 class MusicProducer(Producer):
@@ -271,9 +272,8 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
         return dict([ ('next_token', next_token), ('new_seed',new_seed)])
     
     
-    def produce(self):
+    def produce(self)->stream.Score:
         """Produce a Score from a MarkovChain
-        
         """
         
         initial_seed = self.get_seed(self.seed)      # get the initial seed
@@ -320,9 +320,8 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
         
         return self.score
     
-    def produce_notes(self, part_name, seed, total_duration):
+    def produce_notes(self, part_name, seed, total_duration)->List[note.Note]:
         """Produce a list of Note from a MarkovChain for 'notes' producerType for the named part
-
         """        
         part_notes = []
         more_to_go = True
@@ -390,9 +389,8 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
                     
         return part_notes
     
-    def produce_intervals(self, part_name, seed, total_duration):
+    def produce_intervals(self, part_name, seed, total_duration)->List[note.Note]:
         """Produce list of Note from a MarkovChain for 'intervals' producerType for the named part
-
         """
         
         part_notes = []

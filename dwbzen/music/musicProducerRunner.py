@@ -20,7 +20,7 @@ from common.environment import Environment
 
 import argparse
 import pandas as pd
-from music21 import key
+from music21 import key, stream
 
 class MusicProducerRunner(object):
     
@@ -210,7 +210,7 @@ class MusicProducerRunner(object):
         if args.type == 'intervals' or args.mode == 'sd':
             musicProducer.add_part_notes(args.notes)
                 
-        theScore = musicProducer.produce()
+        theScore:stream.Score = musicProducer.produce()
         if theScore is not None:
             theScore.metadata.title = args.title
             theScore.show(args.show)
