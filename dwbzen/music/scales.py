@@ -8,17 +8,14 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 from music.scale import Scale
+from music.scaleLib import ScaleLib
 from music.keys import Keys
 from music.key import  Key
-from music21 import stream, note
-from common.environment import Environment
 import argparse
 import json
 import pandas as pd
 import sys
-from typing import List
-from itertools import accumulate
-import operator
+from typing import List, Set
 
 class Scales(object):
     """Scale formulas for common scales
@@ -27,31 +24,14 @@ class Scales(object):
     
     def __init__(self, key:Key, scales_filename:str=None):
         
-        env = Environment.get_environment()
-        resource_folder = env.get_resource_folder("music")
-        self.scales = None
-        self.scale = {}
-        self.data = {}
-        self.scale_names = []
-        self.resource_folder = resource_folder
-        self.scales_file_name = Scales.SCALES_FILE if scales_filename is None else scales_filename
-        self.scales_file = f"{resource_folder}/{self.scales_file_name}"
+        # creates a dict with scale name and alternate name(s) adding lower case as keys
+        self.scaleLib = ScaleLib(scales_filename)
+        self.groupNames = self.scaleLib.groupNames
+        self.scales_data = self.scaleLib.scalesData     # List[dict] from the scales JSON file
+        
         self.scales_df = self.create_dataFrame()    # also sets self.scales attribute
-        self.group_names = self._get_all_group_names()
         self.key_name = key.key_name
 
-        # create a dict with scale name and alternate name(s) adding lower case as keys
-        self.scales_dict = {}
-        for scale in self.scales:
-            name = scale["name"]
-            self.scales_dict[name] = scale
-            self.scales_dict[name.lower()] = scale
-            alt_names = scale.get("alternateNames", [])
-            for alt_name in alt_names:
-                self.scales_dict[alt_name] = scale
-                self.scales_dict[alt_name.lower()] = scale
-            
-        # print(sorted(self.group_names))
         
     def format_cols(self, formula:List[int], fnumber:int):
         return f"{formula}: {fnumber}"
@@ -72,40 +52,28 @@ class Scales(object):
             fnum = fnum + (1 << shiftamt)
         return fnum
     
+    def get_scales_data(self)->dict:
+        """ Returns a List[dict] where each dictionary is the scale data for a single named scale.
+        """
+        return self.scales_data
+    
     def get_scale(self, name:str, key:Key, octaves=1, descending=False)->Scale:
         """ Get a Scale by name or alternameName.
             Returns a Scale object
         """
-        name = name
-        _scale = self.scales_dict.get(name, None)
+        _scale = self.scaleLib.getScaleData(name)
         if _scale is None:
-            _scale = self.scales_dict.get(name.lower(), None)
-        scale = None if _scale is None else Scale( _scale, key, octaves, descending)
+            _scale = self.scaleLib.getScaleData(name.lower())
+        scale = None if _scale is None else Scale( _scale, key, octaves=octaves, descending=descending)
         return scale
     
     def create_dataFrame(self)->pd.DataFrame:
-        scales = self.get_scales_data()
         column_names = ['name', 'alternateNames', 'groups', 'formula', 'size']
-        scales_df = pd.DataFrame(data=scales["scales"], columns=column_names)
-        self.scales = scales["scales"]
+        scales_df = pd.DataFrame(data=self.scales_data, columns=column_names)
         return scales_df
-
-    def get_scales_data(self)->dict:
-        with open(self.scales_file, "r") as read_file:
-            scales_data = json.load(read_file)
-            for s in scales_data["scales"]:
-                if "alternateNames" not in s:
-                    val = s["name"].lower()
-                    s["alternateNames"] = [val]
-                    # print(s)
-        return scales_data
     
-    def _get_all_group_names(self):
-        group_names = set()
-        for scale in self.scales:
-            for group in scale["groups"]:
-                group_names.add(group)
-        return group_names
+    def _get_all_group_names(self)->Set(str):
+        return self.scaleLib.groupNames
 
     def __iter__(self):
         """ Iterate over the scales
@@ -122,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument("--group","-G",  help="Group name", type=str, default=None)
     parser.add_argument( "--root", "-R",help="Root pitch, default is 'C'. May also include an octave as in 'D3'", type=str, default="C")
     parser.add_argument("--key", "-K", 
-            help="Optional key name, for example 'Eb-Major', default key is 'C-Major'. Used to determine accidentals in the scale and also the root note.",
+            help="Optional key signature, for example 'Eb-Major', default key signature is 'C-Major'. Used to determine accidentals in the scale and also the tonic note.",
             choices = key_names, type=str, default="C-Major")
     parser.add_argument("--octaves", "-O", 
             help="Octave range, default is 1 octave", type=int, choices=[1,2,3,4], default=1)
@@ -130,9 +98,12 @@ if __name__ == '__main__':
             help="Show both ascending and descending versions of the scale over the specified octave range. Default is False",
             action="store_true", default=False)
     parser.add_argument("--dup", help="Duplicate the scale in a separate part, the number of octaves higher or lower as indicated",
-            type=int, choices=list(range(-2, 3)), default=0 )
+            type=int, choices=list(range(-2, 2)), default=0 )
     parser.add_argument("--show", "-S", help="Display a scale in MuseScore, lilypond or as a list",  
-            type=str, choices=["musicxml", "musicxml.png", "text", "midi", "lily", "lily.pdf", "pitches", "notes"], default=False)
+            type=str, choices=["pitches", "notes", "musicxml", "musicxml.png", "text", "midi", "lily", "lily.pdf"], default="notes")
+    parser.add_argument("--duration", help="Duration of the notes. Default is 'quarter'", type=str, 
+            choices=["whole","half","quarter","eighth","16th","32nd","64th"], default="quarter")
+    parser.add_argument("--instrument", help="The instrument name, default is 'Piano'", type=str, default="Piano")
     args = parser.parse_args()
     
     key:Key = keys.key(args.key)
@@ -155,14 +126,16 @@ if __name__ == '__main__':
         print(f"formula number: {formula_number}, '{bin_formula_number}'")
         print(f"Scale: {scale.to_string(args.root)}")
         
-        pitches = scale.pitches(args.root)
-        notes = scale.notes(args.root)
+        pitches = scale.pitches(args.root, octaves=args.octaves)
+        notes = scale.notes(args.root, num_octaves=args.octaves)
         if args.show == "pitches" or args.show == "musicxml":
             print(f"pitches: {pitches}")
+            print(f"notes: {notes}")
         if args.show == "notes":
             print(f"notes: {notes}")
         else:
-            scale.show(args.show, notes=notes)
+            scale.show(args.show, root=args.root, notes=notes, note_duration=args.duration, 
+                       instrument_name=args.instrument, second_part_transpose=args.dup, metronome_mark=(100,"quarter"))
         
     if args.group is not None:
         group_scales = scales_df[scales_df['groups'].apply(lambda x:args.group in x)]

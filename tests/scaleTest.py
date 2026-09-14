@@ -55,10 +55,10 @@ class ScaleTest(unittest.TestCase):
         print(f"pitches: {pitches}")
         notes = scale.notes(root=root, num_octaves=noctaves)
         print(f"notes: {notes}")
-        scale.show("musicxml", notes=notes)
+        scale.show("musicxml.png", notes=notes)
 
     def test_get_scale_two_octaves_descending(self):
-        scale_name = "Pentatonic minor"
+        scale_name = "Persian"  # "Blues Minor"
         key = ScaleTest.keys.key("C-Minor")
         noctaves = 2
         print(f"\n****** test create {scale_name} Scale, {noctaves} octaves, key of {key.key_name} descending ==========================")

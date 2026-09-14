@@ -35,12 +35,15 @@ class Instruments(object):
     Instruments, Clefs maintained in resources/music/instruments.json, and resources/music/instruments.json respectively.
     """
     
+    INSTRUMENTS_FILE = "instruments.json"
+    CLEFS_FILE = "clefs.json"
+    
     def __init__(self, verbose=0):
         env = Environment.get_environment()
         self.resource_folder = env.get_resource_folder("music")
         self.verbose = verbose
-        instruments_filename = f"{self.resource_folder}/instruments.json"
-        clefs_filename =  f"{self.resource_folder}/clefs.json"
+        instruments_filename = f"{self.resource_folder}/{Instruments.INSTRUMENTS_FILE}"
+        clefs_filename =  f"{self.resource_folder}/{Instruments.CLEFS_FILE}"
         with open(instruments_filename, "r") as fp:
             instruments_dict = json.load(fp)
         with open(clefs_filename, "r") as fp:
@@ -208,20 +211,24 @@ class Instruments(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", "-v", help="increase output verbosity", action="count", default=0)
-    parser.add_argument("--instrument", "-I", help="instrument name", type=str, default=None)
+    parser.add_argument("--name", "-I", help="instrument name", type=str, default=None)
     parser.add_argument("--clef", "-C", help="clef name", type=str, default=None)
     parser.add_argument("--info", help="display class help", action="store_true", default=False)
     args = parser.parse_args()
     if args.info:
         print(Instruments.__doc__)
     instruments = Instruments(args.verbose)
+    instrument_name = args.name.title()
+    clef_name = args.clef.title if args.clef is not None else None
     if instruments.verbose > 1:
         print(f"instruments DataFrame: {instruments.instruments_pd}")
         print(f"clefs DataFrame: {instruments.clefs_pd}")
-    if args.instrument is not None:
-        print(f"{args.instrument}:\n{instruments.instruments_pd.loc[args.instrument.title()]}")
+    if args.name is not None:
+        print(f"{args.name}:\n{instruments.instruments_pd.loc[instrument_name]}")
+        m21Instrument = instruments.get_instrument(instrument_name)
+        print(f"instrument: {type(m21Instrument)} : {m21Instrument}")
     
     if args.clef is not None:
-        print(f"\n{args.clef} clef:\n{instruments.clefs_pd.loc[args.clef.title()]}")
+        print(f"\n{args.clef} clef:\n{instruments.clefs_pd.loc[clef_name]}")
     
     
