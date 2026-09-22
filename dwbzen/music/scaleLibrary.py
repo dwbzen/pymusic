@@ -9,7 +9,7 @@ import json
 from typing import List, Set
 import argparse
 
-class ScaleLib():
+class ScaleLibrary():
     """ Encapsulates scales and instruments.
     """
     
@@ -18,7 +18,7 @@ class ScaleLib():
     def __init__(self, scales_filename:str=None):
         env = Environment.get_environment()
         resource_folder = env.get_resource_folder("music")
-        self.scales_file_name = ScaleLib.SCALES_FILE if scales_filename is None else scales_filename
+        self.scales_file_name = ScaleLibrary.SCALES_FILE if scales_filename is None else scales_filename
         self.scales_file = f"{resource_folder}/{self.scales_file_name}"
         with open(self.scales_file, "r") as read_file:
             scales_data = json.load(read_file)
@@ -89,14 +89,14 @@ class ScaleLib():
     
 
 def main():
-    description = "Create a library of scales from a JSON scales file"
+    description = "Create a library of scales from a JSON scales file. Sample usage."
     parser = argparse.ArgumentParser(prog="ScaleLib", description=description)
     parser.add_argument("filename", help="Scale JSON file", type=str, default=None)
     parser.add_argument("--name", "-N", help="Scale name", type=str, default="Dorian")
     args = parser.parse_args()
     
     print(f"scales JSON file: {args.filename}")
-    sclib = ScaleLib(args.filename)
+    sclib = ScaleLibrary(args.filename)
     print(f"scaleLib: {sclib.toJson()}")
     print(f"scale names: {sclib.scaleNames}")
     scaledata = sclib.getScaleData(args.name)

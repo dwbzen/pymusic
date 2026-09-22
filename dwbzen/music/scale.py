@@ -10,8 +10,7 @@
 
 from typing import List, Dict
 from itertools import accumulate
-from functools import cached_property
-import operator, json
+import operator
 import argparse
 from textwrap import dedent
 import music21
@@ -20,84 +19,8 @@ from music21 import clef, instrument, tempo, meter, interval
 from music.keys import Keys
 from music.key import  Key
 from music.instruments import Instruments
-
-class Notes(object):
-    
-    # chromatic pitches given over a 4-octave range
-    SHARP_PITCHES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-    FLAT_PITCHES =  ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
-    MIXED_PITCHES = ['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B']
-    CHROMATIC_SHARP_PITCHES = 4 * SHARP_PITCHES
-    CHROMATIC_FLAT_PITCHES =  4 * FLAT_PITCHES
-    CHROMATIC_MIXED_PITCHES = 4 * MIXED_PITCHES
-    NATURAL_PITCHES = ["C","D","E","F","G","A","B"]
-    
-    # translation table of note type names to a numerical value
-    NOTE_VALUES = {"whole":1, "half":2, "quarter":4, "eighth":8, "16th":16, "32nd":32}
-
-    
-    def __init__(self, start_octave=0, num_octaves=8):
-        self._num_octaves = num_octaves
-        self._start_octave = start_octave
-    
-    @property
-    def num_octaves(self)->int:
-        return self._num_octaves
-    
-    @num_octaves.setter
-    def num_octaves(self,n:int):
-        self._num_octaves = n
-    
-    @property
-    def start_octave(self)->int:
-        return self._start_octave
-    
-    @cached_property
-    def chromatic_pitches(self)->Dict[str,List[str]]:
-        """ Returns a list of chromatic pitches in ascending order over the number of octaves indicated.
-            Arguments: 
-                num_octaves - the octave range, default value is 2.
-                start_octave - optional argument to produce notes in scientific notation (pitch+octave as in C4).
-                    Default value is -1, an invalid octave designation.
-        """
-        cpf = self.num_octaves * Notes.FLAT_PITCHES       # 12 pitches x #octaves
-        cps = self.num_octaves * Notes.SHARP_PITCHES
-        cpm = self.num_octaves * Notes.MIXED_PITCHES
-        chromatic_pitches = {"flat":cpf, "sharp":cps, "mixed":cpm}
-        return chromatic_pitches
-    
-    @cached_property
-    def chromatic_notes(self)->Dict[str,List[str]]:
-        cpf = []
-        cps = []
-        cpm = []
-        for octave in range(self.start_octave, self.start_octave+self.num_octaves):
-            for pitch in Notes.FLAT_PITCHES:
-                cpf.append(f"{pitch}{octave}")
-            for pitch in Notes.SHARP_PITCHES:
-                cps.append(f"{pitch}{octave}")
-            for pitch in Notes.MIXED_PITCHES:
-                cpm.append(f"{pitch}{octave}")
-        chromatic_notes = {"flat":cpf, "sharp":cps, "mixed":cpm}
-        return chromatic_notes
-    
-    @staticmethod
-    def notes_per_measure(time_signature:str, note_type:str):
-        """ Calulate the number of a given note type are in one measure in a given time signature.
-            Arguments:
-                time_signature - as a string, for example "4/4" or "6/8"
-                note_type - a music21 note type, "quarter", "eighth", "16th" etc.
-            Returns the number of notes in one measure: TS BPM * (Note Type value / TS Note Value)
-            For example, in 4/4 time and a note_type of "eighth", the note_type value is 8
-            and the time signature note value (for a quarter note) is 4
-            so the calculation is: 4 * (8/4) = 4 * 2 = 8.
-        """
-        ts = time_signature.split("/")
-        ts_bpm = int(ts[0])    # beats per measure
-        ts_type_value = int(ts[1])        # note value (type) that gets the beat
-        note_type_value = Notes.NOTE_VALUES[note_type]
-        notes_per_measure = ts_bpm * (note_type_value /ts_type_value)
-        return notes_per_measure
+from music.musicUtils import MusicUtils
+from music.notes import Notes
 
 class Scale:
     """  
@@ -130,6 +53,7 @@ class Scale:
     """
     
     DEFAULT_KEY = Key({ "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "sharp", "signature" : 0, "relativeKey" : "A-Minor" })
+    notes_ = Notes()
         
     def __init__(self, scale_data:dict, key:Key=None, octaves:int=1, descending:bool=False):
         """
@@ -159,81 +83,6 @@ class Scale:
         self._alternate_names = self.scale.get("alternateNames", [])
         self._music21Scale = None    # music21.scale.ConcreteScale
         self._music21Key = None      # key.KeySignature
-
-    @staticmethod
-    def has_octave(note):
-        return len(note) > 0 and note[len(note)-1].isdigit()
-
-    @staticmethod
-    def get_octave(note:str, default_octave=4)->int:
-        """ Gets the octave designation of a given note.
-            If the note is in scientific notation (as in C4 or Bb2), it returns the octave as an int.
-            Otherwise it returns the default_octave argument, which defaults to 4.
-        """
-        if(Scale.has_octave(note)):
-            return  int(note[-1:])
-        else:
-            return default_octave
-
-    @staticmethod
-    def get_octaves(*notes)->List[int]:
-        """ Gets the octave designation for a list of notes.
-            Arguments:
-                notes - variable number of str arguments.
-            Returns a List[int] of the octave values of those notes.
-                The octave value for a note that does not have an octave is -1.
-        """
-        return[Scale.get_octave(note) for note in notes]
-
-    @staticmethod
-    def get_pitch(note)->str:
-        """Strips the octave designation of a given note  """
-        return note[:-1] if Scale.has_octave(note) else note
-
-    @staticmethod
-    def get_note(note:str, default_octave:int=4)->str:
-        """Adds an octave designation to a given note, default octave is 4
-            but can be set to any int >=-1.
-            Returns the input note if it already has an octave.
-        """
-        return note if Scale.has_octave(note) else  f"{note}{default_octave}"
-    
-    @staticmethod
-    def getNote(note:str)->(str,int):
-        """ Adds an octave designation to a given note, default octave is 4
-            but can be set to any int >=-1.
-            Returns pitch,octave as a str,int pair.
-        """
-        pitch = Scale.get_pitch(note)
-        octave = int(Scale.get_octave(note, default_octave=4))
-        return pitch,octave
-    
-    @staticmethod
-    def _get_chromatic_pitches(num_octaves=2, start_octave=-1)->Dict[str,List[str]]:
-        """ Returns a list of chromatic pitches in ascending order over the number of octaves indicated.
-            Arguments: 
-                num_octaves - the octave range, default value is 2.
-                start_octave - optional argument to produce notes in scientific notation (pitch+octave as in C4).
-                    Default value is -1, an invalid octave designation.
-        """
-        if start_octave < 0:
-            cpf = num_octaves * Notes.FLAT_PITCHES       # 12 pitches x #octaves
-            cps = num_octaves * Notes.SHARP_PITCHES
-            cpm = num_octaves * Notes.MIXED_PITCHES
-            cp = {"flat":cpf, "sharp":cps, "mixed":cpm}
-        else:
-            cpf = []
-            cps = []
-            cpm = []
-            for octave in range(start_octave, start_octave+num_octaves):
-                for pitch in Notes.FLAT_PITCHES:
-                    cpf.append(f"{pitch}{octave}")
-                for pitch in Notes.SHARP_PITCHES:
-                    cps.append(f"{pitch}{octave}")
-                for pitch in Notes.MIXED_PITCHES:
-                    cpm.append(f"{pitch}{octave}")
-            cp = {"flat":cpf, "sharp":cps, "mixed":cpm}
-        return cp
     
     @staticmethod
     def get_chromatic_pitches_for_key(key:Key, ascending:bool=True)->List[str]:
@@ -249,9 +98,9 @@ class Scale:
             Note that Key("C-Major") is treated as a sharps key.
          """
         if ascending:
-            chromatic_pitches = Notes.CHROMATIC_FLAT_PITCHES if key.accidental.startswith("flat") else Notes.CHROMATIC_SHARP_PITCHES
+            chromatic_pitches = Scale.notes_.get_chromatic_flat_pitches() if key.accidental.startswith("flat") else Scale.notes_.get_chromatic_sharp_pitches()
         else:
-            chromatic_pitches = Notes.CHROMATIC_SHARP_PITCHES if key.accidental.startswith("flat") else Notes.CHROMATIC_FLAT_PITCHES
+            chromatic_pitches = Scale.notes_.get_chromatic_sharp_pitches() if key.accidental.startswith("flat") else Scale.notes_.get_chromatic_flat_pitches()
         return chromatic_pitches
     
     @staticmethod
@@ -290,17 +139,23 @@ class Scale:
         Returns a dict with keys "pitch_set" (the index of chromatic notes in the scale), and "pitches"
         """
         pitch_set = list(accumulate(formula, operator.add, initial=0)) if include_octave else list(accumulate(formula, operator.add, initial=0))[:-1]
-        tonic = Scale.get_pitch(root_pitch)
+        tonic = MusicUtils.get_pitch(root_pitch)
         
         if "b" in  tonic or accidental == "b":
-            ind = Notes.CHROMATIC_FLAT_PITCHES.index(tonic)
-            pitches = [Notes.CHROMATIC_FLAT_PITCHES[x+ind] for x in pitch_set]
+            cps = Scale.notes_.get_chromatic_flat_pitches()
+            ind = cps.index(tonic)
+            pitches = [cps[x+ind] for x in pitch_set]
+            
         elif "#" in tonic or accidental == "#" or tonic[0] in "GDAEB":    # there's # in the tonic or it's the root of a sharp key
-            ind = Notes.CHROMATIC_SHARP_PITCHES.index(tonic.upper())
-            pitches = [Notes.CHROMATIC_SHARP_PITCHES[x+ind] for x in pitch_set]
+            cps = Scale.notes_.get_chromatic_sharp_pitches()
+            ind = cps.index(tonic.upper())
+            pitches = [cps[x+ind] for x in pitch_set]
+            
         else:
-            ind = Notes.CHROMATIC_FLAT_PITCHES.index(tonic)
-            pitches = [Notes.CHROMATIC_FLAT_PITCHES[x+ind] for x in pitch_set]
+            cps = Scale.notes_.get_chromatic_flat_pitches()
+            ind = cps.index(tonic)
+            pitches = [cps[x+ind] for x in pitch_set]
+            
         return {"pitch_set" : pitch_set, "pitches" : pitches}
     
 
@@ -365,12 +220,12 @@ class Scale:
         """
         result = 0
         root = "C" if root is None else root
-        octaves = Scale.has_octave(note1) + Scale.has_octave(note2)  # 0==no note octaves, 2==both notes have octaves, 1==one does, one doesn't, invalid
+        octaves = MusicUtils.has_octave(note1) + MusicUtils.has_octave(note2)  # 0==no note octaves, 2==both notes have octaves, 1==one does, one doesn't, invalid
         if octaves == 1:    # they must all have octave or not
             raise(TypeError("All arguments must include an octave or not"))
         if octaves == 2:
             # a root note is not needed is both notes are is scientific notation (have octaves)
-            o1,o2 = Scale.get_octaves(note1,note2)
+            o1,o2 = MusicUtils.get_octaves(note1,note2)
             if o1 == o2:   # same octave so compare notes 
                 p1 = Scale.get_pitch(note1)
                 p2 = Scale.get_pitch(note2)
@@ -392,14 +247,20 @@ class Scale:
         self._music21Scale = scale.ConcreteScale(tonic=tonic, pitches=m21Pitches)
     
     def get_music21_key(self, transpose_interval:interval.Interval|None)->key.Key:
-        """ 
+        """ Create a music21.key.Key instance from a music.Key instance
+            Arguments:
+                transpose_interval - optional, for transposing instruments such as a Clarinet.
+                    This is the interval.Interval of transposition.
+            Returns the music21.key.Key corresponding to the music.Key
+            Also sets the result as self._music21Key
         """
         if self._music21Key is None:
-            accidental = -1 if self.key.accidental == "flat" else 1
-            semitones = transpose_interval.semitones if transpose_interval is not None else 0
-            signature = self.key.signature  * accidental  # number of sharps or flats, no need transpose the  key
-            music21Key = music21.key.KeySignature(signature)
-            self._music21Key = music21Key if semitones == 0 else music21Key.transpose(semitones)
+            #accidental = -1 if self.key.accidental == "flat" else 1
+            #semitones = transpose_interval.semitones if transpose_interval is not None else 0
+            #signature = self.key.signature  * accidental  # number of sharps or flats, no need transpose the  key
+            #music21Key = music21.key.KeySignature(signature)
+            self._music21Key = MusicUtils.get_music21_key(self.key, transpose_interval)
+            #self._music21Key = music21Key if semitones == 0 else music21Key.transpose(semitones)
         return self._music21Key
         
 
@@ -419,7 +280,7 @@ class Scale:
         Note - the top note is NOT repeated in an ascending+descending scale.
         """
         _ap = self.get_accidental_preference(root, accidental_preference)
-        tonic = Scale.get_note(root)
+        tonic = MusicUtils.get_note(root)
         pitches = self.pitches(root=tonic, octaves=num_octaves, accidental_preference=accidental_preference)
         notes = []
         #
@@ -447,7 +308,7 @@ class Scale:
             accidental_preference: 'sharp', '#', 'flat', 'b', 'mixed', '#b' or 'key'
             octaves - the number of octaves to cover, defaults to 1 if not specified.
         """
-        tonic = Scale.get_pitch(root)    # strips the octave if there is one, so C3 would return C
+        tonic = MusicUtils.get_pitch(root)    # strips the octave if there is one, so C3 would return C
         pitches = [tonic]
         _ap = self.get_accidental_preference(root, accidental_preference)
         ind = self._chromatic_scale.index(tonic)
@@ -474,26 +335,26 @@ class Scale:
         if accidental_preference is None:
             if(accidental == "sharp" or "#" in root):
                 ap = '#'
-                self._chromatic_scale=Notes.CHROMATIC_SHARP_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_sharp_pitches()
             elif(accidental == "flat" or accidental == "-"  or "b" in root):
                 ap = 'b'
-                self._chromatic_scale=Notes.CHROMATIC_FLAT_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_flat_pitches()
             else:
                 ap = '#b'
-                self._chromatic_scale=Notes.CHROMATIC_MIXED_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
         else:
             if('#' == accidental_preference or 'sharp' == accidental_preference):
                 ap = '#'
-                self._chromatic_scale=Notes.CHROMATIC_SHARP_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_sharp_pitches()
             elif('b' == accidental_preference  or "-" ==  accidental_preference or 'flat' == accidental_preference):
                 ap = 'b'
-                self._chromatic_scale=Notes.CHROMATIC_FLAT_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_flat_pitches()
             elif('#b' == accidental_preference or 'mixed' == accidental_preference):
                 ap = '#b'
-                self._chromatic_scale=Notes.CHROMATIC_MIXED_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
             else:
                 ap = '#b'
-                self._chromatic_scale=Notes.CHROMATIC_MIXED_PITCHES
+                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
         return ap
     
     def __str__(self):
@@ -556,26 +417,17 @@ class Scale:
             else:
                 raise(TypeError(f"No dota for {instrument_name}"))
         
-        root_octave = Scale.get_octave(root)
-        top_octave = root_octave + octaves
-        if 4 <= root_octave <=5:
-            part_clef = clef.TrebleClef()
-        elif root_octave > 5:
-            part_clef = clef.Treble8vaClef()
-        elif 2 <= root_octave <= 3:
-            part_clef = clef.BassClef()
-        else:
-            part_clef = clef.Bass8vbClef()
-        
         part_tempo = tempo.MetronomeMark(number=metronome_mark[0], referent=note.Note(type=metronome_mark[1]))
         notes_per_measure = Notes.notes_per_measure(time_signature, note_duration)
         print(f"notes/measure: {notes_per_measure}")
         
         timeSignature = meter.TimeSignature(time_signature)
+        part_clef = MusicUtils.getClef(root, octaves)
         part_stream = stream.Stream()
         part_stream.insert(0, metadata.Metadata())
         part_stream.metadata.title = self.name
         part_stream.insert(part_clef)
+        #music21Key = self.get_music21_key(self.key, transpose_interval)
         part_stream.insert(self.get_music21_key(transpose_interval))
         part_stream.insert(timeSignature)
         part_stream.insert(part_tempo)
@@ -585,7 +437,8 @@ class Scale:
         tn = len(notes_)    # the total number of notes in this scale
         num_measures = int(tn//notes_per_measure)     # number of complete measures
         left_over = int(tn - notes_per_measure*(num_measures))    # the number of notes in the final measure
-        quarterLength = 4 / Notes.NOTE_VALUES[note_duration]     # note_duration expressed as quarter_length
+        note_values = Scale.notes_.get_note_values()
+        quarterLength = 4 / note_values[note_duration]     # note_duration expressed as quarter_length
         
         note_count = 0
         for anote in notes_:
@@ -622,6 +475,9 @@ def main():
             help="Create both ascending and descending versions of the scale over the specified octave range. Default is False",
             action="store_true", default=False)
     parser.add_argument("--duration", help="Duration of the notes. Default is 'quarter'", type=str, choices=["whole","half","quarter","eighth","sixteenth"], default="quarter")
+    
+    notes = Notes()
+    print(Scale.notes_.get_chromatic_flat_pitches())
 
 if __name__ == '__main__':
     main()

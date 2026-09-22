@@ -1,10 +1,13 @@
 
+
+import music21
 from music21 import interval, instrument, corpus, converter
 from music21 import note, clef, duration, metadata, key, pitch, scale
 from music21.stream import Score
 from music21.stream import Part
 from music21.stream import Measure
 from music.instruments import Instruments
+from music.key import Key
 
 import re
 import pandas as pd
@@ -24,6 +27,84 @@ class MusicUtils(object):
     C_Major = key.Key('C')
     A_Minor = key.Key('a')
     default_pitch_map = {'Db':'C#', "D-":'C#', 'D#':'Eb', 'Gb':'F#', 'G-':'F#', 'Ab':'G#', 'A-':'G#', 'A#':'Bb' }
+    
+    @staticmethod
+    def has_octave(note):
+        return len(note) > 0 and note[len(note)-1].isdigit()
+
+    @staticmethod
+    def get_octave(note:str, default_octave=4)->int:
+        """ Gets the octave designation of a given note.
+            If the note is in scientific notation (as in C4 or Bb2), it returns the octave as an int.
+            Otherwise it returns the default_octave argument, which defaults to 4.
+        """
+        if(MusicUtils.has_octave(note)):
+            return  int(note[-1:])
+        else:
+            return default_octave
+
+    @staticmethod
+    def get_octaves(*notes)->List[int]:
+        """ Gets the octave designation for a list of notes.
+            Arguments:
+                notes - variable number of note names.
+            Returns a List[int] of the octave values of those notes.
+                The octave value for a note that does not have an octave is -1.
+        """
+        return[MusicUtils.get_octave(note) for note in notes]
+
+    @staticmethod
+    def get_pitch(note)->str:
+        """Strips the octave designation of a given note  """
+        return note[:-1] if MusicUtils.has_octave(note) else note
+
+    @staticmethod
+    def get_note(note:str, default_octave:int=4)->str:
+        """Adds an octave designation to a given note, default octave is 4
+            but can be set to any int >=-1.
+            Returns the input note if it already has an octave.
+        """
+        return note if MusicUtils.has_octave(note) else  f"{note}{default_octave}"
+    
+    @staticmethod
+    def getNote(note:str)->(str,int):
+        """ Adds an octave designation to a given note, default octave is 4
+            but can be set to any int >=-1.
+            Returns pitch,octave as a str,int pair.
+        """
+        pitch = MusicUtils.get_pitch(note)
+        octave = int(MusicUtils.get_octave(note, default_octave=4))
+        return pitch,octave
+    
+    @staticmethod
+    def getClef(root:str, octaves:int=1)->clef.Clef:
+        root_octave = MusicUtils.get_octave(root)
+        top_octave = root_octave + octaves
+        if 4 <= root_octave <=5:
+            part_clef = clef.TrebleClef()
+        elif root_octave > 5:
+            part_clef = clef.Treble8vaClef()
+        elif 2 <= root_octave <= 3:
+            part_clef = clef.BassClef()
+        else:
+            part_clef = clef.Bass8vbClef()
+        return part_clef
+
+    @staticmethod
+    def get_music21_key(key:Key, transpose_interval:interval.Interval|None)->key.Key:
+        """ Create a music21.key.Key instance from a music.Key instance
+            Arguments:
+                key - a music.Key
+                transpose_interval - optional, for transposing instruments such as a Clarinet.
+                    This is the interval.Interval of transposition.
+            Returns the music21.key.Key corresponding to the music.Key
+        """
+        accidental = -1 if key.accidental == "flat" else 1
+        semitones = transpose_interval.semitones if transpose_interval is not None else 0
+        signature = key.signature  * accidental  # number of sharps or flats, no need transpose the  key
+        music21Key = music21.key.KeySignature(signature)
+        _music21Key = music21Key if semitones == 0 else music21Key.transpose(semitones)
+        return _music21Key
      
     @staticmethod
     def get_score(file_path:str) -> Score:

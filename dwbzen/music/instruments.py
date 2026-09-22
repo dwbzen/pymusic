@@ -219,7 +219,7 @@ if __name__ == '__main__':
         print(Instruments.__doc__)
     instruments = Instruments(args.verbose)
     instrument_name = args.name.title()
-    clef_name = args.clef.title if args.clef is not None else None
+    clef_name = args.clef.title() if args.clef is not None else None
     if instruments.verbose > 1:
         print(f"instruments DataFrame: {instruments.instruments_pd}")
         print(f"clefs DataFrame: {instruments.clefs_pd}")
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         m21Instrument = instruments.get_instrument(instrument_name)
         print(f"instrument: {type(m21Instrument)} : {m21Instrument}")
     
-    if args.clef is not None:
+    if clef_name is not None:
         print(f"\n{args.clef} clef:\n{instruments.clefs_pd.loc[clef_name]}")
     
     

@@ -1,5 +1,5 @@
 {
-	"info" : ["Master file for common chord formulas."], 
+	"info" : ["Master file for All chord formulas."], 
 	"keys" : ["name", "symbols", "groups", "intervals", "formula", "size", "chordSize", "formulaNumber", "spelling"],
 	"groups" : ["triad", "seventh", "extended", "altered", "suspended", "added tone"],
 	"chordFormulas":[

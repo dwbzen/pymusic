@@ -15,6 +15,7 @@ del minPythonVersionStr
 __all__ = [
     'chord', 
     'chordLibrary', 
+    'chords',
     'durationCollector', 
     'instruments', 
     'intervalCollector',
@@ -33,7 +34,7 @@ __all__ = [
     'notes',
     'sample_usage',
     'scale',
-    'scaleLib',
+    'scaleLibrary',
     'scales',
     'scoreGen',
     'scoreGenRunner',
@@ -42,6 +43,7 @@ __all__ = [
 
 from .chord import Chord
 from .chordLibrary import ChordLibrary
+from .chords import Chords
 from .durationCollector import DurationCollector
 from .instruments import Instruments
 from .intervalCollector import IntervalCollector
@@ -55,11 +57,12 @@ from .musicScale import MusicScale
 from .musicSubstitutionSystem import MusicSubstitutionSystem
 from .musicSubstitutionRules import MusicSubstitutionRules
 from .musicUtils import MusicUtils
+from .notes import Notes
 from .noteCollector import NoteCollector
 from .noteCollectorRunner import NoteCollectorRunner
 from .sample_usage import keys_usage, scales_usage, song_usage
-from .scale  import Scale, Notes
-from .scaleLib import ScaleLib
+from .scale  import Scale
+from .scaleLibrary import ScaleLibrary
 from .scales import Scales
 from .scoreGen import ScoreGen
 from .scoreGenRunner import ScoreGenRunner

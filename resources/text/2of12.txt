@@ -11697,6 +11697,7 @@ engulf
 engulfment
 enhance
 enhancement
+enharmonic
 enigma
 enigmatic
 enigmatically

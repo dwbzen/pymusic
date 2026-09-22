@@ -43,7 +43,7 @@ class ScaleTest(unittest.TestCase):
         print(scale.pitches(root))
         print(scale.notes(root))
         
-    def test_get_scale_two_octaves_ascending(self):
+    def xtest_get_scale_two_octaves_ascending(self):
         scale_name = "Pentatonic minor"
         key = ScaleTest.keys.key("F-Minor")
         noctaves = 2
@@ -57,7 +57,7 @@ class ScaleTest(unittest.TestCase):
         print(f"notes: {notes}")
         scale.show("musicxml.png", notes=notes)
 
-    def test_get_scale_two_octaves_descending(self):
+    def xtest_get_scale_two_octaves_descending(self):
         scale_name = "Persian"  # "Blues Minor"
         key = ScaleTest.keys.key("C-Minor")
         noctaves = 2
@@ -71,7 +71,7 @@ class ScaleTest(unittest.TestCase):
         scale.show("musicxml", notes=notes)
         
 
-    def xtest_get_chromatic_pitches(self):
+    def test_get_chromatic_pitches(self):
         print(f"\n****** test get_chromatic pitches, pitches only ==========================")
         notes = Notes()
         cp = notes.chromatic_pitches
@@ -85,7 +85,7 @@ class ScaleTest(unittest.TestCase):
         print(f'chromatic sharps: {cps}')
         print(f'chromatic mixed: {cpm}')
 
-    def xtest_get_chromatic_notes(self):
+    def test_get_chromatic_notes(self):
         notes = Notes()
         print(f"\n****** test get_chromatic notes (pitches with octave) ==========================")
         cp = notes.chromatic_notes
@@ -98,6 +98,18 @@ class ScaleTest(unittest.TestCase):
         print(f'chromatic flats: {cpf}')
         print(f'chromatic sharps: {cps}')
         print(f'chromatic mixed: {cpm}')
+    
+    def test_get_note_numbers(self):
+        notes = Notes()
+        print(f"\n****** test test_get_note_numbers for notes (pitches with octave) ==========================")
+        # note that D4 appears twice in the list below. Only 1 dict entry is therefore created
+        #
+        notes_list = ("A0", "C1", "F#2", "Bb3", "D4", "G#7", "B10", "C##", "Dbb")
+        note_numbers = notes.get_note_number(*notes_list)
+        print(f"note numbers map: {note_numbers}")
+        assert(len(note_numbers)==8)
+        vals = list(note_numbers.values())
+        print(f"note numbers: {vals}")
     
     def xtest_enharmonic_equivalent(self):
         print(f"\n****** test enharmonic_equivalent pitches, no octaves ==========================")

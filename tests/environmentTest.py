@@ -7,7 +7,7 @@ Created on Oct 14, 2025
 import unittest
 from common.environment import Environment
 
-class Test(unittest.TestCase):
+class EnvironmentTest(unittest.TestCase):
 
 
     def test_environment(self):

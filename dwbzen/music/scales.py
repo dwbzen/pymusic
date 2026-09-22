@@ -8,11 +8,10 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 from music.scale import Scale
-from music.scaleLib import ScaleLib
+from music.scaleLibrary import ScaleLibrary
 from music.keys import Keys
 from music.key import  Key
 import argparse
-import json
 import pandas as pd
 import sys
 from typing import List, Set
@@ -25,7 +24,7 @@ class Scales(object):
     def __init__(self, key:Key, scales_filename:str=None):
         
         # creates a dict with scale name and alternate name(s) adding lower case as keys
-        self.scaleLib = ScaleLib(scales_filename)
+        self.scaleLib = ScaleLibrary(scales_filename)
         self.groupNames = self.scaleLib.groupNames
         self.scales_data = self.scaleLib.scalesData     # List[dict] from the scales JSON file
         
