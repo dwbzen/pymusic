@@ -1,7 +1,7 @@
 {
 	"info" : "Master file for all scale formulas. See common_scaleFormulas.json' for a reasonable subset.",
 	"keys" : ["name", "groups", "formula", "alternateNames", "size"],
-	"group_names" : ["adonai", "aeolian", "algerian", "altered", "alternating", "augmented", "auxillary", "balinese", "bhairubahar", "bi", "blues", "c", "cdim", "center", "chaio", 		"chromatic", "common", "diatonic", "diminished", "do", "dominant", "dorian", "double", "egyptian", "enigmatic", "eskimo", "example", "fifth", "flat", "flattened", "fourth", "full", "genus", "gypsy", "half", "han", "harmonic", "hawaiian", "hindi", "hirajoshi", "honchoshi", "houseini", "houzam", "hungarian", "indian", "ionian", "iwato", "japanese", "javanese", "jazz", "jg", "kiourdi", "kokin", "kung", "leading", "locrian", "lydian", "magen", "major", "maqam", "marva", "minor", "mixolydian", "modes", "moorish", "neapolitan", "neveseri", "nohkan", "octatonic", "oriental", "pan", "pentatonic", "phrygian", "prokofiev", "prometheus", "pyramid", "ritsu", "ritusen", "rock", "romanian", "sabach", "sanagari", "scottish", "sharp", "shostakovich", "spanish", "super", "superlocrian", "symmetrical", "takemitsu", "todi", "ultra", "utility", "warao", "whole", "youlan", "zirafkend"],
+	"group_names" : ["adonai", "aeolian", "algerian", "altered", "alternating", "augmented", "auxillary", "balinese", "bhairubahar", "bi", "blues", "c", "cdim", "center", "chaio", "chromatic", "common", "custom", "diatonic", "diminished", "do", "dominant", "dorian", "double", "egyptian", "enigmatic", "eskimo", "example", "fifth", "flat", "flattened", "fourth", "full", "genus", "gypsy", "half", "han", "harmonic", "hawaiian", "hindi", "hirajoshi", "honchoshi", "houseini", "houzam", "hungarian", "indian", "ionian", "iwato", "japanese", "javanese", "jazz", "jg", "kiourdi", "kokin", "kung", "leading", "locrian", "lydian", "magen", "major", "maqam", "marva", "minor", "mixolydian", "modes", "moorish", "neapolitan", "neveseri", "nohkan", "octatonic", "oriental", "pan", "pentatonic", "phrygian", "prokofiev", "prometheus", "pyramid", "ritsu", "ritusen", "rock", "romanian", "sabach", "sanagari", "scottish", "sharp", "shostakovich", "spanish", "super", "superlocrian", "symmetrical", "takemitsu", "todi", "ultra", "utility", "warao", "whole", "youlan", "zirafkend"],
 	"scales":[
 		{ "name" : "Major","groups" : ["major", "diatonic", "common"],"formula" : [2,2,1,2,2,2,1],"size" : 7},
 		{ "name" : "Minor","alternateNames" : ["Natural minor","Melodic minor descending"],"groups" : ["minor"],"formula" : [2,1,2,2,1,2,2],"size" : 7},
@@ -13,6 +13,9 @@
 		{ "name" : "Pentatonic major","groups" : ["pentatonic", "common"],"formula" : [2,2,3,2,3],"size" : 5},
 		{ "name" : "Pentatonic minor","groups" : ["pentatonic", "common"],"formula" : [3,2,3,2,2],"size" : 5},
 		{ "name" : "Blues","groups" : ["blues"],"formula" : [3,2,1,1,3,2],"size" : 6},
+		{ "name" : "Octatonic H-W", "alternateNames" : ["Blues Diminished"], "groups" : ["blues", "octatonic"],"formula" : [1,2,1,2,1,2,1,2],"size" : 8},
+		{ "name" : "Octatonic W-H", "alternateNames" : ["Diminished"], "groups" : ["blues", "octatonic"],"formula" : [2,1,2,1,2,1,2,1],"size" : 8},
+		{ "name" : "Half Octatonic", "groups" : ["custom"],"formula" : [2,1,2,1,2,1,3],"size" : 7},
 		{ "name" : "(as 7/367/1 in 12edo)","groups" : ["untitled"],"formula" : [1,3,3,2,3],"size" : 5},
 		{ "name" : "Spanish 8 tones (all b's) in 12edo)","groups" : ["spanish", "octatonic"],"formula" : [1,2,1,1,1,2,2,2],"size" : 8},
 		{ "name" : "Spanish 8 tones (all b's) in 12edo) + Fb","groups" : ["spanish", "octatonic"],"formula" : [1,2,1,1,1,2,2,2],"size" : 8},

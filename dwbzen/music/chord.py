@@ -12,6 +12,10 @@ from music21 import stream, interval, instrument, clef
 from music21 import meter, duration
 import music21
 from typing import List, Dict, Union
+from itertools import accumulate
+import operator
+from pyasn1_modules.rfc5275 import GLNewKeyAttributes
+
 
 class Chord(object):
     
@@ -19,37 +23,44 @@ class Chord(object):
     DEFAULT_ROOT_PITCH = "C4"    # middle C
     INTERVALS = None    # set dynamically
 
-    def __init__(self, chord_data:dict, root_pitch:str="C", key:Key=None, fmt=None):
+    def __init__(self, chord_data:dict, root_pitch:str="C", key:Key=None, fmt=None, inversion=0):
         """
         Create a Chord instance from a dictionary, for example: 
         {"name":"Major seventh",  "symbols":["maj7","M7"],   "groups":["seventh"], 
            "formula":[4,3,4],     "intervals":["M3","m3","M3"], "size":3, 
-           "chordSize":4,         "formulaNumber":2193,     "spelling":"C E G B" },
+           "chordSize":4,         "formulaNumber":2193,     "spelling":"C E G B" }
         Arguments:
             chord_data - a dictionary with the above structure.
             root_pitch - the root note of the chord. Default is 'C'. May include an octave designation.
             key - an optional Key instance. If None, the Key is set to C-Major.
+            fmt - How to construct the chords: in a condensed format (all notes within a single octave), or extended.
+            inversion - chord inversion as an integer - this rotates the notes to the right or left by that number of places, default is 0.
         The chord_data["spelling"] are the notes of the chord with 'C' as the root.
         The notes of a chord can be constructed from the formula or intervals.
+        All the chord_data fields are defaulted to produce a C-Major chord.
         """
-        print(f"chord data: {chord_data}")
+        # print(f"chord data: {chord_data}")
         self.chord_data = chord_data
         self._fmt = "condensed" if fmt is None else fmt
-        self._name = self.chord_data['name']
-        self._formula = self.chord_data['formula']           # intervals from the root as number of semitones
-        self._formulaNumber = self.chord_data["formulaNumber"]
-        self._intervals = self.chord_data['intervals']       # intervals from the root as interval names (quality+size)
-        self._spelling = self.chord_data['spelling'].split()    # the chord notes, delimited by spaces, with C as the root
-        # TODO; add support for extended format. For example, the notes of a C7 chord ( C E G Bb D )
-        # would be C4 E4 G4 Bb4 D5, given a root of C4
-        #
-        _notes = copy.copy(self._spelling)    # the notes of the chord with a root of "C"
-        self._symbols = self.chord_data['symbols']
+        self._name = self.chord_data.get('name', "MajorChord")
+        formula = self.chord_data.get("formula", [4,3])      # intervals from the root as number of semitone. Default of [4,3] is a Major triad
+        self._formula = formula
+        self._formulaNumber = self.chord_data.get("formulaNumber", 145)
+        self._intervals = self.chord_data.get("intervals", ["M3","m3"])     # intervals from the root as interval names (quality+size)
+        
+        self._spelling = self.chord_data.get("spelling", "").split()    # the chord notes, delimited by spaces, with C as the root
+        self._symbols:List[str] = self.chord_data.get("symbols", ["M"])
         self.size = len(self.formula)
         self._key = Key(Chord.C_MAJOR_KEY) if key is None else key
         self._music21Key = None      # key.KeySignature
+        #
+        # support for extended format. For example, the notes of a C7 chord ( C E G Bb D )
+        # would be C4 E4 G4 Bb4 D5, given a root of C4
+        #
         
-        music21Chord = chord.Chord(_notes)    # chord.Chord
+        _notes = Chord.chord_notes_from_formula(root_pitch, formula, inversion) if fmt == "extended" or len(self._spelling)==0 else copy.copy(self._spelling)
+        
+        music21Chord = chord.Chord(_notes)    # music21 chord.Chord
         rootPitch = music21Chord.root().name.replace("-","b")
         rp = MusicUtils.get_pitch(root_pitch)     # given root with the octave stripped
         if rootPitch != rp:
@@ -79,33 +90,71 @@ class Chord(object):
         print(f"notes: {self._notes}")
     
     @staticmethod
-    def get_chord_notes(rootPitch:str, formula:Union(List[int], List[str]), compressed:bool=False, inversion:int=0)->List[str]:
+    def chord_notes_from_formula(rootPitch:str, formula:List[int], inversion:int=0)->List[note.Note]:
         """Get the notes of a Chord given the root note and the formula.
             Arguments:
                 rootPitch - the root note of the chord. If an octave is not present, octave 4 is used.
                 formula - the chord formula as a list of number of semitones (half-steps) from each note.
-                    OR a list of intervals, for example ["M3","m3","m3"] for a dominant 7th.
                     For example the formula for a dominant 9th is [4,3,3,4].
                     So starting with C4: C4 + 4 semitones is E4, E4 + 3 semitones is G4, etc.
-                compressed - if True, the notes are all kept in the same octave.
-                    In this form, the notes of D9 are D4,E4,F#4,A4,C5
-                    Otherwise the notes are D4,F#4,A4,C5,E5
+                inversion - invert the final chord (essentially rotate) by the number of places.
+                    Default is 0, any int value is valid. For example 1st inversion, set inversion=1.
+                    A C7 chord (formula [4,3,3] = C4,E4,G4,Bb4) in 1st inversion would be E4 G4 B-5 C5
+                    A C9 (formula [4,3,3,4] = C4,E4,G4,Bb4,D5) in 1st inversion would be E4 G4 B-5 D5 C5
+            Note - the implementation uses the music21 Pitch API.
+        """
+        rp = MusicUtils.get_note(rootPitch)    # add the octave if not present
+        rootNote= note.Note(rp)
+        chord_notes = [rootNote]
+        semitones = list(accumulate(formula, operator.add))
+        for semitone in semitones:   # number of semitones from the root pitch
+            nextNote = rootNote.transpose(semitone)
+            chord_notes.append(nextNote)
+
+        invert_places = inversion%len(chord_notes)
+        if invert_places != 0:
+            # now rotate the chord_notes by that number of places
+            chord_notes = MusicUtils.rotate(chord_notes, invert_places)
+        
+        return chord_notes
+    
+    @staticmethod
+    def music21_chord_from_formula(rootPitch:str, formula:List[int], inversion:int=0)->chord.Chord:
+        """Create and return a music21.chord from the formula provided.  """
+        chord_notes = Chord.chord_notes_from_formula(rootPitch, formula, inversion)
+        m21Chord = chord.Chord(chord_notes)
+        return m21Chord
+    
+    @staticmethod
+    def get_formula_from_intervals(intervals:List[str])->List[int]:
+        """ Get the chord formula corresponding to a list of interval names """
+        sizesMap = MusicUtils.get_interval_sizes()
+        formula:List[int] = list()
+        for intName in intervals:
+            intSize = sizesMap.get(intName,0)
+            formula.append(intSize)
+        return formula
+    
+    @staticmethod
+    def chord_notes_from_intervals(rootPitch:str, intervals:List[str], inversion:int=0)->List[note.Note]:
+        """Get the notes of a Chord given the root note and the formula.
+            Arguments:
+                rootPitch - the root note of the chord. If an octave is not present, octave 4 is used.
+                intervals - the interval names comprising the chord for example ["M3","m3","m3"] for a dominant 7th.
                 inversion - invert the final chord (essentially rotate) by the number of places.
                     Default is 0, any int value is valid. For example 1st inversion, set inversion=1.
             Note - the implementation uses the music21 Pitch API.
         """
-        chord_notes = list()
-        rp = MusicUtils.get_note(rootPitch)    # add the octave if not present
-        for f in formula:       # str or an int
-            if isinstance(f, str):  #  an interval name
-                pass
-            elif isinstance(f,int) or isinstance(f, float):     # number of half-steps
-                pass
-
-        if inversion != 0:
-            pass
-        
+        formula = Chord.get_formula_from_intervals(intervals)
+        chord_notes = Chord.chord_notes_from_formula(rootPitch, formula, inversion)
         return chord_notes
+    
+    @staticmethod
+    def music21_chord_from_intervals(rootPitch:str, intervals:List[str], inversion:int=0)->chord.Chord:
+        """Create and return a music21.chord from the list of interval names provided.  """
+        chord_notes = Chord.chord_notes_from_intervals(rootPitch, intervals, inversion)
+        m21Chord = chord.Chord(chord_notes)
+        return m21Chord
     
     def notes(self)->List[str]:
         return self._notes
@@ -125,6 +174,10 @@ class Chord(object):
     def symbols(self)->List[str]:
         return self._symbols
     
+    def add_symbol(self, symbol:str)->List[str]:
+        self._symbols.append(symbol)
+        return self._symbols
+    
     @property
     def intervals(self)->List[str]:
         return self._intervals
@@ -140,6 +193,15 @@ class Chord(object):
     @property
     def formulaNumber(self)->int:
         return self._formulaNumber
+    
+    @property
+    def key(self)->Key:
+        return self._key
+    
+    @key.setter
+    def key(self, newKey):
+        self._key = newKey
+        self._music21Key = self._get_music21_key()
     
     @property
     def music21Chord(self)->chord.Chord:
@@ -182,6 +244,14 @@ class Chord(object):
                 "P4":5, "d4":4, "a4":6, "P5":7, "d5":6, "a5":8, "M6":9, "m6":8, "d6":7, "a6":10,
                 "M7":11, "m7":10, "d7":9, "a7":12, "P8":12, "d8":11, "a8":13 }
         return cls.INTERVALS
+    
+    def arpegiate(self, root="C4")->List[note.Note]:
+        """ Create a list of Note from the notes in this chord
+        """
+        notes:List[notes.Note] = list()
+        for note in self._music21Chord.notes:
+            notes.append(note)
+        return notes
 
     
     def show(self, format_:str, root="C4", octaves=1, notes:List[str]=None, note_duration="quarter", 

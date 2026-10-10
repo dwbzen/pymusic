@@ -8,8 +8,9 @@ from music21.stream import Part
 from music21.stream import Measure
 from music.instruments import Instruments
 from music.key import Key
+from common.environment import Environment
 
-import re
+import re, json
 import pandas as pd
 import pathlib, random, copy, math
 from datetime import date
@@ -17,6 +18,8 @@ from builtins import isinstance
 import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Dict
+from itertools import accumulate
+import operator
 
 class MusicUtils(object):
     """Music utilities
@@ -27,7 +30,119 @@ class MusicUtils(object):
     C_Major = key.Key('C')
     A_Minor = key.Key('a')
     default_pitch_map = {'Db':'C#', "D-":'C#', 'D#':'Eb', 'Gb':'F#', 'G-':'F#', 'Ab':'G#', 'A-':'G#', 'A#':'Bb' }
+    THEORY_STRUCTURES = {}      # See theory.json for content
+    environment:Environment = None
+    INTERVAL_MAP = None
+    INTERVAL_SIZE = None
+    THEORY_FILENAME = "theory.json"
     
+    @staticmethod
+    def get_enironment()->Environment:
+        if MusicUtils.environment is None:
+            MusicUtils.environment = Environment.get_environment()
+        return MusicUtils.environment
+    
+    @staticmethod
+    def get_theory()->dict:
+        """Gets the structures in the theory.json file as a Dict """
+        env = MusicUtils.get_enironment()
+        resource_folder = env.get_resource_folder("music")
+        theory_file = f"{resource_folder}/{MusicUtils.THEORY_FILENAME}"
+        with open(theory_file, "r") as read_file:
+            theory_data = json.load(read_file)
+        return theory_data
+    
+    @staticmethod
+    def get_interval_map()->Dict[int,str]:
+        """Returns a Dict that maps an interval size to an interval name. For example: { 5:"P4", 7:"P5"}
+            This returns the cached value if it is not None.
+        """
+        if MusicUtils.INTERVAL_MAP is None:
+            theory_data = MusicUtils.get_theory()
+            interval_map = theory_data["interval_map"]
+            imap = {}
+            for interval in interval_map.keys():
+                imap[int(interval)] = interval_map[interval]
+            MusicUtils.INTERVAL_MAP = imap
+        return MusicUtils.INTERVAL_MAP
+    
+    @staticmethod
+    def get_interval_sizes()->Dict[str,int]:
+        """Returns a Dict that maps an interval name to the interval size (in semitones). For example: {3:"m3", 4:"M3"}
+            M3 = major 3rd, m3 = minor 3rd
+            This returns the cached value if it is not None
+        """
+        if MusicUtils.INTERVAL_SIZE is None:
+            theory_data = MusicUtils.get_theory()
+            interval_size_map = theory_data["interval_size"]
+            MusicUtils.INTERVAL_SIZE = interval_size_map
+        return MusicUtils.INTERVAL_SIZE
+    
+    @staticmethod
+    def intervalNames_to_intervalSizes(interval_names:List[str]):
+        """ Convert a list of interval names to a corresponding formula (list of sizes in semitones) """
+        sizes:List[int] = list()
+        int_sizes = MusicUtils.get_interval_sizes()
+        for name in interval_names:
+            sizes.append(int_sizes.get(name, 0))
+        return sizes
+
+    @staticmethod
+    def intervalSizes_to_intervalNames(interval_sizes:List[int]):
+        """ Convert a list of interval sizes to a corresponding list of interval names """
+        names:List[str] = list()
+        int_names = MusicUtils.get_interval_map()
+        for isize in interval_sizes:
+            names.append(int_names.get(isize, "d2"))
+        return names
+    
+    @staticmethod
+    def root_intervals(formula:List[int]):
+        """ Converts a chord (or scale) formula to a list of intervals from a root note.
+            A standard formula gives the semitones between successive notes.
+            For example the formula for a dominant 9th chord is [4,3,3,4]
+            As root intervals this is [4,7,10,14]
+        """
+        semitones = list(accumulate(formula, operator.add))
+        return semitones
+    
+    @staticmethod
+    def rotate(lst, n)->list:
+        """Positive n rotates right; negative n rotates left."""
+        if not lst:
+            return lst
+    
+        n %= len(lst)
+        return lst[-n:] + lst[:-n]
+    
+    @staticmethod
+    def formula_to_pitch_indexes(formula:List[int]):
+        """
+        Creates a List of relative pitch indexes from a given formula.
+         Each element is the number of steps from the root.
+         For example given the chord formula [4, 3, 3, 4] (a 9th chord)
+         the resulting pitch set is [0, 4, 7, 10, 14, 21]
+         If the root Pitch is C, the corresponding Pitches are { C, E, G, Bb, D}
+        """
+        pitchSet:List[int] = [0]    # root
+        pitchSet += MusicUtils.root_intervals(formula)
+        return pitchSet
+        
+    
+    @staticmethod
+    def get_formulaNumber(formula:List[int]):
+        """ Gets the forulaNUmber for a corresponding formula
+            For example, the formula number for [4, 3, 3, 4] (a 9th chord) is 1173.
+            The formula number is a binary representation of each element of the formula.
+            1173 in binary is 10010010101.
+        """
+        fnum = 0
+        indexes = MusicUtils.formula_to_pitch_indexes(formula)
+        for pi in indexes:
+            shiftamt = pi if pi < 12 else pi-12
+            fnum += (1<<shiftamt)
+        return fnum
+        
     @staticmethod
     def has_octave(note):
         return len(note) > 0 and note[len(note)-1].isdigit()
@@ -105,6 +220,16 @@ class MusicUtils(object):
         music21Key = music21.key.KeySignature(signature)
         _music21Key = music21Key if semitones == 0 else music21Key.transpose(semitones)
         return _music21Key
+    
+    @staticmethod
+    def get_music21_note(anote:str, transpose_semitones=0):
+        """Create and return a music21.note.Note from a given string.
+            Arguments:
+                anote - a pitch represented as a string, for example "C4"
+                transpose_semitones - the number of semitones (up or down) to transpose the resulting Note.
+        """
+        m21Note = note.Note(anote)
+        return m21Note if transpose_semitones == 0 else m21Note.transpose(transpose_semitones)
      
     @staticmethod
     def get_score(file_path:str) -> Score:
@@ -1092,4 +1217,8 @@ class MusicUtils(object):
         g.ax.yaxis.grid(True, "minor", linewidth=.25)
 
 if __name__ == '__main__':
-    print(MusicUtils.__doc__)
+    interval_map = MusicUtils.get_interval_map()
+    print(f"interval map: {interval_map}")
+    interval_sizes = MusicUtils.get_interval_sizes()
+    print(f"interval sizes: {interval_sizes}")
+    

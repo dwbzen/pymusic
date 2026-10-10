@@ -16,6 +16,7 @@ __all__ = [
     'chord', 
     'chordLibrary', 
     'chords',
+    'customchord',
     'durationCollector', 
     'instruments', 
     'intervalCollector',
@@ -42,6 +43,7 @@ __all__ = [
 ]
 
 from .chord import Chord
+from .customChord import CustomChord
 from .chordLibrary import ChordLibrary
 from .chords import Chords
 from .durationCollector import DurationCollector

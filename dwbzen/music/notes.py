@@ -57,14 +57,12 @@ class Notes(object):
     @cached_property
     def chromatic_pitches(self)->Dict[str,List[str]]:
         """ Returns a list of chromatic pitches in ascending order over the number of octaves indicated.
-            Arguments: 
-                num_octaves - the octave range, default value is 2.
-                start_octave - optional argument to produce notes in scientific notation (pitch+octave as in C4).
-                    Default value is -1, an invalid octave designation.
+            The octave range is num_octaves set in the constructor which defaults to 10
         """
-        cpf = self.num_octaves * Notes.FLAT_PITCHES       # 12 pitches x #octaves
-        cps = self.num_octaves * Notes.SHARP_PITCHES
-        cpm = self.num_octaves * Notes.MIXED_PITCHES
+        num_octaves = self.num_octaves
+        cpf = num_octaves * Notes.FLAT_PITCHES       # 12 pitches x #octaves
+        cps = num_octaves * Notes.SHARP_PITCHES
+        cpm = num_octaves * Notes.MIXED_PITCHES
         chromatic_pitches = {"flat":cpf, "sharp":cps, "mixed":cpm}
         return chromatic_pitches
     
@@ -83,7 +81,33 @@ class Notes(object):
         chromatic_notes = {"flat":cpf, "sharp":cps, "mixed":cpm}
         return chromatic_notes
     
-    def get_note_number(self, *notes)->Dict[str,int]:
+    def get_pitch_number(self, *pitches):
+        note_numbers = {}
+        cnotes = self.chromatic_pitches
+        for anote in pitches:
+            if Notes.DOUBLE_SHARP in anote:
+                p = pitch.Pitch(anote)
+                n = p.getEnharmonic().nameWithOctave
+                note_ = MusicUtils.get_pitch(n)
+            elif Notes.DOUBLE_FLAT in anote:
+                p = pitch.Pitch(anote.replace(Notes.DOUBLE_FLAT, Notes.DOUBLE_FLAT_M21))
+                n = p.getEnharmonic().nameWithOctave
+                note_ = MusicUtils.get_pitch(n)
+            else:
+                note_ = MusicUtils.get_pitch(anote)    # pitch+octave (default is 4)
+            try:
+                if "#" in note_:
+                    ind = cnotes["sharp"].index(note_)
+                elif "b" in note_:
+                    ind = cnotes["flat"].index(note_)
+                else:    # no accidental
+                    ind = cnotes["sharp"].index(note_)
+            except:
+                ind = -1
+            note_numbers[note_] = ind
+        return note_numbers
+    
+    def get_note_number(self, *notes):
         note_numbers = {}
         cnotes = self.chromatic_notes
         for anote in notes:
@@ -109,23 +133,41 @@ class Notes(object):
             note_numbers[note_] = ind
         return note_numbers
     
-    def distance(self, anote1:str, anote2:str)->int:
-        """Returns the number of semitones (half-steps) separating 2 notes.
+    def distance(self, start_note:str, end_note:str)->int:
+        """Returns the number of semitones (half-steps) from one note to another.
             For example, distance("D4", "C5") is 10, but distance("C5", "D4") is -10
         """
-        dist = self.get_note_number(anote1, anote2)
-        return dist[anote2]-dist[anote1]
+        dist = self.get_note_number(start_note, end_note)
+        return dist[end_note]-dist[start_note]
     
-    def compare_notes(self, anote1:str, anote2:str)->int:
-        note_numbers = self.get_note_number(anote1, anote2)   # Dict[str,int]
-        n1 = note_numbers[anote1]
-        n2 = note_numbers[anote2]
+    def compare_notes(self, note1:str, note2:str)->int:
+        """Compare two notes.
+            Arguments:
+                note1, note2 - note names representing the notes to compare, for example "D3", "F4"
+            Returns
+                0 if the notes are equal, 1 if note1 is > note2, -1 if note1 < note2
+                What's compared are the chromatic note numbers.
+                
+        """
+        note_numbers = self.get_note_number(note1, note2)   # Dict[str,int]
+        n1 = note_numbers[note1]
+        n2 = note_numbers[note2]
         if n1 == n2:
             result = 0
         else:
-            result = 1 if n2 > n1 else -1
+            result = -1 if n2 > n1 else 1
         return result
-        
+    
+    def compare_pitches(self, pitch1:str, pitch2:str, relative_to:str="C"):
+        pitch_numbers = self.get_pitch_number(pitch1,pitch2, relative_to)
+        start_ind = pitch_numbers[relative_to]
+        n1 = (start_ind + pitch_numbers[pitch1])%12
+        n2 = (start_ind + pitch_numbers[pitch2])%12
+        if n1 == n2:
+            result = 0
+        else:
+            result = -1 if n2 > n1 else 1
+        return result        
         
     @staticmethod
     def notes_per_measure(time_signature:str, note_type:str):
@@ -148,16 +190,31 @@ class Notes(object):
 def main():
     notes = Notes()
     chromatic_notes = notes.chromatic_notes
+    chromatic_pitches = notes.chromatic_pitches
     print(chromatic_notes["sharp"])
+    print(chromatic_pitches["flat"])
     anote1 = "D3"
     anote2 = "F#4"
     note_numbers = notes.get_note_number(anote1, anote2)
+    pitch1 = "A"
+    pitch2 = "D"
+    pitch_numbers = notes.get_pitch_number(pitch1,pitch2)
     print(f" {anote1}, {anote2}  note numbers: {note_numbers}")
+    print(f" {pitch1}, {pitch2} pitch numbers: {pitch_numbers}")
     dist1 = notes.distance(anote1, anote2)
     dist2 = notes.distance(anote2, anote1)
     print(f"distance from {anote1} to {anote2}: {dist1}")    # 16 is the right answer
     print(f"distance from {anote2} to {anote1}: {dist2}")    # -16
-
+    compared = notes.compare_notes(anote1, anote2)
+    print(f"comparing {anote1}, {anote2}: {compared}")
+    
+    compared = notes.compare_pitches(pitch1, pitch2)
+    print(f"comparing {pitch1}, {pitch2}: {compared}")
+    
+    relative_to="F"
+    compared = notes.compare_pitches(pitch1, pitch2, relative_to="F")
+    print(f"comparing {pitch1}, {pitch2} relative to {relative_to}: {compared}")
+    
     
 if __name__ == '__main__':
     main()

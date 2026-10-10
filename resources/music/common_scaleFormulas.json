@@ -5,23 +5,10 @@
 			  "Only scales of 3 or more notes are included",
 			  "See 'all_scaleFormulas.json' for the complete set."],
 	"keys" : ["name", "groups", "formula", "alternateNames", "size"],
-	"group_names" : ["adonai", "aeolian", "algerian", "altered", "alternating", "augmented", "auxillary", "balinese", "bhairubahar", "bi", "blues", "c", "cdim", "center", "chaio", 		"chromatic", "common", "diatonic", "diminished", "do", "dominant", "dorian", "double", "egyptian", "enigmatic", "eskimo", "example", "fifth", "flat", "flattened", "fourth", "full", "genus", "gypsy", "half", "han", "harmonic", "hawaiian", "hindi", "hirajoshi", "honchoshi", "houseini", "houzam", "hungarian", "indian", "ionian", "iwato", "japanese", "javanese", "jazz", "jg", "kiourdi", "kokin", "kung", "leading", "locrian", "lydian", "magen", "major", "maqam", "marva", "minor", "mixolydian", "modes", "moorish", "neapolitan", "neveseri", "nohkan", "octatonic", "oriental", "pan", "pentatonic", "phrygian", "prokofiev", "prometheus", "pyramid", "ritsu", "ritusen", "rock", "romanian", "sabach", "sanagari", "scottish", "sharp", "shostakovich", "spanish", "super", "superlocrian", "symmetrical", "takemitsu", "todi", "ultra", "utility", "warao", "whole", "youlan", "zirafkend"],
+	"group_names" : ["adonai", "aeolian", "algerian", "altered", "alternating", "augmented", "auxillary", "balinese", "bhairubahar", "bi", "blues", "c", "cdim", "center", "chaio", "chromatic", "common", "custom", "diatonic", "diminished", "do", "dominant", "dorian", "double", "egyptian", "enigmatic", "eskimo", "example", "fifth", "flat", "flattened", "fourth", "full", "genus", "gypsy", "half", "han", "harmonic", "hawaiian", "hindi", "hirajoshi", "honchoshi", "houseini", "houzam", "hungarian", "indian", "ionian", "iwato", "japanese", "javanese", "jazz", "jg", "kiourdi", "kokin", "kung", "leading", "locrian", "lydian", "magen", "major", "maqam", "marva", "minor", "mixolydian", "modes", "moorish", "neapolitan", "neveseri", "nohkan", "octatonic", "oriental", "pan", "pentatonic", "phrygian", "prokofiev", "prometheus", "pyramid", "ritsu", "ritusen", "rock", "romanian", "sabach", "sanagari", "scottish", "sharp", "shostakovich", "spanish", "super", "superlocrian", "symmetrical", "takemitsu", "todi", "ultra", "utility", "warao", "whole", "youlan", "zirafkend"],
 	
-	"enharmonic_equivalents" : {
-		"info" : [
-			"This gives the enharmonic equivalent (EE) for all notes in the chromatic scale",
-			"They are given in order starting with C, C#, Db, D, D#,... B# ",
-			"The most common EE are listed first, followed by double sharp ('x' for '##'), and double flats ('bb')"
-		],
-		"C" : ["B#"],  "C#" : ["Db"],
-		"Db" : ["C#"], "D" : ["Cx", "Ebb"], "D#" : ["Eb"],
-		"Eb" : ["D#"], "E" : ["Dx", "Fb"], 	"E#" : ["F"],
-		"Fb" : ["E"],  "F" : ["E#"],        "F#" : ["Gb"],
-		"Gb" : ["F#"], "G" : ["Fx", "Abb"], "G#" : ["Ab"],
-		"Ab" : ["G#"], "A" : ["Gx", "Bbb"],	"A#" : ["Bb"],
-		"Bb" : ["A#"], "B" : ["Ax", "Cb"],  "B#" : ["C"],
-		"Cb" : ["B"]
-	},
+	"pitches" : ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C"],
+
 	"scales":[
 		{ "name" : "Major","groups" : ["major", "diatonic", "common"],"formula" : [2,2,1,2,2,2,1],"size" : 7},
 		{ "name" : "Minor","alternateNames" : ["Natural minor", "Melodic minor descending"],"groups" : ["minor", "common"],"formula" : [2,1,2,2,1,2,2],"size" : 7},
@@ -35,6 +22,7 @@
 		{ "name" : "Blues","groups" : ["blues"],"alternateNames" : ["Blues Minor"], "formula" : [3,2,1,1,3,2],"size" : 6},
 		{ "name" : "Octatonic H-W", "alternateNames" : ["Blues Diminished"], "groups" : ["blues", "octatonic"],"formula" : [1,2,1,2,1,2,1,2],"size" : 8},
 		{ "name" : "Octatonic W-H", "alternateNames" : ["Diminished"], "groups" : ["blues", "octatonic"],"formula" : [2,1,2,1,2,1,2,1],"size" : 8},
+		{ "name" : "Half Octatonic", "groups" : ["custom"],"formula" : [2,1,2,1,2,1,3],"size" : 7},
 		{ "name" : "Spanish 8 tones (all b's) in 12edo)","groups" : ["spanish", "octatonic"],"formula" : [1,2,1,1,1,2,2,2],"size" : 8},
 		{ "name" : "Spanish 8 tones (all b's) in 12edo) + Fb","groups" : ["spanish", "octatonic"],"formula" : [1,2,1,1,1,2,2,2],"size" : 8},
 		{ "name" : "Adonai Malakh (Israel) 2b 1#","groups" : ["adonai", "octatonic"],"formula" : [1,1,1,2,2,2,1,2],"size" : 8},
@@ -53,7 +41,7 @@
 		{ "name" : "Balinese, Pelog 1 ","groups" : ["balinese"],"formula" : [1,2,4,1,4],"size" : 5},
 		{ "name" : "Bhairubahar Thaat (India)","groups" : ["bhairubahar"],"formula" : [1,3,1,2,2,2,1],"size" : 7},
 		{ "name" : "Bi Yu (China)","groups" : ["bi"],"formula" : [3,4,3,2],"size" : 4},
-		{ "name" : "Blues #V (as 7/346/8 in 12edo)","groups" : ["blues"],"formula" : [3,2,1,5,1],"size" : 5},
+		{ "name" : "Blues #V","groups" : ["blues"],"formula" : [3,2,1,5,1],"size" : 5},
 		{ "name" : "Blues Diminished", "groups" : ["blues", "octatonic"],"formula" : [1,2,1,2,1,2,1,2],"size" : 8},
 		{ "name" : "Blues Dorian Hex (all b's) as 9/6789/1 in 12edo)","alternateNames" : ["Blues Dorian Hexatonic"],"groups" : ["blues"],"formula" : [2,1,1,3,2,3],"size" : 6},
 		{ "name" : "Blues Dorian Hexatonic","groups" : ["blues"],"formula" : [1,2,1,3,2,3],"size" : 6},
@@ -131,7 +119,7 @@
 		{ "name" : "Harmonic Major 1", "alternateNames" : "Ethiopian, Nat Bhairava", "groups" : ["harmonic"],"formula" : [2,2,1,2,1,3,1],"size" : 7},
 		{ "name" : "Harmonic Major 2", "alternateNames" :"Ionian #5","groups" : ["harmonic"],"formula" : [2,2,1,3,1,2,1],"size" : 7},
 		{ "name" : "Harmonic Minor","groups" : ["harmonic"],"formula" : [2,1,2,2,1,3,1],"size" : 7},
-		{ "name" : "Harmonic Minor Inverse","alternateNames" : ["Bhairav", "Maqam Hicaz (Arabia)"],"groups" : ["harmonic"],"formula" : [1,3,1,2,2,1,2],"size" : 7},
+		{ "name" : "Harmonic Minor Inverse","alternateNames" : ["Bhairav", "Maqam Hicaz"],"groups" : ["harmonic"],"formula" : [1,3,1,2,2,1,2],"size" : 7},
 		{ "name" : "Harmonic Minor Tetrachord","groups" : ["harmonic"],"formula" : [2,1,3,6],"size" : 4},
 		{ "name" : "Harmonic Neapolitan Minor 2b1#","groups" : ["harmonic", "octatonic"],"formula" : [1,1,1,2,2,1,3,1],"size" : 8},
 		{ "name" : "Harmonic Neapolitan Minor 3#'s","groups" : ["harmonic", "octatonic"],"formula" : [1,1,1,2,2,1,3,1],"size" : 8},
@@ -145,7 +133,8 @@
 		{ "name" : "Hungarian Folk or Byzantine Major Gypsy","alternateNames" : ["Bhairav Thaat (India) Mela Mayamalavagaula (India) Raga Paraj (India) Hitzazkiar (Greece)"],"groups" : ["hungarian"],"formula" : [1,3,1,2,1,3,1],"size" : 7},
 		{ "name" : "Hungarian Gypsy","alternateNames" : ["Mela Sanmukhapriya (India)"],"groups" : ["hungarian"],"formula" : [2,1,3,1,1,2,2],"size" : 7},
 		{ "name" : "Hungarian Gypsy, Damian Emmanuel","alternateNames" : ["Mela Sanmukhapriya (India)"],"groups" : ["hungarian"],"formula" : [2,1,3,1,1,2,2],"size" : 7},
-		{ "name" : "Hungarian Major Raga Nasamani (India)","groups" : ["hungarian"],"formula" : [3,1,2,1,2,1,2],"size" : 7},
+		{ "name" : "Hungarian Harmonic Minor", "groups" : ["custom", "hungarian"], "formula" : [1,3,3,2,3], "size":5},
+		{ "name" : "Hungarian Major", "alternateNames" : ["Raga Nasamani"], "groups" : ["hungarian"],"formula" : [3,1,2,1,2,1,2],"size" : 7},
 		{ "name" : "Hungarian Minor","alternateNames" : ["Maqam Nawa Athar (Arabia)","Double Harmonic Minor","Niavent (Greece)"],"groups" : ["hungarian"],"formula" : [2,1,3,1,1,3,1],"size" : 7},
 		{ "name" : "Hungarian Minor b2","groups" : ["hungarian", "octatonic"],"formula" : [1,1,1,3,1,1,3,1],"size" : 8},
 		{ "name" : "Indian, Phrygian dim 4th","groups" : ["indian"],"formula" : [1,2,1,3,1,2,2],"size" : 7},

@@ -8,19 +8,20 @@
 # License:      BSD, see license.txt
 # ------------------------------------------------------------------------------
 
-from typing import List, Dict
+from typing import List, Dict, Union
 from itertools import accumulate
 import operator
 import argparse
 from textwrap import dedent
 import music21
 from music21 import stream, note, pitch, scale, metadata
-from music21 import clef, instrument, tempo, meter, interval
+from music21 import chord, instrument, tempo, meter, interval
 from music.keys import Keys
 from music.key import  Key
 from music.instruments import Instruments
 from music.musicUtils import MusicUtils
 from music.notes import Notes
+from music.scaleLibrary import ScaleLibrary
 
 class Scale:
     """  
@@ -55,34 +56,50 @@ class Scale:
     DEFAULT_KEY = Key({ "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "sharp", "signature" : 0, "relativeKey" : "A-Minor" })
     notes_ = Notes()
         
-    def __init__(self, scale_data:dict, key:Key=None, octaves:int=1, descending:bool=False):
+    def __init__(self, scaleData:Union(Dict,str), key:Key=None, octaves:int=1, descending:bool=False, formula:List[int]=None):
         """
         Create a Scale from a dictionary
         Arguments:
             scale_data a dict representing a single scale having the keys described above
                 for example: { "name" : "Major" , "groups" : [ "major", "diatonic", "common"] , "formula" : [2,2,1,2,2,2,1] , "size" : 7}
-                scale_data argument is mandatory.
+                OR the name of a scale. The scale_data argument is mandatory.
             key - optional Key object. Defaults to C-Major if not provided.
                 The Key is used to determine the accidental choice. 
                 Also the root note of the scale is the tonic note of the key.
             octaves - the number of octaves to cover. Range is 1 to 4, default is 1.
             descending - if True create the scale in descending order. Default is False
+            formula - a user-defined scale formula as a List[int]. If present this overrides any scaleData.
         Note a music21.scale.ConcreteScale is also created as needed.
         """
+        assert(scaleData is not None)
         self._key = Key(key_date=Scale.DEFAULT_KEY) if key is None else key
         
         self.octaves = octaves
         self.descending = descending
-        self.scale_data = scale_data
-        assert(len(scale_data)>0)
-        self.scale = scale_data
-        self._name = self.scale.get('name', "MY_SCALE")
+        if isinstance(scaleData, str):    # the name of a scale
+            # if there is a formula us it instead of the name
+            if formula is not None and len(formula) >=2:
+                print(f"Using the formula {formula}")
+            scaleLib = ScaleLibrary()
+            scale_data = scaleLib.getScaleData(scaleData)
+            if scale_data is None:    # Create something
+                scale_data = {"name":scaleData, "groups":["custon"], "formula":formula, "size":len(formula)}
+            self.scale = scale_data
+            self.scale_data = scale_data
+        elif isinstance(scaleData, dict):
+            self.scale = scaleData
+            self.scale_data = scaleData
+        else:
+            raise(TypeError("Invalid scale data"))
+        
+        self._name = self.scale.get('name', "MyScale")
         self._formula = self.scale.get('formula', [])
         self._size = self.scale.get("size", 0)
         self._groups = self.scale.get("groups", [])
         self._alternate_names = self.scale.get("alternateNames", [])
         self._music21Scale = None    # music21.scale.ConcreteScale
         self._music21Key = None      # key.KeySignature
+        self._notes = Notes()
     
     @staticmethod
     def get_chromatic_pitches_for_key(key:Key, ascending:bool=True)->List[str]:
@@ -188,16 +205,8 @@ class Scale:
         self.formula = newformula
         self.size = len(newformula)
     
-    def _compare_pitches(self, pitch1, pitch2, root)->int:
-        """ Compare 2 notes without octaves relative to a given root.
-            TODO
-        """
-        accidental1 = "#"
-        return 0
-        
-    
     def compare_notes(self, note1:str, note2:str, root:str=None)->int:
-        """ Compare 2 notes relative to a chromatic scale starting on a given root pitch
+        """ Compare 2 notes or pitches relative to a chromatic scale starting on a given root pitch
             Arguments:
                 note1 - note to compare. May or may not include the octave.
                 note2 - note to compare against note1. May or may not include the octave.
@@ -214,29 +223,23 @@ class Scale:
                If the root was "C", the result would be 1 because in the scale
                 C,D,E,F,G,A,B,C  B comes after C.
             2. The octave is used if both notes include it. 
-            Throws a TypeError if the arguments are inconsistent or don't represent notes.
-            
-            TODO finish this and make static
+            Raises a TypeError if the arguments are inconsistent or don't represent notes.
         """
         result = 0
         root = "C" if root is None else root
-        octaves = MusicUtils.has_octave(note1) + MusicUtils.has_octave(note2)  # 0==no note octaves, 2==both notes have octaves, 1==one does, one doesn't, invalid
+        # 0==no note octaves, 2==both notes have octaves, 1==one does, one doesn't, invalid
+        octaves = MusicUtils.has_octave(note1) + MusicUtils.has_octave(note2)
         if octaves == 1:    # they must all have octave or not
             raise(TypeError("All arguments must include an octave or not"))
         if octaves == 2:
             # a root note is not needed is both notes are is scientific notation (have octaves)
-            o1,o2 = MusicUtils.get_octaves(note1,note2)
-            if o1 == o2:   # same octave so compare notes 
-                p1 = Scale.get_pitch(note1)
-                p2 = Scale.get_pitch(note2)
-            else:
-                result = -1 if o1 < o2 else 1
+            return self._notes.compare_notes(note1, note2)
         if octaves == 0:   # compare 2 pitches relative to a chromatic scale whose starting note is root
-            pass
+            return self._notes.compare_pitches(note1, note2, relative_to=root)
             
         return result
     
-    def _create_music21_scale(self, tonic:str, pitches:List[str]):
+    def _create_music21_scale(self, tonic:str, pitches:List[str])->scale.ConcreteScale:
         """ Create a music21 ConcreteScale from a list of pitches.
             Arguments:
                 tonic - the tonic note of the scale as a pitch or note (pitch+octave)
@@ -264,7 +267,7 @@ class Scale:
         return self._music21Key
         
 
-    def notes(self, root='C4', num_octaves:int=1, accidental_preference:str=None)->List[str]:
+    def notes(self, root='C4', num_octaves:int=1, accidental_preference:str=None, add_descending:bool|None=None)->List[str]:
         """
         Creates and returns the list of notes for this scale starting with the root provided. 
         Arguments:
@@ -276,10 +279,12 @@ class Scale:
             In general the accidental (# or b) used is determined first by the root note. If the root doesn't have an accidental,
             the accidental_preference is used. If a preference is not provided a # is the default.
         accidental_preference: 'sharp', '#', 'flat', 'b', 'mixed', '#b' or 'key'
+        add_descending - if not None, this overrides the value of self.descending
         
         Note - the top note is NOT repeated in an ascending+descending scale.
         """
         _ap = self.get_accidental_preference(root, accidental_preference)
+        descending = self.descending if add_descending is None else add_descending
         tonic = MusicUtils.get_note(root)
         pitches = self.pitches(root=tonic, octaves=num_octaves, accidental_preference=accidental_preference)
         notes = []
@@ -292,7 +297,7 @@ class Scale:
             p = pitch.nameWithOctave.replace("-","b")
             notes.append(p)
 
-        if self.descending:
+        if descending:
             notes_copy = notes.copy()
             notes_copy.reverse()
             notes.extend(notes_copy[1:])
@@ -323,6 +328,7 @@ class Scale:
             p1 = pitches[1:]
             pitches = pitches + ((octaves-1)*p1)
         return pitches
+        
     
     def get_accidental_preference(self, root, accidental_preference:str=None)->List[str]:
         """ 
@@ -369,9 +375,148 @@ class Scale:
     def to_JSON(self)->dict:
         return self.scale_data
     
+    def create_part(self, notes:List[note.Note], transpose_octaves:int)->stream.Part:
+        """Create a new Part given a list of Note and number of octaves higher or lower.
+            Arguments:
+                notes - a List of music21 note.Note. Note the notes must have an octave designation like 'C4'
+                transpose_octaves - an int between -2 and 2 inclusive.
+            Returns:
+                stream.Part consisting of the notes transposed the number of octaves specified.
+            TODO
+        """
+        part_stream = stream.Part()
+        semitones = 12 * transpose_octaves
+        return part_stream
+    
+    def chordifyIntervals(self, intervals:Union[List[int], List[str]], root:str="C4", num_octaves:int=1 )->List[chord.Chord]:
+        """Chordify the scale using arbitrary intervals, instead of alternating notes.
+            Interval list can be specified as a list of integers or strings.
+            If a list of int, each is a number of semitones from the previous note, starting with the root, 
+            for example [4, 3, 3] with a starting with "C" works out to ["C", "E", "G", "Bb"] as a Chord.
+            If a List of str, each entry is an interval name. For example ["M3", "m3", "m3"] is the same chord as the above.
+            Valid interval names are 2 characters, the first specifying the quality: M, m, d, a for major, minor, diminished, augmented.
+            The second is an integer specifying the size which is a number from 2 to 7.
+        """
+        chord_size = len(intervals)
+        chordList:List[chord.Chord] = list()
+        if chord_size==0 or chord_size>self._size:
+            raise TypeError("Invalid chord size. Valid range is 1 up to the length of the scale.")
+        
+        return None
+    
+    def chordify(self, root="C4",  num_octaves:int=1, chord_size:int=3)->List[chord.Chord]:
+        """Create chords for this scale. A chord is built for each scale degree
+            by taking alternating notes. The root is the first note of the scale in octave 4.
+            Arguments:
+                chord_size = the number of notes in each chord. Valid range is 2 (thirds),
+                    3 (triads), up to the length of the scale.
+                    For example, for a 7-note scale like C-Major, the chord could have up to 7 notes:
+                    C E G B D F A (which is a major 13th chord).
+                    A 5-note scale, like pentatonic minor (C,D,E,G,A for example) could have up to 5 notes.
+                num_octaves - the octave span
+            Returns:
+                A List[chord.Chord] (music21 chords)
+            Raises a TypeError if the chord_size is invalid
+        """
+        chordList:List[chord.Chord] = list()
+        if chord_size<=1 or chord_size>self._size:
+            raise TypeError("Invalid chord size. Valid range is 2 up to the length of the scale.")
+        #
+        # ALgorithm- duplicate the scale if needed. Then for each scale degree, up to an including
+        # the size of the scale, create a chord consisting of alternating notes.
+        # Chordify ascending first, then add descending if needed.
+        #
+        scale_size = self._size
+        scale_notes = self.notes(root=root, num_octaves=num_octaves+1, add_descending=False)    # the scale notes over a n-octave span
+        for root_ind in range(0, num_octaves*scale_size+1):
+            chord_notes = list()
+            for i in range(chord_size):
+                chord_ind = root_ind + 2*i
+                chord_notes.append(scale_notes[chord_ind])
+            chordList.append(chord.Chord(chord_notes))
+            
+        return chordList
+    
+    def _createPartStream(self, root:str, octaves, notes:List[str], note_duration:str, 
+             instrument_name:str, second_part_transpose:int, 
+             metronome_mark:(int,str), time_signature:str, show_chords:int, add_descending:bool)->stream.Part:
+        """Create a stream.Part from the arguments provided.
+            Arguments;
+            Returns: stream.Part ready to insert into a stream.Score
+            NOTE - chord durations are always a quarter note.
+        """
+        transpose_interval = interval.Interval(0)
+        if instrument_name == "Piano":
+            part_instrument = instrument.Piano()
+        else:    # need to load Instruments and Clefs data
+            instruments = Instruments()
+            if instrument_name in instruments.instrument_names:
+                part_instrument = instruments.get_instrument(instrument_name)
+                interval_semitones = 0 if part_instrument.transposition is None else -part_instrument.transposition.semitones
+                transpose_interval = interval.Interval(interval_semitones)
+                part_instrument
+            else:
+                raise(TypeError(f"No dota for {instrument_name}"))
+
+        part_tempo = tempo.MetronomeMark(number=metronome_mark[0], referent=note.Note(type=metronome_mark[1]))
+        notes_per_measure = Notes.notes_per_measure(time_signature, note_duration)
+        print(f"notes/measure: {notes_per_measure}")
+        
+        timeSignature = meter.TimeSignature(time_signature)
+        part_clef = MusicUtils.getClef(root, octaves)
+        part_stream = stream.Part()
+        part_stream.insert(0, metadata.Metadata())
+        part_stream.metadata.title = self.name
+        part_stream.insert(part_clef)
+        #music21Key = self.get_music21_key(self.key, transpose_interval)
+        part_stream.insert(self.get_music21_key(transpose_interval))
+        part_stream.insert(timeSignature)
+        part_stream.insert(part_tempo)
+        part_stream.insert(0, part_instrument)
+   
+        notes_ = self.notes(root=root, num_octaves=octaves) if notes is None else notes
+        tn = len(notes_)    # the total number of notes in this scale
+        num_measures = int(tn//notes_per_measure)     # number of complete measures
+        left_over = int(tn - notes_per_measure*(num_measures))    # the number of notes in the final measure
+        note_values = Scale.notes_.get_note_values()
+        quarterLength = 4 / note_values[note_duration]     # note_duration expressed as quarter_length
+        
+        note_count = 0
+        part_notes = list()
+        for anote in notes_:
+            if note_count == tn - 1 and left_over > 0:    # is this the last note? If so, adjust duration to fill the measure
+                ql = quarterLength * (notes_per_measure - left_over + 1)
+                n = note.Note(anote, quarterLength=ql)
+                part_stream.append(n)
+                part_notes.append(n)
+            else:
+                n = note.Note(anote, type=note_duration)
+                if transpose_interval.semitones > 0:
+                    n_transpose = n.transpose(transpose_interval)
+                    part_stream.append(n_transpose)
+                    part_notes.append(n_transpose)
+                else:
+                    part_stream.append(n)
+                    part_notes.append(n)
+            note_count += 1
+            
+        if show_chords >= 2:
+            chord_list = self.chordify(root=root, num_octaves=octaves, chord_size=show_chords)
+            if add_descending:
+                for i in range(len(chord_list)-2, -1, -1):
+                    c=chord.Chord(chord_list[i].pitches)
+                    chord_list.append(c)
+            for i in range(len(chord_list)):
+                c = chord_list[i]
+                c.quarterLength = 1.0   # part_notes[i].quarterLength
+                print(c)
+                part_stream.append(c)
+                
+        return part_stream
+    
     def show(self, format_:str, root="C4", octaves=1, notes:List[str]=None, note_duration="quarter", 
              instrument_name="Piano", second_part_transpose:int=0, 
-             metronome_mark:(int,str)=(120,"quarter"), time_signature:str="4/4"):
+             metronome_mark:(int,str)=(120,"quarter"), time_signature:str="4/4", show_chords:int=0, add_descending:bool=False):
         """ Display this scale in a specified format.
             Arguments:
                 format_ - valid choices are: "pitches", "notes", "musicxml", "musicxml.png", "text", "midi", "lily", "lily.pdf"
@@ -388,6 +533,7 @@ class Scale:
                     Default value is (100, "quarter"). This also appears in the score display.
                 time_signature - as a string, for example "4/4" or "12/4". Beats per measure (the top number) must be in range(1,17).
                     The note value that gets the beat must be a power of 2: [1,2,4,8,16]
+                show_chords - if >=2, chordify the scale with show_chords number of notes in each chord.
                 
             Raises: a TypeError if the instrument or time signature is invalid.
                 
@@ -403,58 +549,26 @@ class Scale:
         elif format_ == "pitches":
             print(self.pitches(root, octaves))
             return
+        scaleScore = stream.Score()
+        scaleScore.insert(0, metadata.Metadata())
+        scaleScore.metadata.title = self.name
         
-        transpose_interval = interval.Interval(0)
-        if instrument_name == "Piano":
-            part_instrument = instrument.Piano()
-        else:    # need to load Instruments and Clefs data
-            instruments = Instruments()
-            if instrument_name in instruments.instrument_names:
-                part_instrument = instruments.get_instrument(instrument_name)
-                interval_semitones = 0 if part_instrument.transposition is None else -part_instrument.transposition.semitones
-                transpose_interval = interval.Interval(interval_semitones)
-                part_instrument
-            else:
-                raise(TypeError(f"No dota for {instrument_name}"))
+        partTwoStream = None
         
-        part_tempo = tempo.MetronomeMark(number=metronome_mark[0], referent=note.Note(type=metronome_mark[1]))
-        notes_per_measure = Notes.notes_per_measure(time_signature, note_duration)
-        print(f"notes/measure: {notes_per_measure}")
-        
-        timeSignature = meter.TimeSignature(time_signature)
-        part_clef = MusicUtils.getClef(root, octaves)
-        part_stream = stream.Stream()
-        part_stream.insert(0, metadata.Metadata())
-        part_stream.metadata.title = self.name
-        part_stream.insert(part_clef)
-        #music21Key = self.get_music21_key(self.key, transpose_interval)
-        part_stream.insert(self.get_music21_key(transpose_interval))
-        part_stream.insert(timeSignature)
-        part_stream.insert(part_tempo)
-        part_stream.insert(0, part_instrument)
-   
-        notes_ = self.notes(root=root, octaves=octaves) if notes is None else notes
-        tn = len(notes_)    # the total number of notes in this scale
-        num_measures = int(tn//notes_per_measure)     # number of complete measures
-        left_over = int(tn - notes_per_measure*(num_measures))    # the number of notes in the final measure
-        note_values = Scale.notes_.get_note_values()
-        quarterLength = 4 / note_values[note_duration]     # note_duration expressed as quarter_length
-        
-        note_count = 0
-        for anote in notes_:
-            if note_count == tn - 1 and left_over > 0:    # is this the last note? If so, adjust duration to fill the measure
-                ql = quarterLength * (notes_per_measure - left_over + 1)
-                n = note.Note(anote, quarterLength=ql)
-                part_stream.append(n)
-            else:
-                n = note.Note(anote, type=note_duration)
-                if transpose_interval.semitones > 0:
-                    part_stream.append(n.transpose(transpose_interval))
-                else:
-                    part_stream.append(n)
-            note_count += 1
+        partOneStream= self._createPartStream(root, octaves, notes, note_duration, instrument_name, 
+                                                   second_part_transpose, metronome_mark, time_signature, show_chords, add_descending)
+        if second_part_transpose != 0:
+            # add another par with the root the number of octaves higher or lower than the specified root
+            semitones = second_part_transpose * 12
+            part_root = MusicUtils.get_music21_note(root, semitones).nameWithOctave
+            partTwoStream = self._createPartStream(part_root, octaves, None, note_duration, instrument_name, 
+                                                   second_part_transpose, metronome_mark, time_signature, show_chords, add_descending)
+            
+        scaleScore.insert(partOneStream)
+        if partTwoStream is not None:
+            scaleScore.insert(partTwoStream)
 
-        part_stream.show(fmt=format_)
+        scaleScore.show(fmt=format_)
 
 def main():
     description = dedent("""
@@ -464,20 +578,33 @@ def main():
     key_names = keys.key_names
     # TODO finish this - maybe not needed?
     parser = argparse.ArgumentParser(prog="Scale", description=description)
-    parser.add_argument("--name", "-N", help="Scale name", type=str, default=None)
-    parser.add_argument( "--root", "--tonic", "-R",help="Root pitch, default is 'C'. May also include an octave as in 'D3'", type=str, default="C")
+    parser.add_argument("--name",  help="Scale name", type=str, default="MyScale")
+    parser.add_argument("--formula", "-F", help="Create a scale with this formula: a comma-separated list. Overrides name lookup.",
+                        type=str, default=None)
+    parser.add_argument( "--root", "--tonic", "-R",help="Root pitch, default is 'C'. May also include an octave as in 'D3'", type=str, default="C4")
     parser.add_argument("--key", "-K", 
             help="Optional key signature, for example 'Eb-Major', 'F-Minor'. Default key is 'C-Major'. Used to determine accidentals in the scale and the tonic/root note.",
             choices = key_names, type=str, default="C-Major")
     parser.add_argument("--octaves", "-O", 
-            help="Octave range, default is 1 octave", type=int, choices=[1,2,3,4], default=1)
+            help="Octave range, default is 1 octave", type=int, choices=[1,2,3], default=1)
     parser.add_argument("--descending", "-D", 
-            help="Create both ascending and descending versions of the scale over the specified octave range. Default is False",
-            action="store_true", default=False)
-    parser.add_argument("--duration", help="Duration of the notes. Default is 'quarter'", type=str, choices=["whole","half","quarter","eighth","sixteenth"], default="quarter")
+            help="Create both ascending and descending versions of the scale over the specified octave range. Default is True",
+            action="store_true", default=True)
+    parser.add_argument("--duration", help="Duration of the notes. Default is 'quarter'", type=str, choices=["whole","half","quarter","eighth","sixteenth"], default="eighth")
+    parser.add_argument("--show", "-S", help="Display a scale in MuseScore, lilypond or as a list",  
+            type=str, choices=["pitches", "notes", "musicxml", "musicxml.png", "text", "midi", "lily", "lily.pdf"], default="notes")
     
-    notes = Notes()
-    print(Scale.notes_.get_chromatic_flat_pitches())
+    args = parser.parse_args()
+    key:Key = keys.key(args.key)
+    theScale = None
+    if args.formula is not None:
+        formula = [int(x) for x in args.formula.split(",")]
+        theScale = Scale(args.name, key=key, octaves=args.octaves, descending=args.descending, formula=formula)
+    else:
+        theScale = Scale(args.name, key=key, octaves=args.octaves, descending=args.descending)
+        
+    if theScale is not None:
+        theScale.show(format_=args.show, root=args.root, octaves=args.octaves, note_duration=args.duration, add_descending=args.descending)
 
 if __name__ == '__main__':
     main()

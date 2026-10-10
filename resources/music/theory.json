@@ -1,0 +1,31 @@
+{
+	"info" : "Structures related to music theory",
+	
+	"interval_map" : { "1":"m2", "2":"M2", "3":"m3", "4":"M3", "5":"P4", "6":"d5", "7":"P5", "8":"m6", "9":"M6", "10":"m7", "11":"M7", "12":"P8",
+					   "13":"m9", "14":"M9", "15":"m10", "16":"M10", "17":"M11", "18":"d12", "19":"P12", "20":"m13", "21":"M13", "22":"m14",
+					   "23":"M14", "24":"P15" },
+	
+	"interval_size" : { "d2":0, "m2":1, "M2":2, "a2":3, "d3":2, "m3":3, "M3":4, "a3":5, "d4":4, "P4":5, "a4":6, "d5":6, "P5":7,
+		"d6":6, "m6":8, "M6":9, "a6":10, "d7":9, "m7":10, "M7":11, "a7":12, "d8":11, "P8":12, "a8":13 },
+		
+	"pitches" : {
+		"flat_pitches" : ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C"],
+		"sharp_pitches" : ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B","C"]
+	},
+		
+	"enharmonic_equivalents" : {
+		"info" : [
+			"This gives the enharmonic equivalent (EE) for all notes in the chromatic scale",
+			"They are given in order starting with C, C#, Db, D, D#,... B# ",
+			"The most common EE are listed first, followed by double sharp ('x' for '##'), and double flats ('bb')"
+		],
+		"C" : ["B#"],  "C#" : ["Db"],
+		"Db" : ["C#"], "D" : ["Cx", "Ebb"], "D#" : ["Eb"],
+		"Eb" : ["D#"], "E" : ["Dx", "Fb"], 	"E#" : ["F"],
+		"Fb" : ["E"],  "F" : ["E#"],        "F#" : ["Gb"],
+		"Gb" : ["F#"], "G" : ["Fx", "Abb"], "G#" : ["Ab"],
+		"Ab" : ["G#"], "A" : ["Gx", "Bbb"],	"A#" : ["Bb"],
+		"Bb" : ["A#"], "B" : ["Ax", "Cb"],  "B#" : ["C"],
+		"Cb" : ["B"]
+	}
+}

@@ -103,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument("--duration", help="Duration of the notes. Default is 'quarter'", type=str, 
             choices=["whole","half","quarter","eighth","16th","32nd","64th"], default="quarter")
     parser.add_argument("--instrument", help="The instrument name, default is 'Piano'", type=str, default="Piano")
+    parser.add_argument("--chords", help="Display the chords built on each scale degree", type=int, choices=list(range(11)), default=0)
     args = parser.parse_args()
     
     key:Key = keys.key(args.key)
@@ -133,8 +134,9 @@ if __name__ == '__main__':
         if args.show == "notes":
             print(f"notes: {notes}")
         else:
-            scale.show(args.show, root=args.root, notes=notes, note_duration=args.duration, 
-                       instrument_name=args.instrument, second_part_transpose=args.dup, metronome_mark=(100,"quarter"))
+            scale.show(args.show, root=args.root, octaves=args.octaves, notes=notes, note_duration=args.duration, 
+                       instrument_name=args.instrument, second_part_transpose=args.dup, 
+                       metronome_mark=(100,"quarter"), show_chords=args.chords, add_descending=args.descending)
         
     if args.group is not None:
         group_scales = scales_df[scales_df['groups'].apply(lambda x:args.group in x)]
