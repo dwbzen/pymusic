@@ -57,10 +57,9 @@ class Keys(object):
         """ Get a Key by name or alternate_name
             Arguments: name - the key name to get. The format is <root>-<mode> where mode is "Major" | "Minor"
                 and root is a valid pitch using # for sharp and b for flat if needed.
-                If there is no dash in keyname the mode is based on the case of the root pitch:
+                If there is no dash in key name the mode is based on the case of the root pitch:
                 upper for Major, lower for Minor. 
-                alternate_names have the same format, but root accidental uses a '-' instead of a 'b'
-                and the mode is 'major' or 'minor'
+                The alternate_name is equivalent to str of the associated music21.key.Key.
         """
         return self.keys.get(keyname)
     
@@ -74,16 +73,16 @@ class Keys(object):
 if __name__ == '__main__':
     #print(Keys.__doc__)
     keys = Keys()
-    print(json.dumps(keys.get_keys(), indent=2))
+    #print(json.dumps(keys.get_keys(), indent=2))
     k = keys.key("F#-Major")    # returns a Key
     print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature()}")
-    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(True)}")
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(False)}")
     
     k = keys.key("Bb-Minor")    # returns a Key
     print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature()}")
-    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(True)}")
+    print(f"{k.key_name}: mode: {k.mode}, signature: {k.get_key_signature(False)}")
     
-    k = keys.key("B- minor")    # alternate name
+    k = keys.key("b- minor")    # alternate name
     print(f"names: '{k.key_name}', '{k.alternate_name}': mode: {k.mode}, accidental: {k.accidental}, signature: {k.get_key_signature()}")
     
 

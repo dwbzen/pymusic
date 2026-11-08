@@ -4,7 +4,7 @@ Created on Oct 8, 2026
 @author: don_bacon
 '''
 
-from music.chord import Chord
+from music.chord import Chord, ChordPosition
 from music.musicUtils import MusicUtils
 from music.key import Key
 from typing import List
@@ -25,7 +25,7 @@ class CustomChord(Chord):
             symbol - a user-defined symbol for this chord. Default is "cus" for custom
             root_pitch - the chord root, default is "C"
         Raises:
-            TypeError if both arguments are None.
+            TypeError if both formula and interval_names arguments are None.
             
         If both are not None, they should resolve to the same chord
         Note that the Key defaults to C-Major. It can be set with the key property setter.
@@ -39,7 +39,7 @@ class CustomChord(Chord):
         formulaNumber = MusicUtils.get_formulaNumber(formula)
         chord_data = {"name":name, "symbols":[symbol], "groups":["custom"], "formula":formula, 
                       "intervals":names, "size":fsize, "chordSize":fsize+1, "formulaNumber":formulaNumber}
-        super().__init__(chord_data, root_pitch=root_pitch, fmt="extended")
+        super().__init__(chord_data, root_pitch=root_pitch, position=ChordPosition.EXTENDED)
         
         
 if __name__ == '__main__':

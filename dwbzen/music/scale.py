@@ -13,13 +13,13 @@ from itertools import accumulate
 import operator
 import argparse
 from textwrap import dedent
-import music21
 from music21 import stream, note, pitch, scale, metadata
 from music21 import chord, instrument, tempo, meter, interval
 from music.keys import Keys
 from music.key import  Key
 from music.instruments import Instruments
 from music.musicUtils import MusicUtils
+from music.generalUtils import GeneralUtils
 from music.notes import Notes
 from music.scaleLibrary import ScaleLibrary
 
@@ -35,7 +35,7 @@ class Scale:
         For example, with a root note 'C', and the formula [2, 2, 1, 2, 2, 2, 1], the resulting notes are:
         C (+2) D (+2) E (+1) F (+2) G (+2) A (+2) B (+1) C. 
         The number of notes produced by a give formula is len(formula)+1. 
-        The sum of the intervals in a given formula MUST equal 12.
+        For standard scales, The sum of the intervals in a given formula MUST equal 12 to span 1 octave.
     size - number of notes in the scale excluding the final note, which is an octave above the root.
         So the size of diatonic scales (major, harmonic minor, etc.) is 7.
         
@@ -56,7 +56,7 @@ class Scale:
     DEFAULT_KEY = Key({ "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "sharp", "signature" : 0, "relativeKey" : "A-Minor" })
     notes_ = Notes()
         
-    def __init__(self, scaleData:Union(Dict,str), key:Key=None, octaves:int=1, descending:bool=False, formula:List[int]=None):
+    def __init__(self, scaleData:Union(Dict,str), key:Key=None, octaves:int=1, descending:bool=False, formula:List[int]=None, custom=False):
         """
         Create a Scale from a dictionary
         Arguments:
@@ -69,10 +69,11 @@ class Scale:
             octaves - the number of octaves to cover. Range is 1 to 4, default is 1.
             descending - if True create the scale in descending order. Default is False
             formula - a user-defined scale formula as a List[int]. If present this overrides any scaleData.
+            custom - if True this scale/melody is not in the scale library
         Note a music21.scale.ConcreteScale is also created as needed.
         """
         assert(scaleData is not None)
-        self._key = Key(key_date=Scale.DEFAULT_KEY) if key is None else key
+        self._key = Key(key_data=Scale.DEFAULT_KEY) if key is None else key
         
         self.octaves = octaves
         self.descending = descending
@@ -83,7 +84,7 @@ class Scale:
             scaleLib = ScaleLibrary()
             scale_data = scaleLib.getScaleData(scaleData)
             if scale_data is None:    # Create something
-                scale_data = {"name":scaleData, "groups":["custon"], "formula":formula, "size":len(formula)}
+                scale_data = {"name":scaleData, "groups":["custom"], "formula":formula, "size":len(formula)}
             self.scale = scale_data
             self.scale_data = scale_data
         elif isinstance(scaleData, dict):
@@ -94,6 +95,7 @@ class Scale:
         
         self._name = self.scale.get('name', "MyScale")
         self._formula = self.scale.get('formula', [])
+        self._custom = custom
         self._size = self.scale.get("size", 0)
         self._groups = self.scale.get("groups", [])
         self._alternate_names = self.scale.get("alternateNames", [])
@@ -156,7 +158,7 @@ class Scale:
         Returns a dict with keys "pitch_set" (the index of chromatic notes in the scale), and "pitches"
         """
         pitch_set = list(accumulate(formula, operator.add, initial=0)) if include_octave else list(accumulate(formula, operator.add, initial=0))[:-1]
-        tonic = MusicUtils.get_pitch(root_pitch)
+        tonic:pitch.Pitch = MusicUtils.get_pitch(root_pitch)
         
         if "b" in  tonic or accidental == "b":
             cps = Scale.notes_.get_chromatic_flat_pitches()
@@ -258,16 +260,11 @@ class Scale:
             Also sets the result as self._music21Key
         """
         if self._music21Key is None:
-            #accidental = -1 if self.key.accidental == "flat" else 1
-            #semitones = transpose_interval.semitones if transpose_interval is not None else 0
-            #signature = self.key.signature  * accidental  # number of sharps or flats, no need transpose the  key
-            #music21Key = music21.key.KeySignature(signature)
             self._music21Key = MusicUtils.get_music21_key(self.key, transpose_interval)
-            #self._music21Key = music21Key if semitones == 0 else music21Key.transpose(semitones)
         return self._music21Key
         
 
-    def notes(self, root='C4', num_octaves:int=1, accidental_preference:str=None, add_descending:bool|None=None)->List[str]:
+    def notes(self, root='C4', num_octaves:int=1, add_descending:bool|None=None)->List[str]:
         """
         Creates and returns the list of notes for this scale starting with the root provided. 
         Arguments:
@@ -276,17 +273,15 @@ class Scale:
             By convention, notes are expressed in scientific music notation which includes an octave designation starting at 0
             For example, the range of a Piano is A0 to C8.
             Octaves are from C to B, so the pitch following B4 is C5.
-            In general the accidental (# or b) used is determined first by the root note. If the root doesn't have an accidental,
-            the accidental_preference is used. If a preference is not provided a # is the default.
-        accidental_preference: 'sharp', '#', 'flat', 'b', 'mixed', '#b' or 'key'
+            In general the accidental (# or b) used is determined by the key.
+            
         add_descending - if not None, this overrides the value of self.descending
         
         Note - the top note is NOT repeated in an ascending+descending scale.
         """
-        _ap = self.get_accidental_preference(root, accidental_preference)
         descending = self.descending if add_descending is None else add_descending
         tonic = MusicUtils.get_note(root)
-        pitches = self.pitches(root=tonic, octaves=num_octaves, accidental_preference=accidental_preference)
+        pitches = self.pitches(root=tonic, octaves=num_octaves)    # this sets chromatic_pitches
         notes = []
         #
         # create a music21 ConcreteScale
@@ -304,18 +299,17 @@ class Scale:
 
         return notes
 
-    def pitches(self, root:str='C', octaves:int=1, accidental_preference:str=None)->List[str]:
+    def pitches(self, root:str='C', octaves:int=1)->List[str]:
         """
         Creates and returns the list of pitches for this scale starting with the root note provided. the default root is 'C'. 
         By convention, a pitch does not include an octave designation.
         Arguments:
             root - the default root is 'C' (middle C).
-            accidental_preference: 'sharp', '#', 'flat', 'b', 'mixed', '#b' or 'key'
             octaves - the number of octaves to cover, defaults to 1 if not specified.
         """
         tonic = MusicUtils.get_pitch(root)    # strips the octave if there is one, so C3 would return C
         pitches = [tonic]
-        _ap = self.get_accidental_preference(root, accidental_preference)
+        self.set_chromatic_pitches()
         ind = self._chromatic_scale.index(tonic)
         formula = self.formula
         for i in formula:
@@ -330,47 +324,34 @@ class Scale:
         return pitches
         
     
-    def get_accidental_preference(self, root, accidental_preference:str=None)->List[str]:
+    def set_chromatic_pitches(self)->None:
         """ 
-            Arguments:
-                root - a note or pitch string
-                accidental_preference - flat, sharp, mixed, or an accidental symbol:
-                "-" or "b" for flat, "#" for sharp. "-" is the music21 symbol for flat
+            Uses the current Key to select the appropriate set of chromatic notes in self._chromatic_scale.
         """
-        accidental = self.key.accidental    # "sharp", "flat" or "mixed"
-        if accidental_preference is None:
-            if(accidental == "sharp" or "#" in root):
-                ap = '#'
-                self._chromatic_scale = Scale.notes_.get_chromatic_sharp_pitches()
-            elif(accidental == "flat" or accidental == "-"  or "b" in root):
-                ap = 'b'
-                self._chromatic_scale = Scale.notes_.get_chromatic_flat_pitches()
-            else:
-                ap = '#b'
-                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
+        accidental = self.key.accidental    # "sharp", "flat"
+        accidental_preference = 'b' if accidental=="flat" else "#"
+        if('#' == accidental_preference or 'sharp' == accidental_preference):
+            self._chromatic_scale = Scale.notes_.get_chromatic_sharp_pitches()
+        elif('b' == accidental_preference  or 'flat' == accidental_preference):
+            self._chromatic_scale = Scale.notes_.get_chromatic_flat_pitches()
         else:
-            if('#' == accidental_preference or 'sharp' == accidental_preference):
-                ap = '#'
-                self._chromatic_scale = Scale.notes_.get_chromatic_sharp_pitches()
-            elif('b' == accidental_preference  or "-" ==  accidental_preference or 'flat' == accidental_preference):
-                ap = 'b'
-                self._chromatic_scale = Scale.notes_.get_chromatic_flat_pitches()
-            elif('#b' == accidental_preference or 'mixed' == accidental_preference):
-                ap = '#b'
-                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
-            else:
-                ap = '#b'
-                self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
-        return ap
+            self._chromatic_scale = Scale.notes_.get_chromatic_mixed_pitches()
+        return 
+    
+    def get_key_root(self)->str:
+        root = self.key.tonic
+        return root
     
     def __str__(self):
-        return str(self.notes(root="C", accidental_preference='mixed'))
+        root = self.get_key_root()
+        return str(self.notes(root))
     
     def __repr__(self):
         return self.scale_data
     
     def to_string(self, root:str)->str:
-        return str(self.notes(root, accidental_preference=None))
+        root = self.get_key_root()
+        return str(self.notes(root))
     
     def to_JSON(self)->dict:
         return self.scale_data
@@ -445,18 +426,7 @@ class Scale:
             Returns: stream.Part ready to insert into a stream.Score
             NOTE - chord durations are always a quarter note.
         """
-        transpose_interval = interval.Interval(0)
-        if instrument_name == "Piano":
-            part_instrument = instrument.Piano()
-        else:    # need to load Instruments and Clefs data
-            instruments = Instruments()
-            if instrument_name in instruments.instrument_names:
-                part_instrument = instruments.get_instrument(instrument_name)
-                interval_semitones = 0 if part_instrument.transposition is None else -part_instrument.transposition.semitones
-                transpose_interval = interval.Interval(interval_semitones)
-                part_instrument
-            else:
-                raise(TypeError(f"No dota for {instrument_name}"))
+        part_instrument,transpose_interval = GeneralUtils.get_instrument(instrument_name)
 
         part_tempo = tempo.MetronomeMark(number=metronome_mark[0], referent=note.Note(type=metronome_mark[1]))
         notes_per_measure = Notes.notes_per_measure(time_signature, note_duration)

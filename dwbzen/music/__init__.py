@@ -18,11 +18,14 @@ __all__ = [
     'chords',
     'customchord',
     'durationCollector', 
+    'generalUtils',
     'instruments', 
     'intervalCollector',
     'intervalCollectorRunner',
     'keys',
     'key',
+    'melody',
+    'melodyMaker',
     'musicCollector',
     'musicProducer',
     'musicProducerRunner',
@@ -39,19 +42,23 @@ __all__ = [
     'scales',
     'scoreGen',
     'scoreGenRunner',
+    'scoreUtils',
     'song'
 ]
 
-from .chord import Chord
+from .chord import Chord, ChordPosition
 from .customChord import CustomChord
 from .chordLibrary import ChordLibrary
 from .chords import Chords
 from .durationCollector import DurationCollector
+from .generalUtils import GeneralUtils
 from .instruments import Instruments
 from .intervalCollector import IntervalCollector
 from .intervalCollectorRunner import IntervalCollectorRunner
 from .keys import Keys
 from .key import Key
+from .melody import Melody
+from .melodyMaker import MelodyMaker
 from .musicCollector import MusicCollector
 from .musicProducer import MusicProducer
 from .musicProducerRunner import MusicProducerRunner
@@ -68,6 +75,7 @@ from .scaleLibrary import ScaleLibrary
 from .scales import Scales
 from .scoreGen import ScoreGen
 from .scoreGenRunner import ScoreGenRunner
+from .scoreUtils import ScoreUtils
 from .song import Song
 
 

@@ -6,7 +6,7 @@ Created on Sep 22, 2026
 from functools import cached_property
 from typing import Dict, List
 from music.musicUtils import MusicUtils
-from music21 import pitch
+from music21 import pitch, note
 
 class Notes(object):
     
@@ -29,7 +29,6 @@ class Notes(object):
         self._num_octaves = num_octaves
         self._start_octave = start_octave
     
-
     def get_chromatic_flat_pitches(self)->List[str]:
         return Notes.CHROMATIC_FLAT_PITCHES
 
@@ -109,7 +108,6 @@ class Notes(object):
     
     def get_note_number(self, *notes):
         note_numbers = {}
-        cnotes = self.chromatic_notes
         for anote in notes:
             if Notes.DOUBLE_SHARP in anote:
                 p = pitch.Pitch(anote)
@@ -123,15 +121,34 @@ class Notes(object):
                 note_ = MusicUtils.get_note(anote)    # pitch+octave (default is 4)
             try:
                 if "#" in note_:
-                    ind = cnotes["sharp"].index(note_)
+                    ind = self.chromatic_notes["sharp"].index(note_)
                 elif "b" in note_:
-                    ind = cnotes["flat"].index(note_)
+                    ind = self.chromatic_notes["flat"].index(note_)
                 else:    # no accidental
-                    ind = cnotes["sharp"].index(note_)
+                    ind = self.chromatic_notes["sharp"].index(note_)
             except:
                 ind = -1
             note_numbers[note_] = ind
         return note_numbers
+    
+    def get_notes(self, start_index:int, end_index:int, num_sharps=1)->List[note.Note]:
+        """ Get the notes by index.
+            Arguments:
+                start_index - an int >= 0
+                end_index - also an int >=0
+                num_sharps - indicates the key signature. If <0 this indicates the number of flats.
+                    This is used to select the accidental to use.
+                Note: if start_index < end_index, for example 20 to 30, the list is returned in reverse order.
+            Returns:
+                a list of note.Note : notes:List[note.Note]
+        """
+        indexes = [x for x in range(start_index,end_index+1)] if start_index < end_index else [x for x in range(end_index,start_index-1, -1)]
+        chromaticNotes = self.chromatic_notes["sharp"] if num_sharps >= 0 else self.chromatic_notes["flat"]
+        notes = list()
+        for ind in indexes:
+            anote = chromaticNotes[ind]
+            notes.append(note.Note(anote))
+        return notes
     
     def distance(self, start_note:str, end_note:str)->int:
         """Returns the number of semitones (half-steps) from one note to another.
@@ -189,10 +206,6 @@ class Notes(object):
     
 def main():
     notes = Notes()
-    chromatic_notes = notes.chromatic_notes
-    chromatic_pitches = notes.chromatic_pitches
-    print(chromatic_notes["sharp"])
-    print(chromatic_pitches["flat"])
     anote1 = "D3"
     anote2 = "F#4"
     note_numbers = notes.get_note_number(anote1, anote2)
@@ -201,20 +214,6 @@ def main():
     pitch_numbers = notes.get_pitch_number(pitch1,pitch2)
     print(f" {anote1}, {anote2}  note numbers: {note_numbers}")
     print(f" {pitch1}, {pitch2} pitch numbers: {pitch_numbers}")
-    dist1 = notes.distance(anote1, anote2)
-    dist2 = notes.distance(anote2, anote1)
-    print(f"distance from {anote1} to {anote2}: {dist1}")    # 16 is the right answer
-    print(f"distance from {anote2} to {anote1}: {dist2}")    # -16
-    compared = notes.compare_notes(anote1, anote2)
-    print(f"comparing {anote1}, {anote2}: {compared}")
-    
-    compared = notes.compare_pitches(pitch1, pitch2)
-    print(f"comparing {pitch1}, {pitch2}: {compared}")
-    
-    relative_to="F"
-    compared = notes.compare_pitches(pitch1, pitch2, relative_to="F")
-    print(f"comparing {pitch1}, {pitch2} relative to {relative_to}: {compared}")
-    
     
 if __name__ == '__main__':
     main()

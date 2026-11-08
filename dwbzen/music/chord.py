@@ -7,23 +7,39 @@ import json, copy
 from music.key import Key
 from music.instruments import Instruments
 from music.musicUtils import MusicUtils
+from music.generalUtils import GeneralUtils
 from music21 import chord, note, metadata, pitch, tempo
 from music21 import stream, interval, instrument, clef
 from music21 import meter, duration
 import music21
-from typing import List, Dict, Union
+from typing import List, Dict
 from itertools import accumulate
 import operator
-from pyasn1_modules.rfc5275 import GLNewKeyAttributes
+from enum import Enum
 
-
+class ChordPosition(Enum):
+    """ChordPosition is how the notes of a chord are arranged.
+        For example, a dominant 9th has the intervals: M3, m3, m3, M3 or formula 4,3,3,4.
+        In CLOSED position the notes are all within a single octave range.
+            The notes of a C9 with root C4 are C4,D4,E4,G4,Bb4
+        In EXTENDED position the notes are defined strictly by intervals. 
+            The notes of a C9 in EXTENDED position with root C4 are C4,E4,G4,Bb4,D5
+        OPEN and SEMI_CLOSED are music21 positions defined by chord.Chord.openPosition()
+        and chord.Chord.semiClosedPosition().
+        If unspecified the default ChordPosition is EXTENDED.
+    """
+    CLOSED = "closed"           # also a music21 closedPosition
+    EXTENDED = "extended"
+    OPEN = "open"
+    SEMI_CLOSED = "semi-closed" # music21 semiClosedPosition
+    
 class Chord(object):
     
     C_MAJOR_KEY = { "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "mixed", "signature" : 0, "relativeKey" : "A-Minor" }
     DEFAULT_ROOT_PITCH = "C4"    # middle C
     INTERVALS = None    # set dynamically
 
-    def __init__(self, chord_data:dict, root_pitch:str="C", key:Key=None, fmt=None, inversion=0):
+    def __init__(self, chord_data:dict,/, root_pitch:str="C4", symbol:str=None, key:Key=None, position:ChordPosition=None, inversion=0, doubleRoot=False):
         """
         Create a Chord instance from a dictionary, for example: 
         {"name":"Major seventh",  "symbols":["maj7","M7"],   "groups":["seventh"], 
@@ -31,66 +47,51 @@ class Chord(object):
            "chordSize":4,         "formulaNumber":2193,     "spelling":"C E G B" }
         Arguments:
             chord_data - a dictionary with the above structure.
-            root_pitch - the root note of the chord. Default is 'C'. May include an octave designation.
+            root_pitch - the root note of the chord. Default is 'C4'.The octave designation is set to 4 if not included.
+            symbol - an optional chord symbol. If present it overrides the symbol give in chord_data.
             key - an optional Key instance. If None, the Key is set to C-Major.
-            fmt - How to construct the chords: in a condensed format (all notes within a single octave), or extended.
+            position - a ChordPosition: How to construct the chords: CLOSED, EXTENDED, OPEN, or SEMI_CLOSED. 
             inversion - chord inversion as an integer - this rotates the notes to the right or left by that number of places, default is 0.
-        The chord_data["spelling"] are the notes of the chord with 'C' as the root.
+            doubleRoot - if True double the root note (add an additional note 1 octave higher than the root). True by default.
+        The chord_data["spelling"] are the notes of the chord with 'C' as the root. 
+        The notes in the chord spelling don't include an octave designation - an EXTENDED position is assumed.
         The notes of a chord can be constructed from the formula or intervals.
-        All the chord_data fields are defaulted to produce a C-Major chord.
+        All the chord_data fields are defaulted to produce a C-Major triad.
         """
-        # print(f"chord data: {chord_data}")
         self.chord_data = chord_data
-        self._fmt = "condensed" if fmt is None else fmt
+        self._position = ChordPosition.EXTENDED if position is None else position
         self._name = self.chord_data.get('name', "MajorChord")
         formula = self.chord_data.get("formula", [4,3])      # intervals from the root as number of semitone. Default of [4,3] is a Major triad
         self._formula = formula
         self._formulaNumber = self.chord_data.get("formulaNumber", 145)
         self._intervals = self.chord_data.get("intervals", ["M3","m3"])     # intervals from the root as interval names (quality+size)
         
-        self._spelling = self.chord_data.get("spelling", "").split()    # the chord notes, delimited by spaces, with C as the root
+        self._spelling = self.chord_data.get("spelling", "").split()    # the chord notes, delimited by spaces, with "C" as the root
         self._symbols:List[str] = self.chord_data.get("symbols", ["M"])
+        self._symbol = self._symbols[0] if symbol is None else symbol  # the first symbol is the primary if not explicitly given
         self.size = len(self.formula)
         self._key = Key(Chord.C_MAJOR_KEY) if key is None else key
         self._music21Key = None      # key.KeySignature
         #
-        # support for extended format. For example, the notes of a C7 chord ( C E G Bb D )
-        # would be C4 E4 G4 Bb4 D5, given a root of C4
-        #
+        _notes = Chord.chord_notes_from_formula(root_pitch, formula, position, doubleRoot)
+        self._root = _notes[0]
+        self._bassNote = self._root    # An inversion keeps the root and update the bass note.
+            
+        self._music21Chord = chord.Chord(_notes)    # music21 chord.Chord
+        self._notes = _notes
+        self._rootPitch = pitch.Pitch(root_pitch)
+        self._doubleRoot = doubleRoot
         
-        _notes = Chord.chord_notes_from_formula(root_pitch, formula, inversion) if fmt == "extended" or len(self._spelling)==0 else copy.copy(self._spelling)
-        
-        music21Chord = chord.Chord(_notes)    # music21 chord.Chord
-        rootPitch = music21Chord.root().name.replace("-","b")
-        rp = MusicUtils.get_pitch(root_pitch)     # given root with the octave stripped
-        if rootPitch != rp:
-            #
-            # if a rootPitch is given and NOT "C", need to transpose the chord to the new root
-            # p1 = pitch.Pitch("C"), p2=pitch.Pitch(rootPitch), aInterval =interval.Interval(pitchStart=p1,pitchEnd=p2)
-            # then m21Chord = music21Chord.transpose(aInterval)
-            #
-            p2 = pitch.Pitch(rp)    # music21 treats a 'b' as a flat and converts to '-'
-            p1 = pitch.Pitch(rootPitch)
-            aInterval = interval.Interval(pitchStart=p1,pitchEnd=p2)
-            m21Chord = music21Chord.transpose(aInterval)
-            self._notes = list()
-            for note in m21Chord.notes:
-                self._notes.append(note.pitch.name.replace("-","b"))
-            self._music21Chord = m21Chord
-            self._rootPitch = m21Chord.root()
-            self._root = m21Chord.root().name.replace("-","b")
+        if inversion > 0:
+            self.create_inversion(inversion)
         else:
-            self._notes = _notes
-            self._music21Chord = music21Chord
-            self._root = rootPitch
-            self._rootPitch = self._music21Chord.root()    # music21.pitch.Pitch
-        
+            self._inversion = 0
         
         print(f"chord root: {self._root}")
         print(f"notes: {self._notes}")
     
     @staticmethod
-    def chord_notes_from_formula(rootPitch:str, formula:List[int], inversion:int=0)->List[note.Note]:
+    def chord_notes_from_formula(rootPitch:str, formula:List[int], position:ChordPosition=ChordPosition.EXTENDED, doubleRoot=False)->List[note.Note]:
         """Get the notes of a Chord given the root note and the formula.
             Arguments:
                 rootPitch - the root note of the chord. If an octave is not present, octave 4 is used.
@@ -101,20 +102,21 @@ class Chord(object):
                     Default is 0, any int value is valid. For example 1st inversion, set inversion=1.
                     A C7 chord (formula [4,3,3] = C4,E4,G4,Bb4) in 1st inversion would be E4 G4 B-5 C5
                     A C9 (formula [4,3,3,4] = C4,E4,G4,Bb4,D5) in 1st inversion would be E4 G4 B-5 D5 C5
-            Note - the implementation uses the music21 Pitch API.
+                position - ChordPosition instance, default value if not specified is ChordPosition.EXTENDED
+                doubleRoot - if True double the root note (add an additional note 1 octave higher than the root). True by default.
+            Returns: a List of music21 note.Note
         """
-        rp = MusicUtils.get_note(rootPitch)    # add the octave if not present
+        rp = MusicUtils.get_note(rootPitch)    # add the octave if not present, default is octave 4
         rootNote= note.Note(rp)
         chord_notes = [rootNote]
         semitones = list(accumulate(formula, operator.add))
+        
         for semitone in semitones:   # number of semitones from the root pitch
-            nextNote = rootNote.transpose(semitone)
+            st = semitone if position == ChordPosition.EXTENDED or position == ChordPosition.OPEN else semitone%12
+            nextNote = rootNote.transpose(st)
             chord_notes.append(nextNote)
-
-        invert_places = inversion%len(chord_notes)
-        if invert_places != 0:
-            # now rotate the chord_notes by that number of places
-            chord_notes = MusicUtils.rotate(chord_notes, invert_places)
+        if doubleRoot:
+            chord_notes.append(rootNote.transpose("P8"))
         
         return chord_notes
     
@@ -179,6 +181,10 @@ class Chord(object):
         return self._symbols
     
     @property
+    def symbol(self)->str:
+        return self._symbol
+    
+    @property
     def intervals(self)->List[str]:
         return self._intervals
     
@@ -204,7 +210,19 @@ class Chord(object):
         self._music21Key = self._get_music21_key()
     
     @property
+    def position(self)->ChordPosition:
+        return self._position
+    
+    @position.setter
+    def position(self, newPosition:ChordPosition):
+        self._position = newPosition
+    
+    @property
     def music21Chord(self)->chord.Chord:
+        if self._position == ChordPosition.CLOSED:
+            self._music21Chord.closedPosition(inPlace=True)
+        elif self._position == ChordPosition.SEMI_CLOSED:
+            self._music21Chord.semiClosedPosition(inPlace=True)
         return self._music21Chord
             
     @property
@@ -214,6 +232,15 @@ class Chord(object):
     @property
     def rootPitch(self)->pitch.Pitch:
         return self._rootPitch
+    
+    @property
+    def bassNote(self)->pitch.Pitch:
+        return self._bassNote
+    
+    @bassNote.setter
+    def bassNote(self, new_bassNote:str|pitch.Pitch)->None:
+        bassNote = MusicUtils.get_note(new_bassNote)    # adds an octave if not present
+        self._bassNote = pitch.Pitch(new_bassNote) if isinstance(new_bassNote,str) else new_bassNote
     
     def _get_music21_key(self, transpose_interval:interval.Interval|None=None)->music21.key.Key:
         """ 
@@ -239,20 +266,41 @@ class Chord(object):
             perfect              half step smaller        diminished
         """
         if cls.INTERVALS is None:
-            cls.INTERVALS = {
-                "P1":0, "a1":1, "M2":2, "m2":1, "d2":0, "a2":3, "M3":4, "m3":3, "d3":2, "a3":5,
-                "P4":5, "d4":4, "a4":6, "P5":7, "d5":6, "a5":8, "M6":9, "m6":8, "d6":7, "a6":10,
-                "M7":11, "m7":10, "d7":9, "a7":12, "P8":12, "d8":11, "a8":13 }
+            cls.INTERVALS = MusicUtils.get_interval_sizes()
         return cls.INTERVALS
     
-    def arpegiate(self, root="C4")->List[note.Note]:
+    def arpegiate(self)->List[note.Note]:
         """ Create a list of Note from the notes in this chord
         """
-        notes:List[notes.Note] = list()
-        for note in self._music21Chord.notes:
-            notes.append(note)
+        notes = [note for note in self._music21Chord.notes]
         return notes
+    
+    def create_inversion(self, inversion:int)->None:
+        # TODO 
+        """ Create an inversion of this chord and update the symbol as a slash chord:
+            For example: D4  F#4  A4  C4  E5  =>  F#4  A4  C4 D5  E5
+            D9 formula: 4,3,3,4   1st inversion symbol 'D9/F#', C9 in 1st inversion is 'C9/E'
+            Argument:
+                inversion - a positive integer with range from 1 to len(self.formula).
+                    If inversion < 0, the absolute value is used.
+                For example a major triad (4,3) has 2 inversions.
+            Note that this updates self directly.
+        """
+        self._inversion = abs(inversion%len(self._notes))
+        inversion = self._inversion
+        while inversion > 0:
+            bass_note = self._notes[0]
+            self._notes.append(bass_note.transpose("P8"))
+            self._notes = self._notes[1:]
+            inversion-=1
 
+        self._bassNote = self._notes[0]
+        self._symbol = f"{self._symbol}/{self._bassNote.name}"
+        self._music21Chord = chord.Chord(self._notes)    # music21 chord.Chord
+
+
+    def __iter__(self):
+        return self.arpegiate().__iter__()
     
     def show(self, format_:str, root="C4", octaves=1, notes:List[str]=None, note_duration="quarter", 
              instrument_name="Piano", second_part_transpose:int=0, metronome_mark:(int,str)=(100,"quarter"), time_signature:str="4/4"):
@@ -264,25 +312,15 @@ class Chord(object):
             print(self.pitches(root))
             return
         
-        transpose_interval = interval.Interval(0)
-        if instrument_name == "Piano":
-            part_instrument = instrument.Piano()
-        else:    # need to load Instruments and Clefs data
-            instruments = Instruments()
-            if instrument_name in instruments.instrument_names:
-                part_instrument = instruments.get_instrument(instrument_name)
-                interval_semitones = 0 if part_instrument.transposition is None else -part_instrument.transposition.semitones
-                transpose_interval = interval.Interval(interval_semitones)
-                part_instrument
-            else:
-                raise(TypeError(f"No dota for {instrument_name}"))
+        part_instrument,transpose_interval = GeneralUtils.get_instrument(instrument_name)
             
         part_tempo = tempo.MetronomeMark(number=metronome_mark[0], referent=note.Note(type=metronome_mark[1]))
         timeSignature = meter.TimeSignature(time_signature)
         part_clef = MusicUtils.getClef(root, octaves)
         part_stream = stream.Stream()
         part_stream.insert(0, metadata.Metadata())
-        part_stream.metadata.title = self.name
+        part_stream.metadata["title"] = f"{self.name}\n{self._root.name}{self.symbol}"
+
         part_stream.insert(part_clef)
         part_stream.insert(self._get_music21_key(transpose_interval))
         part_stream.insert(timeSignature)
@@ -293,4 +331,14 @@ class Chord(object):
         self._music21Chord.duration = dur
         part_stream.append(self._music21Chord)
         part_stream.show(fmt=format_)
-        
+
+if __name__ == '__main__':
+    c13_chord_data = {"name":"Dominant thirteenth", "symbols":["13"], "groups":["extended"], "formula":[4,3,3,4,7],
+                  "intervals":["M3", "m3", "m3", "M3", "P5"], "size":5, "chordSize":6, "formulaNumber":1685, "spelling":"C E G Bb D A" }
+    c9_chord_data = {"name":"Dominant ninth", "symbols":["9"], "groups":["extended"], "formula":[4,3,3,4], 
+                   "intervals":["M3", "m3", "m3", "M3"], "size":4, "chordSize":5, "formulaNumber":1173, "spelling":"C E G Bb D" }
+    
+    c13 = Chord(c9_chord_data, root_pitch="C4", position=ChordPosition.EXTENDED)
+    c13.show(format_="musicxml", note_duration="half")
+    for note in c13: print(note)
+    

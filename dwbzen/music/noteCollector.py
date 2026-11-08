@@ -16,6 +16,7 @@
 
 from music.musicCollector import MusicCollector
 from music.musicUtils import MusicUtils
+from music.scoreUtils import ScoreUtils
 from common.markovChain import MarkovChain
 from common.collectorProducer import CollectorProducer
 import pandas as pd
@@ -161,7 +162,7 @@ class NoteCollector(MusicCollector):
                 elif st[0] == 'title':
                     title = st[1]
 
-            self.scores, self.titles = MusicUtils.get_scores_from_corpus(composer=composer, title=title, keypart=self.key_partName, filters=self.score_filters)
+            self.scores, self.titles = ScoreUtils.get_scores_from_corpus(composer=composer, title=title, keypart=self.key_partName, filters=self.score_filters)
             self.number_of_scores = len(self.scores)
                 
             for ascore in self.scores:
@@ -173,16 +174,16 @@ class NoteCollector(MusicCollector):
                     # default target key of C-Major  or A-minor is used
                     # based on the mode (major or minor) of the original Keys of each part
                     #                    
-                    transposed_score = MusicUtils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
-                    self.transposed_scores.append(transposed_score)
-                    notesdf, pnames, pnums = MusicUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
+                    transposed_score = ScoreUtils.transpose_score(ascore, partnames=self.part_names, instruments=range_instruments)
+                    self.transposed_scores.ScoreUtils(transposed_score)
+                    notesdf, pnames, pnums = ScoreUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
                 else:
                     #
                     # absolute pitch/pitch class or scale degree.  no transposition, but still need to adjust_accidentals
                     #
-                    transposed_score = MusicUtils.adjust_score_accidentals(ascore, partnames=self.part_names, inPlace=False)
+                    transposed_score = ScoreUtils.adjust_score_accidentals(ascore, partnames=self.part_names, inPlace=False)
                     self.transposed_scores.append(transposed_score)
-                    notesdf, pnames, pnums = MusicUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
+                    notesdf, pnames, pnums = ScoreUtils.get_notes_for_score(transposed_score, self.part_names, self.part_numbers)
                 
                 if self.verbose > 2 and len(notesdf)>0 and 3 in notesdf['pitchClass']:  # temporary debugging code
                     print(notesdf[notesdf['pitchClass']==3][['part_name','pitch']])
@@ -203,7 +204,7 @@ class NoteCollector(MusicCollector):
                 corpus_file = self.corpus_folder + source[6:]
                 self.score = corpus.parse(corpus_file)
             else:
-                file_info = MusicUtils.get_file_info(source)
+                file_info = ScoreUtils.get_file_info(source)
                 if file_info['Path'].exists():
                     self.score = converter.parse(file_info['path_text'])
                     if self.verbose > 2:
@@ -215,13 +216,13 @@ class NoteCollector(MusicCollector):
                     # diatonic pitch - transpose the score to C-Major or C-Minor
                     # and enforce instrument ranges if needed (if enforce_range is True)
                     #
-                    self.transposed_score = MusicUtils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
+                    self.transposed_score = ScoreUtils.transpose_score(self.score, partnames=self.part_names, instruments=range_instruments)
                     self.transposed_scores.append(self.transposed_score)
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
-                        MusicUtils.get_notes_for_score(self.transposed_score, self.part_names, self.part_numbers)
+                        ScoreUtils.get_notes_for_score(self.transposed_score, self.part_names, self.part_numbers)
                 else:   # absolute pitch/pitch class or scale degree - no transposition required
                     self.notes_df, self.score_partNames, self.score_partNumbers = \
-                        MusicUtils.get_notes_for_score(self.score, self.part_names, self.part_numbers)
+                        ScoreUtils.get_notes_for_score(self.score, self.part_names, self.part_numbers)
             else:
                 result = False
 
@@ -238,13 +239,13 @@ class NoteCollector(MusicCollector):
         """
         
         if self.pitch_mode:
-            index_str = MusicUtils.show_notes(key_notes,'nameWithOctave')
+            index_str = ScoreUtils.show_notes(key_notes,'nameWithOctave')
             col_str = str(next_note.loc['nameWithOctave'])
         elif self.pitch_class_mode:
-            index_str = MusicUtils.show_notes(key_notes,'name')
+            index_str = ScoreUtils.show_notes(key_notes,'name')
             col_str = str(next_note.loc['name'])
         else:  # self.scale_degree_mode:
-            index_str = MusicUtils.show_notes(key_notes,'scaleDegree')
+            index_str = ScoreUtils.show_notes(key_notes,'scaleDegree')
             col_str = str(next_note.loc['scaleDegree'])
 
         if self.verbose > 1:
@@ -318,7 +319,7 @@ class NoteCollector(MusicCollector):
         sums = self.counts_df.sum(axis=1)
         self.chain_df = self.counts_df.div(sums, axis=0)
         self.chain_df.rename_axis('KEY', inplace=True)
-        self.chain_df = self.chain_df.map(lambda x: MusicUtils.round_values(x, 6))
+        self.chain_df = self.chain_df.map(lambda x: ScoreUtils.round_values(x, 6))
         
         self.markovChain = MarkovChain(self.order, self.counts_df,  chain_df=self.chain_df, myname=self.name)
         

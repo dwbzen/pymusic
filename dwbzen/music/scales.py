@@ -51,7 +51,7 @@ class Scales(object):
             fnum = fnum + (1 << shiftamt)
         return fnum
     
-    def get_scales_data(self)->dict:
+    def get_scales_data(self)->List[dict]:
         """ Returns a List[dict] where each dictionary is the scale data for a single named scale.
         """
         return self.scales_data
@@ -80,7 +80,6 @@ class Scales(object):
         return self.scales.__iter__()
         
 if __name__ == '__main__':
-
     keys = Keys()
     key_names = keys.key_names
     

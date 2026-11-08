@@ -17,10 +17,13 @@ class Key(object):
         For example: { "name" : "G major",  "mode" : "Major", "accidental" : "sharps", "signature" : 1, "relativeKey" : "E-Minor"}
         Each entry is also represented as a property: key_name (for name), mode, accidental, signature, relativeKey, parallelKey
     """
-    
+    #
+    # "sharp" and "flat" pitches include the accidental in order of appearance in circle of 5th keys:
+    # "sharpNotes" and "flatNotes" do not.
+    #
     KEY_SIGNATURES = {
-        "sharps": ["","F","C","G","D","A","E","B"], "flats" : ["","B","E","A","D","G","C","F"],
-        "sharp":  ["","F","C","G","D","A","E","B"], "flat"  : ["","B","E","A","D","G","C","F"]
+        "sharp":  ["","F#","C#","G#","D#","A#","E#","B#"], "flat"  : ["","Bb","Eb","Ab","Db","Gb","Cb","Fb"],
+        "sharpNotes": ["","F","C","G","D","A","E","B"], "flatNotes" : ["","B","E","A","D","G","C","F"]
     }
     
     def __init__(self, key_data:dict=None, name:str=None, mode:str=None, accidental:str=None, signature:int=0, relativeKey:str=None, parallelKey=None):
@@ -32,8 +35,9 @@ class Key(object):
         self._key_name = key_data.get("name",None)
         assert(self._key_name is not None)
         self._name:str = self._key_name
+        
         self._mode = self._key_data.get("mode","Major")
-        self._accidental = self._key_data.get("accidental", "")
+        self._accidental = self._key_data.get("accidental", "sharp")
         self._signature = self._key_data.get("signature",0)
         self._relativeKey = self._key_data.get("relativeKey", None)
         self._parallelKey = self._key_data.get("parallelKey", None)
@@ -50,7 +54,7 @@ class Key(object):
         return self._mode
     
     @property
-    def accidental(self)->str:    # "sharp" or "flat" or ""
+    def accidental(self)->str:    # "sharp" or "flat"
         return self._accidental
     
     @property
@@ -69,22 +73,15 @@ class Key(object):
     def tonic(self)->str:
         return self._tonic
     
-    def get_key_signature(self, add_accidental:bool=False)->List[str]:
+    def get_key_signature(self, add_accidental:bool=True)->List[str]:
         """Returns the list of pitches that define this key. Returns an empty list for C-Major and A-Minor.
-            Argument: add_accidental - if True then add the accidental (# or b) to the pitch. Default is False.
+            Argument: add_accidental - if True then add the accidental (# or b) to the pitch. Default is True.
         """
-        accidentals = Key.KEY_SIGNATURES[self.accidental]    # sharp or flat
-        sig_accidental = "#" if self.accidental == "sharps" else "b"
-        num_accidentals = self.signature
+        # self.accidental is "sharp" or "flat"
+        accidentals = Key.KEY_SIGNATURES[self.accidental] if add_accidental else Key.KEY_SIGNATURES[f"{self.accidental}Notes"]
+        num_accidentals = self.signature    # number of accidentals in the key signature: 0 through 7
         sig_pitches = accidentals[1:num_accidentals+1] if num_accidentals > 0 else []
-        if add_accidental and len(sig_pitches)>0:
-            sig_notes = []
-            for n in sig_pitches:
-                sig_notes.append(f"{n}{sig_accidental}")
-            return sig_notes
-        else:
-            return accidentals[1:num_accidentals+1] if num_accidentals > 0 else []
-
+        return sig_pitches
     
     @staticmethod
     def create_key(tonic:str, mode:str)->music21.key.Key:

@@ -49,7 +49,7 @@
 		"flat" : ["","B","E","A","D","G","C","F"]
 	},
 	"keys" : {
-		"C-Major": { "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "mixed", "signature" : 0, "relativeKey" : "A-Minor" },
+		"C-Major": { "name" : "C-Major", "alternate_name" : "C major", "mode" : "Major", "accidental" : "sharp", "signature" : 0, "relativeKey" : "A-Minor" },
 		"G-Major": { "name" : "G-Major", "alternate_name" : "G major", "mode" : "Major", "accidental" : "sharp", "signature" : 1, "relativeKey" : "E-Minor"},
 		"D-Major": { "name" : "D-Major", "alternate_name" : "D major",  "mode" : "Major", "accidental" : "sharp", "signature" : 2, "relativeKey" : "B-Minor"},
 		"A-Major": { "name" : "A-Major", "alternate_name" : "A major",  "mode" : "Major", "accidental" : "sharp", "signature" : 3, "relativeKey" : "F#-Minor"},	
@@ -66,21 +66,21 @@
 		"Gb-Major": { "name" : "Gb-Major", "alternate_name" : "G- major",  "mode" : "Major", "accidental" : "flat", "signature" : 6, "relativeKey" : "Eb-Minor", "parallelKey" : "F#-Major"},
 		"Cb-Major": { "name" : "Cb-Major", "alternate_name" : "C- major",  "mode" : "Major", "accidental" : "flat", "signature" : 7, "relativeKey" : "Ab-Minor", "parallelKey" : "B-Major"},	
 
-		"A-Minor" : { "name" : "A-Minor", "alternate_name" : "A minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 0, "relativeKey" : "C-Major"},
-		"E-Minor": { "name" : "E-Minor", "alternate_name" : "E minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 1, "relativeKey" : "G-Major"},
-		"B-Minor": { "name" : "B-Minor", "alternate_name" : "B minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 2, "relativeKey" : "D-Major"},
-		"F#-Minor": { "name" : "F#-Minor", "alternate_name" : "F# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 3, "relativeKey" : "A-Major"},
-		"C#-Minor": { "name" : "C#-Minor", "alternate_name" : "C# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 4, "scale" : "Minor", "relativeKey" : "E-Major"},
-		"G#-Minor": { "name" : "G#-Minor", "alternate_name" : "G# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 5, "relativeKey" : "B-Major", "parallelKey" : "Ab-Minor"},
-		"D#-Minor": { "name" : "D#-Minor", "alternate_name" : "D# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 6, "relativeKey" : "F#-Major", "parallelKey" : "Eb-Minor"},
-		"A#-Minor": { "name" : "A#-Minor", "alternate_name" : "A# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 7, "relativeKey" : "C#-Major", "parallelKey" : "Bb-Minor"},
+		"A-Minor" : { "name" : "A-Minor", "alternate_name" : "a minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 0, "relativeKey" : "C-Major"},
+		"E-Minor": { "name" : "E-Minor", "alternate_name" : "e minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 1, "relativeKey" : "G-Major"},
+		"B-Minor": { "name" : "B-Minor", "alternate_name" : "b minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 2, "relativeKey" : "D-Major"},
+		"F#-Minor": { "name" : "F#-Minor", "alternate_name" : "f# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 3, "relativeKey" : "A-Major"},
+		"C#-Minor": { "name" : "C#-Minor", "alternate_name" : "c# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 4, "scale" : "Minor", "relativeKey" : "E-Major"},
+		"G#-Minor": { "name" : "G#-Minor", "alternate_name" : "g# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 5, "relativeKey" : "B-Major", "parallelKey" : "Ab-Minor"},
+		"D#-Minor": { "name" : "D#-Minor", "alternate_name" : "d# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 6, "relativeKey" : "F#-Major", "parallelKey" : "Eb-Minor"},
+		"A#-Minor": { "name" : "A#-Minor", "alternate_name" : "a# minor", "mode" : "Minor", "accidental" : "sharp", "signature" : 7, "relativeKey" : "C#-Major", "parallelKey" : "Bb-Minor"},
 
-		"D-Minor": { "name" : "D-Minor", "alternate_name" : "D minor", "mode" : "Minor", "accidental" : "flat", "signature" : 1, "relativeKey" : "F-Major"},
-		"G-Minor": { "name" : "G-Minor", "alternate_name" : "G minor", "mode" : "Minor", "accidental" : "flat", "signature" : 2, "relativeKey" : "Bb-Major"},
-		"C-Minor": { "name" : "C-Minor", "alternate_name" : "C minor", "mode" : "Minor", "accidental" : "flat", "signature" : 3, "relativeKey" : "Eb-Major"},
-		"F-Minor": { "name" : "F-Minor", "alternate_name" : "F minor", "mode" : "Minor", "accidental" : "flat", "signature" : 4, "relativeKey" : "Ab-Major"},	
-		"Bb-Minor": { "name" : "Bb-Minor", "alternate_name" : "B- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 5, "relativeKey" : "Db-Major", "parallelKey" : "A#-Minor"},		
-		"Eb-Minor": { "name" : "Eb-Minor", "alternate_name" : "E- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 6, "relativeKey" : "Gb-Major", "parallelKey" : "D#-Minor"},
-		"Ab-Minor": { "name" : "Ab-Minor", "alternate_name" : "A- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 7, "relativeKey" : "Cb-Major", "parallelKey" : "G#-Minor"}
+		"D-Minor": { "name" : "D-Minor", "alternate_name" : "d minor", "mode" : "Minor", "accidental" : "flat", "signature" : 1, "relativeKey" : "F-Major"},
+		"G-Minor": { "name" : "G-Minor", "alternate_name" : "g minor", "mode" : "Minor", "accidental" : "flat", "signature" : 2, "relativeKey" : "Bb-Major"},
+		"C-Minor": { "name" : "C-Minor", "alternate_name" : "c minor", "mode" : "Minor", "accidental" : "flat", "signature" : 3, "relativeKey" : "Eb-Major"},
+		"F-Minor": { "name" : "F-Minor", "alternate_name" : "f minor", "mode" : "Minor", "accidental" : "flat", "signature" : 4, "relativeKey" : "Ab-Major"},	
+		"Bb-Minor": { "name" : "Bb-Minor", "alternate_name" : "b- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 5, "relativeKey" : "Db-Major", "parallelKey" : "A#-Minor"},		
+		"Eb-Minor": { "name" : "Eb-Minor", "alternate_name" : "e- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 6, "relativeKey" : "Gb-Major", "parallelKey" : "D#-Minor"},
+		"Ab-Minor": { "name" : "Ab-Minor", "alternate_name" : "a- minor", "mode" : "Minor", "accidental" : "flat", "signature" : 7, "relativeKey" : "Cb-Major", "parallelKey" : "G#-Minor"}
 	}
 }

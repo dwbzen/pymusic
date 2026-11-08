@@ -5,9 +5,10 @@ Created on Sep 11, 2026
 '''
 
 import json, argparse
-from typing import List
+from typing import List, Dict
 from music.chord import Chord
 from music.key import Key
+from music.chord import ChordPosition
 from common.environment import Environment
 import pandas as pd
 
@@ -40,7 +41,12 @@ class ChordLibrary(object):
             
         # extract and save all the group names
         self._groupNames = chords_data["groups"]
-            
+        
+        # build a Dict[str, dict] that indexes the chords by symbol
+        self._symbols = {}
+        for chord in self._chordsData:
+            cs = {x: chord for x in chord["symbols"]}
+            self._symbols.update(cs)
     
     def getChordDataFrame(self)->pd.DataFrame:
         for cdata in self._chordsData:
@@ -64,9 +70,18 @@ class ChordLibrary(object):
     def chordsData(self)->dict:
         return self._chordsData
     
-    def getChord(self, name:str, fmt, rootNote="C", key:Key=None)->Chord:
+    @property
+    def symbols(self)->Dict[str,dict]:
+        return self._symbols
+    
+    def getChord(self, name:str, position:ChordPosition=ChordPosition.EXTENDED, rootNote:str="C4", key:Key=None, inversion:int=0, doubleRoot=False)->Chord:
         chord_data = self.chordsLib[name]
-        chord = Chord(chord_data, root_pitch=rootNote, key=key, fmt=fmt)
+        chord = Chord(chord_data, root_pitch=rootNote, key=key, position=position, inversion=inversion, doubleRoot=doubleRoot)
+        return chord
+    
+    def getChordBySymbol(self, symbol:str, position:ChordPosition=ChordPosition.CLOSED, rootNote="C", key:Key=None)->Chord:
+        chord_data = self._symbols.get(symbol, None)
+        chord = Chord(chord_data, root_pitch=rootNote, key=key, position=position) if chord_data is not None else None
         return chord
     
     def __iter__(self):

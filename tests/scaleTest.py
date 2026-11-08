@@ -23,18 +23,17 @@ class ScaleTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def xtest_get_scale1(self):
+    def test_get_scale1(self):
         scale_name = "Harmonic Major 1"
         print(f"\n****** test create {scale_name} Scale, ascending, 1 octave, C-Major key ==========================")
-        scales_dict = ScaleTest.scales.scales_dict
-        scale_data = scales_dict.get(scale_name, None)
+        scale_data = ScaleTest.scales.scaleLib.getScaleData(scale_name)
         key = ScaleTest.keys.key("C-Major")
         root=key.tonic
         scale = Scale(scale_data, key=key)
         print(scale.pitches(root))
         print(scale.notes(root))
     
-    def xtest_get_scale2(self):
+    def test_get_scale2(self):
         scale_name = "Melodic minor ascending"
         print(f"\n****** test create {scale_name} Scale, 1 octave, F-Minor key ==========================")
         key = ScaleTest.keys.key("F-Minor")
@@ -43,7 +42,7 @@ class ScaleTest(unittest.TestCase):
         print(scale.pitches(root))
         print(scale.notes(root))
         
-    def xtest_get_scale_two_octaves_ascending(self):
+    def test_get_scale_two_octaves_ascending(self):
         scale_name = "Pentatonic minor"
         key = ScaleTest.keys.key("F-Minor")
         noctaves = 2
@@ -57,7 +56,7 @@ class ScaleTest(unittest.TestCase):
         print(f"notes: {notes}")
         scale.show("musicxml.png", notes=notes)
 
-    def xtest_get_scale_two_octaves_descending(self):
+    def test_get_scale_two_octaves_descending(self):
         scale_name = "Persian"  # "Blues Minor"
         key = ScaleTest.keys.key("C-Minor")
         noctaves = 2
@@ -68,7 +67,7 @@ class ScaleTest(unittest.TestCase):
         print(f"pitches: {pitches}")
         notes = scale.notes(root=root, num_octaves=noctaves)
         print(f"notes: {notes}")
-        scale.show("musicxml", notes=notes)
+        scale.show("musicxml", notes=notes, note_duration="eighth")
         
 
     def test_get_chromatic_pitches(self):

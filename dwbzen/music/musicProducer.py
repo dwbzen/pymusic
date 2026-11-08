@@ -11,6 +11,7 @@
 import music
 from common.producer import Producer
 from music.musicUtils import MusicUtils
+from music.scoreUtils import ScoreUtils
 import pandas as pd
 import random, math, sys
 from typing import List 
@@ -159,7 +160,7 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
         
         """
         if collector_type == "intervals":
-            theseed = MusicUtils.to_string(raw_seed)
+            theseed = ScoreUtils.to_string(raw_seed)
         elif collector_type == "notes":
             theseed = ",".join(raw_seed)
         
@@ -212,7 +213,7 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
                 next_token = nt
                 
             ns.append(next_token)
-            new_seed =  MusicUtils.to_string(ns[1:])
+            new_seed =  ScoreUtils.to_string(ns[1:])
             if self.verbose > 1:
                 print(f"random prob: {prob}, row prob: {p}, seed: '{seed}', next_token: '{next_token}', new_seed: '{new_seed}'")
         
@@ -342,7 +343,7 @@ collectionMode = {self.collection_mode}, parts={self.parts}, produce={self.produ
             if self.collection_mode != 'sd':
                 newnote = note.Note(newnote_str)
             else:
-                newpitch = MusicUtils.get_pitch_from_scaleDegree(self.score_key, newnote_str)
+                newpitch = ScoreUtils.get_pitch_from_scaleDegree(self.score_key, newnote_str)
                 newnote = note.Note(newpitch)
                 
             if self.trace_mode:
